@@ -1,0 +1,122 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/auditEdgecases.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-claude-audit-20261022/snapshot/web
+
+(node:88024) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/auditEdgecases.test.ts > independent audit reproductions > keeps a complete exact-game forecast when tomorrow's newer row has null learned heads
+BRIDGE_OBSERVED {"forecasts":[],"limitations":["Interim FORGE projections until native forecasts go live: each player's latest FORGE v2 daily line (runs 2026-10-21 to 2026-10-22) stands in for his remaining games; 0 of 1 teams covered.","Season rates could not be read, so penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs count as 0.","Team strength could not be read, so future games reuse each FORGE line without an opponent adjustment.","Goalie starts use each goalie's last-10 start share (season share when missing), or FORGE's own starter probability for an already projected game. Per-start lines come from his latest FORGE line, or his team's when he has none.","Goalie news could not be read; start chances use start shares only.","1 skaters have a FORGE line with blank even-strength goals, assists or shots; such lines give no forecast."]}
+
+stdout | lib/auditEdgecases.test.ts > independent audit reproductions > does not produce season percentages from unpaired missing count columns
+AGGREGATE_OBSERVED {"nst":0.6666666666666666,"wgo":0.1,"shots":15}
+
+stdout | lib/auditEdgecases.test.ts > independent audit reproductions > keeps a missing weighted actual stat unknown in the recorded Yahoo lineup
+PAST_POINTS_OBSERVED [{"date":"2026-10-20","source":"yahoo","entries":[{"playerId":"p1","name":"Synthetic player","position":"C","slotId":"C1","points":2}]}]
+
+stdout | lib/auditEdgecases.test.ts > independent audit reproductions > does not mark an absent player DNP just because one unrelated actual row arrived
+SETTLE_OBSERVED [{"dressed":false,"fp":0,"settled":"2026-10-22T11:00:00Z"}]
+
+stdout | lib/auditEdgecases.test.ts > independent audit reproductions > recognizes an expired in-flight lease after a late durable checkpoint
+LATE_LEASE_OBSERVED {"state":{"status":"running","cursorGameId":11,"lastError":null,"updatedAt":"2026-10-21T10:03:35.000Z","leaseExpiresAt":"2026-10-21T10:04:30.000Z"},"dead":false}
+
+ ❯ lib/auditEdgecases.test.ts (5 tests | 5 failed) 6ms
+   × independent audit reproductions > keeps a complete exact-game forecast when tomorrow's newer row has null learned heads 3ms
+     → expected undefined to be defined
+   × independent audit reproductions > does not produce season percentages from unpaired missing count columns 1ms
+     → expected 0.1 to be null
+   × independent audit reproductions > keeps a missing weighted actual stat unknown in the recorded Yahoo lineup 0ms
+     → expected 2 to be null
+   × independent audit reproductions > does not mark an absent player DNP just because one unrelated actual row arrived 1ms
+     → expected '2026-10-22T11:00:00Z' to be null
+   × independent audit reproductions > recognizes an expired in-flight lease after a late durable checkpoint 1ms
+     → expected false to be true // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/auditEdgecases.test.ts > independent audit reproductions > keeps a complete exact-game forecast when tomorrow's newer row has null learned heads
+AssertionError: expected undefined to be defined
+ ❯ lib/auditEdgecases.test.ts:17:53
+     15|  const output=buildForgeDailyBridgeForecasts(inputs,[player],[game("10…
+     16|  console.log("BRIDGE_OBSERVED",JSON.stringify(output));
+     17|  expect(output.forecasts.find(x=>x.gameId==="100")).toBeDefined();
+       |                                                     ^
+     18|  });
+     19|  it("does not produce season percentages from unpaired missing count c…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  lib/auditEdgecases.test.ts > independent audit reproductions > does not produce season percentages from unpaired missing count columns
+AssertionError: expected 0.1 to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+0.1
+
+ ❯ lib/auditEdgecases.test.ts:23:27
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  lib/auditEdgecases.test.ts > independent audit reproductions > keeps a missing weighted actual stat unknown in the recorded Yahoo lineup
+AssertionError: expected 2 to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+2
+
+ ❯ lib/auditEdgecases.test.ts:30:38
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  lib/auditEdgecases.test.ts > independent audit reproductions > does not mark an absent player DNP just because one unrelated actual row arrived
+AssertionError: expected '2026-10-22T11:00:00Z' to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+"2026-10-22T11:00:00Z"
+
+ ❯ lib/auditEdgecases.test.ts:36:32
+     34|  const settled=settleLedgerRows(rows,{skaters:[{game_id:100,player_id:…
+     35|  console.log("SETTLE_OBSERVED",JSON.stringify(settled.map(x=>({dressed…
+     36|  expect(settled[0].settled_at).toBeNull();
+       |                                ^
+     37|  });
+     38|  it("recognizes an expired in-flight lease after a late durable checkp…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  lib/auditEdgecases.test.ts > independent audit reproductions > recognizes an expired in-flight lease after a late durable checkpoint
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/auditEdgecases.test.ts:43:15
+     41|  const dead=isRollingForgeStageLeaseDead(state,t+301000);
+     42|  console.log("LATE_LEASE_OBSERVED",JSON.stringify({state,dead}));
+     43|  expect(dead).toBe(true);
+       |               ^
+     44|  });
+     45| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed (5)
+   Start at  20:16:48
+   Duration  560ms (transform 280ms, setup 9ms, collect 328ms, tests 6ms, environment 130ms, prepare 27ms)
+

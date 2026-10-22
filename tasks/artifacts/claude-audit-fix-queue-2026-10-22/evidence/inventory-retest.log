@@ -1,0 +1,21 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts -t drops exactly the reviewed 491 columns
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-claude-audit-20261022/snapshot/web
+
+(node:89166) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+
+ ✓ lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts (68 tests | 67 skipped) 73ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 67 skipped (68)
+   Start at  20:22:24
+   Duration  378ms (transform 135ms, setup 8ms, collect 90ms, tests 73ms, environment 123ms, prepare 26ms)
+

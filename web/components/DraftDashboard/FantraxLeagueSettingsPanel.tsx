@@ -28,6 +28,7 @@ function warnings(settings: FantraxLeagueSettingsV1) {
 export default function FantraxLeagueSettingsPanel({
   disabled,
   enabled,
+  canSync = false,
   onApply,
   onRestoreLiveSession,
   lockReason,
@@ -36,6 +37,7 @@ export default function FantraxLeagueSettingsPanel({
 }: {
   disabled: boolean;
   enabled: boolean;
+  canSync?: boolean;
   lockReason?: "yahoo" | "espn" | "fantrax" | "fantrax-picks" | "draft-work" | null;
   onApply: (
     league: FantraxConnectionLeague,
@@ -149,7 +151,7 @@ export default function FantraxLeagueSettingsPanel({
 
   const leagueWarnings = league ? warnings(league.settings) : [];
   const apply = () => {
-    if (!account || !league) return;
+    if (!canSync || !account || !league) return;
     if (
       league.settings.diagnostics.status === "partial" &&
       !window.confirm(
@@ -251,7 +253,7 @@ export default function FantraxLeagueSettingsPanel({
           type="button"
           onClick={apply}
           disabled={
-            disabled ||
+            !canSync || disabled ||
             !league ||
             league.settings.diagnostics.status === "unsupported"
           }
@@ -292,7 +294,7 @@ export default function FantraxLeagueSettingsPanel({
         <div className={styles.summary}>
           <strong>Fantrax live draft sync</strong>
           <p>Choose your league and team above, then start live sync. Fantrax teams will fill the local draft slots in Fantrax order, and the team names will update after you confirm. Your scoring and roster settings stay in place. Future pick owners come from Fantrax when available. Keeper labels are not provided; only numbered selections sync.</p>
-          {!liveSync.enabled ? <p role="status">Fantrax live sync is paused. Manual drafting remains available.</p> : !liveSync.eligible ? <p role="status">Draft Pro access is required to start live sync. Manual drafting remains available.</p> : null}
+          {!liveSync.enabled ? <p role="status">Fantrax live sync is paused. Manual drafting remains available.</p> : null}
           {liveSync.blocked && !lockReason && liveSync.state?.session.status !== "active" ? <p role="status">Export a bookmark, then reset this draft before starting Fantrax sync.</p> : null}
           {liveSync.state?.warning ? <p role="alert">{liveSync.state.warning}</p> : null}
           {liveSync.state && liveSync.orderMatches === false ? <p role="alert">The Fantrax team order does not match this local draft. Picks are paused; stop sync and review the draft settings.</p> : null}
@@ -305,7 +307,7 @@ export default function FantraxLeagueSettingsPanel({
             : "Fantrax has not supplied an owner for the next pick; future order is unavailable."}</p> : null}
           {liveSync.state?.session.status === "active" ? (
             <>
-              <button type="button" onClick={liveSync.onPoll} disabled={liveSync.isPolling}>Sync now</button>{" "}
+              <button type="button" onClick={liveSync.onPoll} disabled={!canSync || !liveSync.eligible || liveSync.isPolling}>Sync now</button>{" "}
               <button type="button" onClick={liveSync.onStop}>Stop &amp; continue manually</button>
             </>
           ) : (

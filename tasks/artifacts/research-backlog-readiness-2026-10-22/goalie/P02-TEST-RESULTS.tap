@@ -1,0 +1,35 @@
+TAP version 13
+# Subtest: P02-N1: existing valid pooled SV and appearance semantics remain sound
+ok 1 - P02-N1: existing valid pooled SV and appearance semantics remain sound
+  ---
+  duration_ms: 0.421666
+  ...
+# Subtest: P02-D1: QS uses appearances rather than classified starts and missing QS becomes zero
+ok 2 - P02-D1: QS uses appearances rather than classified starts and missing QS becomes zero
+  ---
+  duration_ms: 7.600958
+  ...
+# Subtest: P02-D2: contextual SV sums unmatched support while the shared summary preserves paired support
+ok 3 - P02-D2: contextual SV sums unmatched support while the shared summary preserves paired support
+  ---
+  duration_ms: 2.759083
+  ...
+# Subtest: P02-D3: GAA summary averages game rates instead of pooling elapsed seconds
+ok 4 - P02-D3: GAA summary averages game rates instead of pooling elapsed seconds
+  ---
+  duration_ms: 0.138917
+  ...
+# Subtest: P02-D4: missing season GAA becomes zero and outranks an observed GAA
+ok 5 - P02-D4: missing season GAA becomes zero and outranks an observed GAA
+  ---
+  duration_ms: 2.962375
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 193.658

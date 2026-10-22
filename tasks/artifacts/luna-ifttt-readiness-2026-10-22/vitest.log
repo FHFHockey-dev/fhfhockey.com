@@ -1,0 +1,27 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/sources/tweetIdentityProposal.test.ts (43 tests) 68ms
+ ✓ lib/sources/tweetDecisionReview.test.ts (54 tests) 63ms
+ ✓ lib/sources/tweetIdentityEvaluation.test.ts (5 tests) 62ms
+ ✓ lib/sources/tweetIdentityLocalReview.test.ts (17 tests) 42ms
+ ✓ lib/sources/tweetIdentityCandidates.test.ts (26 tests) 23ms
+ ✓ lib/sources/tweetClaimSourceHints.test.ts (3 tests) 20ms
+ ✓ lib/sources/tweetClaimExtraction.test.ts (13 tests) 15ms
+ ✓ lib/sources/iftttSemanticResearch.test.ts (48 tests) 9ms
+(node:56351) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/sources/tweetNewsAutomation.test.ts (29 tests) 42ms
+(node:56353) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/sources/tweetNewsInference.test.ts (7 tests) 20ms
+(node:56355) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/sources/playerIdentity.test.ts (7 tests) 5ms
+
+ Test Files  11 passed (11)
+      Tests  252 passed (252)
+   Start at  08:31:18
+   Duration  2.59s (transform 281ms, setup 9ms, collect 734ms, tests 370ms, environment 374ms, prepare 295ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/artifacts/luna-ifttt-readiness-2026-10-22/vitest-results.json

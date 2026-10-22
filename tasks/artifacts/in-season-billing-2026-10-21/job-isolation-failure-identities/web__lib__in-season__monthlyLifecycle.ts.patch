@@ -1,0 +1,62 @@
+--- web/lib/in-season/monthlyLifecycle.ts (baseline)
++++ web/lib/in-season/monthlyLifecycle.ts
+@@ -47,14 +47,14 @@
+ export type MonthlyEvent = {
+   eventId: string; userId: string; subscriptionId: string;
+ } & ({ kind: "paid"; invoiceId: string; period: number; paymentIntentId: string; paidAt: string }
+-  | { kind: "failed"; invoiceId: string; period: number; failedAttempts: number; firstFailureAt: string | null }
++  | { kind: "failed"; invoiceId: string; period: number; failedAttempts?: number; failureId?: string; firstFailureAt: string | null }
+   | { kind: "cancelled"; cancelledAt: string }
+   | { kind: "billing_stopped"; stoppedAt: string }
+   | { kind: "observed"; observedAt: string }
+   | { kind: "refund"; invoiceId: string; period: number; paymentIntentId: string; refundId: string; amountCents: number; status: "pending" | "failed" | "succeeded"; observedAt: string; observedVersion?: number }
+   | { kind: "dispute"; invoiceId: string; period: number; paymentIntentId: string; disputeId: string; openedAt: string; status: "open" | "won" | "lost" });
+ 
+-type InvoiceState = { period: number; paymentIntentId: string | null; paidAt: string | null; firstFailureAt: string | null; failedAttempts: number;
++type InvoiceState = { period: number; paymentIntentId: string | null; paidAt: string | null; firstFailureAt: string | null; failedAttempts: number; failureIds?: string[];
+   refunds: Record<string, { amountCents: number; status: "pending" | "failed" | "succeeded"; observedAt: string; observedVersion?: number }>;
+   disputes: Record<string, { openedAt: string; status: "open" | "won" | "lost" }>;
+ };
+@@ -78,7 +78,7 @@
+   if (!Number.isFinite(now.getTime()) || !event.eventId || event.userId !== state.binding.userId || event.subscriptionId !== state.binding.subscriptionId) throw new Error("Monthly event ownership mismatch.");
+   const fingerprint = JSON.stringify(event.kind === "paid"
+     ? [event.kind, event.userId, event.subscriptionId, event.invoiceId, event.period, event.paymentIntentId, event.paidAt]
+-    : event.kind === "failed" ? [event.kind, event.userId, event.subscriptionId, event.invoiceId, event.period, event.failedAttempts, event.firstFailureAt]
++    : event.kind === "failed" ? [event.kind, event.userId, event.subscriptionId, event.invoiceId, event.period, ...(event.failureId === undefined ? [event.failedAttempts] : ["identity", event.failureId]), event.firstFailureAt]
+       : event.kind === "cancelled" ? [event.kind, event.userId, event.subscriptionId, event.cancelledAt]
+         : event.kind === "billing_stopped" ? [event.kind, event.userId, event.subscriptionId, event.stoppedAt]
+           : event.kind === "observed" ? [event.kind, event.userId, event.subscriptionId, event.observedAt]
+@@ -115,13 +115,22 @@
+       if (invoice.paidAt && invoice.paidAt !== event.paidAt) throw new Error("Payment was rebound or changed.");
+       invoice.paymentIntentId = event.paymentIntentId; invoice.paidAt = event.paidAt;
+     } else if (event.kind === "failed") {
+-      if (!Number.isInteger(event.failedAttempts) || event.failedAttempts < 1) throw new Error("Invalid failed-attempt count.");
++      if (event.failureId !== undefined) {
++        if (!event.failureId || event.failedAttempts !== undefined) throw new Error("Invalid confirmed failure identity.");
++        // Older stored counts already include the initial invoice failure.
++        const ids = invoice.failureIds ?? (invoice.failedAttempts > 0 ? [`invoice:${event.invoiceId}:initial`] : []);
++        if (!ids.includes(event.failureId)) invoice.failedAttempts += 1;
++        invoice.failureIds = [...new Set([...ids, event.failureId])];
++      } else {
++        // Preserve historical aggregate events; new provider/worker facts use identities.
++        if (!Number.isSafeInteger(event.failedAttempts) || event.failedAttempts! < 1) throw new Error("Invalid failed-attempt count.");
++        invoice.failedAttempts = Math.max(invoice.failedAttempts, event.failedAttempts!);
++      }
+       if (event.firstFailureAt) {
+         const failed = instant(event.firstFailureAt);
+         if (failed < instant(period.from) || failed >= instant(period.to) || failed > now.getTime()) throw new Error("Invalid first failure time.");
+         invoice.firstFailureAt = new Date(Math.min(failed, invoice.firstFailureAt ? instant(invoice.firstFailureAt) : Infinity)).toISOString();
+       }
+-      invoice.failedAttempts = Math.max(invoice.failedAttempts, event.failedAttempts);
+     } else if (event.kind === "refund") {
+       if (!event.refundId || !Number.isSafeInteger(event.amountCents) || event.amountCents <= 0 || event.amountCents > period.amountCents || !["pending", "failed", "succeeded"].includes(event.status)) throw new Error("Invalid refund facts.");
+       const previous = Object.hasOwn(invoice.refunds, event.refundId) ? invoice.refunds[event.refundId] : null;
+@@ -193,7 +202,7 @@
+     if (invoice.paidAt || !invoice.firstFailureAt || invoice.failedAttempts >= 3) return [];
+     return monthlyFailureWindow(new Date(invoice.firstFailureAt)).retryAt.flatMap((at, index) => {
+       const attempt = index + 2;
+-      if (attempt <= invoice.failedAttempts || instant(at) < now.getTime() || instant(at) >= instant(state.binding.periods[invoice.period].to)) return [];
++      if (attempt <= invoice.failedAttempts || invoice.failureIds?.includes(`in-season-monthly-retry:${invoiceId}:${attempt}`) || instant(at) < now.getTime() || instant(at) >= instant(state.binding.periods[invoice.period].to)) return [];
+       return [{ invoiceId, subscriptionId: state.binding.subscriptionId, userId: state.binding.userId,
+         at, attempt, idempotencyKey: `in-season-monthly-retry:${invoiceId}:${attempt}` }];
+     });

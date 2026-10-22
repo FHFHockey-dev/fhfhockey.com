@@ -54,11 +54,13 @@ describe("/api/v1/forge/scoreboard", () => {
     expect(out.headers["Cache-Control"]).toContain("s-maxage=300");
     expect(out.body).toMatchObject({ scope: "skater", days: 14, startDate: "2026-10-09", endDate: "2026-10-22" });
     expect(out.body.empty).toBeUndefined();
+    expect(out.body).toMatchObject({ coverageStatus: "unavailable_independent_universe_not_persisted", comparison: "unpaired_source_samples" });
     expect(out.body.data.map((day: any) => day.served_date)).toEqual(["2026-10-20", "2026-10-21"]);
     const day1 = out.body.data[0].scores;
     expect(day1.find((s: any) => s.source === "bridge_exact")).toMatchObject({ n: 1, heads: { goals: { n: 1, mae: 0.5, bias: -0.5 } }, fantasyPoints: { mae: 0.5 } });
     expect(day1.find((s: any) => s.source === "naive_season").heads.goals).toMatchObject({ mae: 0.8, bias: -0.8 });
     expect(out.body.pooled.find((s: any) => s.source === "bridge_exact")).toMatchObject({ n: 2, heads: { goals: { n: 2, mae: 0.5, bias: 0 } } });
+    expect(out.body.pooled.find((s: any) => s.source === "bridge_exact")).toMatchObject({ dressed: null, coverage: null, coverageStatus: "unavailable" });
   });
 
   it("returns 200 empty when nothing is settled", async () => {

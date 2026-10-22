@@ -328,7 +328,7 @@ describe("StartChartPage", () => {
     vi.stubGlobal("fetch", request);
     try {
       const view = render(<StartChartPage />);
-      fireEvent.click(screen.getByText("My Yahoo team · Today · Draft Pro"));
+      fireEvent.click(screen.getByText("My Yahoo team · Today · Premium sync"));
       fireEvent.click(screen.getByRole("button", { name: "Refresh today’s comparison" }));
       await screen.findByText("Incomplete lineup comparison");
       expect(screen.getByText("Participation estimates are missing.")).toBeTruthy();
@@ -1690,3 +1690,5 @@ describe("Start Chart historical goals", () => {
     expect(summarizeTeamForm(form, 10)[0].goalsFor).toBe(3.5);
   });
 });
+
+vi.mock("hooks/useProviderSyncAccess", () => ({ useProviderSyncAccess: () => ({ status: "ready", access: { eligible: true }, refresh: vi.fn() }) }));

@@ -1,0 +1,25 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/integrations/yahoo/rosterPlanning.test.ts lib/integrations/providerSyncAccess.test.ts lib/integrations/providerSyncPaywall.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-czo1qy0n/isolation/snapshot/web
+
+(node:49184) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/integrations/yahoo/rosterPlanning.test.ts (75 tests) 54ms
+(node:49184) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | lib/integrations/providerSyncPaywall.test.ts > RSO provider API paywall > fails closed on entitlement outages without exposing internals
+[rso/provider] snapshot failed { status: [33m503[39m, code: [32m'snapshot_unavailable'[39m }
+
+ ✓ lib/integrations/providerSyncPaywall.test.ts (49 tests) 10ms
+(node:49184) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/integrations/providerSyncAccess.test.ts (14 tests) 6ms
+
+ Test Files  3 passed (3)
+      Tests  138 passed (138)
+   Start at  08:06:35
+   Duration  1.29s (transform 433ms, setup 16ms, collect 559ms, tests 70ms, environment 406ms, prepare 83ms)
+

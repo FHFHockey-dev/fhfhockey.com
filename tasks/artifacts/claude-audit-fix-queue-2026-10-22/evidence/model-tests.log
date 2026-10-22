@@ -1,0 +1,254 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/projections/queries/team-context-queries.test.ts lib/projections/nativeGoalAccounting.test.ts lib/projections/runProjectionV2.test.ts lib/projections/runProjectionV2.alignedConversion.test.ts scripts/forge-reconstruction-backtest.test.ts lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-claude-audit-20261022/snapshot/web
+
+(node:89078) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: ⚙️  enable debug logging with { debug: true }
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages fetchGames > pages games by date with a unique id tie-breaker
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main full refresh > refuses an explicit truncate with { playerId: 8478402 } before touching the database
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main full refresh > refuses an explicit truncate with { playerId: 8478402 } before touching the database
+[fetchRollingPlayerAverages] Starting run {"forceFullRefresh":true,"fullRefreshMode":"rpc_truncate","playerId":8478402}
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main full refresh > refuses an explicit truncate with { dryRunUpsert: true } before touching the database
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main full refresh > refuses an explicit truncate with { dryRunUpsert: true } before touching the database
+[fetchRollingPlayerAverages] Starting run {"forceFullRefresh":true,"fullRefreshMode":"rpc_truncate","dryRunUpsert":true}
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main full refresh > refuses an explicit truncate with { maxPlayers: 5 } before touching the database
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main full refresh > refuses an explicit truncate with { maxPlayers: 5 } before touching the database
+[fetchRollingPlayerAverages] Starting run {"forceFullRefresh":true,"fullRefreshMode":"rpc_truncate","maxPlayers":5}
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main full refresh > refuses an explicit truncate with { season: 20252026, startDate: '2026-03-01' } before touching the database
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main full refresh > refuses an explicit truncate with { season: 20252026, startDate: '2026-03-01' } before touching the database
+[fetchRollingPlayerAverages] Starting run {"forceFullRefresh":true,"fullRefreshMode":"rpc_truncate","season":20252026,"startDate":"2026-03-01"}
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main full refresh > never truncates for a full refresh that does not opt in
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: ⚙️  enable debug logging with { debug: true }
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main full refresh > never truncates for a full refresh that does not opt in
+[fetchRollingPlayerAverages] Starting run {"forceFullRefresh":true,"dryRunUpsert":true,"playerId":8478402}
+[fetchRollingPlayerAverages] Supabase host example.supabase.co keyLen [33m21[39m
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main full refresh > never truncates for a full refresh that does not opt in
+[fetchRollingPlayerAverages] phase {"phase":"bootstrap","status":"start","playerId":8478402,"season":null,"startDate":null,"endDate":null,"strengths":null,"resumePlayerId":null,"forceFullRefresh":true}
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main full refresh > never truncates for a full refresh that does not opt in
+[fetchRollingPlayerAverages] phase {"phase":"bootstrap","status":"complete","durationMs":0,"durationLabel":"0s","games":0,"players":1,"knownGameIds":0}
+[fetchRollingPlayerAverages] Full refresh requested: mode=overwrite_only; skipping auto-resume.
+[fetchRollingPlayerAverages] Overwrite-only mode: skipping pre-delete; existing rows will be updated via upsert.
+[fetchRollingPlayerAverages] Players to process [33m1[39m
+[fetchRollingPlayerAverages] Execution settings {"playerConcurrency":4,"upsertConcurrency":1,"batchSize":400}
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main full refresh > never truncates for a full refresh that does not opt in
+[players] [########################] 100.0% (1/1) player:8478402 rowsUpserted:0 coverageWarn:0 suspicious:0 freshness:0 elapsed:0s
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main full refresh > never truncates for a full refresh that does not opt in
+[fetchRollingPlayerAverages] player:8478402: 0.438ms
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main full refresh > never truncates for a full refresh that does not opt in
+[players] [########################] 100.0% (1/1) rowsUpserted:0 playersWithRows:0 coverageWarn:0 suspicious:0 freshness:0 elapsed:0s
+[fetchRollingPlayerAverages] phase {"phase":"summary","status":"start","processedPlayers":1,"playersWithRows":0,"rowsUpserted":0}
+[fetchRollingPlayerAverages] Completed run {"rowsUpserted":0,"processedPlayers":1,"playersWithRows":0,"coverageWarnings":0,"suspiciousOutputWarnings":0,"unknownGameIds":0,"freshnessBlockers":0,"sourceTracking":{"missingSources":{"counts":0,"rates":0,"countsOi":0,"pp":0,"ppUnit":0,"line":0,"lineAssignment":0,"knownGameId":0},"wgoFallbacks":{"goals":0,"assists":0,"primary_assists":0,"secondary_assists":0,"shots":0,"hits":0,"blocks":0,"points":0,"ixg":0},"rateReconstructions":{"sog_per_60":0,"ixg_per_60":0},"ixgPer60Sources":{"counts_raw":0,"wgo_raw":0,"rate_reconstruction":0,"unavailable":0},"toiSources":{"counts":0,"counts_oi":0,"rates":0,"fallback":0,"wgo":0,"none":0},"toiFallbackSeeds":{"counts":0,"counts_oi":0,"wgo":0,"none":0},"toiTrustTiers":{"authoritative":0,"supplementary":0,"fallback":0,"none":0},"toiWgoNormalizations":{"minutes_to_seconds":0,"already_seconds":0,"missing":0,"invalid":0},"toiSuspiciousReasons":{"non_finite":0,"non_positive":0,"above_max_seconds":0}},"lastProcessedPlayerId":8478402,"nextResumeFrom":null,"abandonedPlayerCount":0,"totalPlayersAfterResumeFilter":1,"remainingPlayerCount":0,"stoppedReason":"complete"}
+[fetchRollingPlayerAverages] phase {"phase":"summary","status":"complete","processedPlayers":1,"playersWithRows":0,"rowsUpserted":0,"coverageWarnings":0,"suspiciousOutputWarnings":0,"unknownGameIds":0,"freshnessBlockers":0}
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main runtime budget > stops claiming at the budget and resumes so every player is processed exactly once
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: ⚙️  override existing env vars with { override: true }
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main runtime budget > writes the same window rows as a full-history run while skipping earlier output rows
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: ⚙️  suppress all logs with { quiet: true }
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main runtime budget > writes the same window rows as a full-history run while skipping earlier output rows
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: ⚙️  suppress all logs with { quiet: true }
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main runtime budget > keeps WGO rows whose season label contradicts their date out of the three-season totals
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main runtime budget > scopes a season run's writes, not its history, so it matches an unscoped run
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: ⚙️  suppress all logs with { quiet: true }
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main runtime budget > scopes a season run's writes, not its history, so it matches an unscoped run
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: ⚙️  override existing env vars with { override: true }
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main runtime budget > does not count WGO shots without an NST ixG as zero-xG shots in expected_sh_pct
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main runtime budget > does not count WGO shots without an NST ixG as zero-xG shots in expected_sh_pct
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: ⚙️  write to custom object with { processEnv: myObject }
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main runtime budget > keeps the incoming cursor when the budget is spent before any player is claimed
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: ⚙️  write to custom object with { processEnv: myObject }
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main runtime budget > abandons the in-flight player at the hard deadline; the resume redoes it and skips no one
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main runtime budget > keeps each concurrent run's deadline to itself
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: ⚙️  enable debug logging with { debug: true }
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main runtime budget > reads at most two strengths' NST tables at once per player
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+
+stdout | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages main runtime budget > treats a read that fails past the deadline as an abandoned player, not a failed run
+[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../.env.local -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from ../../.env.local -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+
+stderr | lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch > splits and retries timed-out direct upsert statements
+[fetchRollingPlayerAverages] splitting timed-out upsert batch {"label":"rolling_player_game_metrics","rows":2,"firstHalfRows":1,"secondHalfRows":1,"error":"canceling statement due to statement timeout"}
+
+ ❯ lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts (68 tests | 1 failed) 1140ms
+   ✓ fetchRollingPlayerAverages fetchGames > pages games by date with a unique id tie-breaker 6ms
+   ✓ fetchRollingPlayerAverages main full refresh > refuses an explicit truncate with { playerId: 8478402 } before touching the database 4ms
+   ✓ fetchRollingPlayerAverages main full refresh > refuses an explicit truncate with { dryRunUpsert: true } before touching the database 2ms
+   ✓ fetchRollingPlayerAverages main full refresh > refuses an explicit truncate with { maxPlayers: 5 } before touching the database 2ms
+   ✓ fetchRollingPlayerAverages main full refresh > refuses an explicit truncate with { season: 20252026, startDate: '2026-03-01' } before touching the database 2ms
+   ✓ fetchRollingPlayerAverages main full refresh > never truncates for a full refresh that does not opt in 4ms
+   ✓ fetchRollingPlayerAverages main runtime budget > stops claiming at the budget and resumes so every player is processed exactly once 124ms
+   ✓ fetchRollingPlayerAverages main runtime budget > writes the same window rows as a full-history run while skipping earlier output rows 100ms
+   ✓ fetchRollingPlayerAverages main runtime budget > keeps WGO rows whose season label contradicts their date out of the three-season totals 29ms
+   ✓ fetchRollingPlayerAverages main runtime budget > scopes a season run's writes, not its history, so it matches an unscoped run 91ms
+   ✓ fetchRollingPlayerAverages main runtime budget > does not count WGO shots without an NST ixG as zero-xG shots in expected_sh_pct 60ms
+   ✓ fetchRollingPlayerAverages main runtime budget > keeps the incoming cursor when the budget is spent before any player is claimed 4ms
+   ✓ fetchRollingPlayerAverages main runtime budget > abandons the in-flight player at the hard deadline; the resume redoes it and skips no one 204ms
+   ✓ fetchRollingPlayerAverages main runtime budget > keeps each concurrent run's deadline to itself 193ms
+   ✓ fetchRollingPlayerAverages main runtime budget > reads at most two strengths' NST tables at once per player 29ms
+   ✓ fetchRollingPlayerAverages main runtime budget > treats a read that fails past the deadline as an abandoned player, not a failed run 196ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > uses matching ev TOI without dropping the WGO appearance 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > uses matching pp TOI without dropping the WGO appearance 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > uses matching pp TOI without dropping the WGO appearance 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > uses matching pp TOI without dropping the WGO appearance 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > uses matching pk TOI without dropping the WGO appearance 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > uses matching 5v5 TOI without dropping the WGO appearance 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > uses matching ev TOI without dropping the WGO appearance 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > uses matching pp TOI without dropping the WGO appearance 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > uses matching pk TOI without dropping the WGO appearance 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > uses matching 5v5 TOI without dropping the WGO appearance 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > uses matching pp TOI without dropping the WGO appearance 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > uses matching pp TOI without dropping the WGO appearance 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > uses matching pp TOI without dropping the WGO appearance 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > uses matching all TOI without dropping the WGO appearance 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > preserves split-strength zero and NST precedence over conflicting fallbacks 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > uses the retained Giroux strength seconds and keeps the dedicated PP builder contract 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > preserves the WGO row spine when NST enrichment rows are missing 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > nulls unknown game ids in the stored row while preserving the source id for diagnostics 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > merges counts, rates, on-ice, PP, and line data into a single row with explicit source context 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > preserves true 5v5 strength rows and on-ice xG enrichment 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > maps optional PP context fields to row outputs without changing pp_share semantics 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > treats pp_unit as an independently trusted contextual label 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > uses PP TOI for PP goals per 60 fallback rows instead of all-situations TOI 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > distinguishes line row presence from trusted player line assignment 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > tracks fallback-heavy rows and null-source gaps through sourceTracking summaries 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > builds an exportable structured run summary with source-tracking detail 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > treats split-strength appearance as positive-TOI participation 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > suppresses availability-named aliases for split-strength participation outputs 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > derives all-strength legacy gp aliases from canonical availability fields 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > emits canonical ratio snapshot fields and raw support columns from shared accumulators 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > stores canonical oz_start_pct support fields including neutral-zone counts 0ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > emits optional on-ice save percentage, additive support metrics, and weighted-rate families 1ms
+   ✓ fetchRollingPlayerAverages buildGameRecords > emits shot attempts per 60 from NST ICF components 0ms
+   ✓ fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch > retains source identity in the aligned-count read instead of projecting it away 1ms
+   ✓ fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch > stores aligned count support only in the exact-anchor sidecar while preserving legacy scalars 1ms
+   ✓ fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch > retains model TOI averages in both storage paths: 900 0ms
+   ✓ fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch > retains model TOI averages in both storage paths: 0 0ms
+   ✓ fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch > retains model TOI averages in both storage paths: null 0ms
+   ✓ fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch > compacts storage-heavy compatibility fields while preserving ranking fields 0ms
+   ✓ fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch > leaves null pruned fields out of the support payload without changing what readers merge 0ms
+   ✓ fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch > splits pruned support fields into the durable support payload 0ms
+   ✓ fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch > omits dropped columns from the wide row and the historical sidecar, leaving kept keys unchanged 0ms
+   × fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch > drops exactly the reviewed 491 columns, never an identity or runtime column 4ms
+     → ENOENT: no such file or directory, open '/private/tmp/fhfh-claude-audit-20261022/snapshot/tasks/artifacts/forge-projection-audit-2026-10-21/rolling-column-inventory.json'
+   ✓ fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch > posts wide rolling metric rows through the direct PostgREST endpoint 2ms
+   ✓ fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch > surfaces structured response details when the direct upsert fails 1ms
+   ✓ fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch > splits and retries timed-out direct upsert statements 1ms
+   ✓ fetchRollingPlayerAverages resume behavior > reads complete prior history while keeping the requested write window bounded 0ms
+   ✓ fetchRollingPlayerAverages resume behavior > uses date-scoped player selection only for incremental date-bounded runs 0ms
+   ✓ fetchRollingPlayerAverages resume behavior > normalizes player-id lists into sorted unique values 0ms
+   ✓ fetchRollingPlayerAverages resume behavior > normalizes optional strength scopes for targeted rolling recomputes 0ms
+   ✓ fetchRollingPlayerAverages resume behavior > does not infer an implicit auto-resume for broad runs 0ms
+   ✓ fetchRollingPlayerAverages resume behavior > still honors an explicit resume boundary when requested 0ms
+(node:89078) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/projections/runProjectionV2.test.ts (108 tests) 20ms
+(node:89078) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/projections/nativeGoalAccounting.test.ts (36 tests) 173ms
+(node:89078) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/projections/runProjectionV2.alignedConversion.test.ts (9 tests) 4ms
+(node:89078) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/projections/queries/team-context-queries.test.ts (11 tests) 3ms
+ ✓ scripts/forge-reconstruction-backtest.test.ts (3 tests) 11ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts > fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch > drops exactly the reviewed 491 columns, never an identity or runtime column
+Error: ENOENT: no such file or directory, open '/private/tmp/fhfh-claude-audit-20261022/snapshot/tasks/artifacts/forge-projection-audit-2026-10-21/rolling-column-inventory.json'
+ ❯ lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts:2422:7
+    2420|   it("drops exactly the reviewed 491 columns, never an identity or run…
+    2421|     const inventory = JSON.parse(
+    2422|       readFileSync(
+       |       ^
+    2423|         path.resolve(
+    2424|           __dirname,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 5 passed (6)
+      Tests  1 failed | 234 passed (235)
+   Start at  20:22:00
+   Duration  2.93s (transform 352ms, setup 22ms, collect 525ms, tests 1.35s, environment 605ms, prepare 154ms)
+

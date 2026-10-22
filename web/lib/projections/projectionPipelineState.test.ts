@@ -109,6 +109,35 @@ describe("projection pipeline durable state", () => {
     expect(mocks.limit).toHaveBeenCalledWith(1);
   });
 
+  it("checks resumability against the same freshly read revision used by acquisition", async () => {
+    mocks.maybeSingle.mockResolvedValueOnce({ data: stateRow({
+      revision: 5, status: "failed", lease_owner: null, lease_expires_at: null,
+      last_error: "nst_persistence_unconfirmed",
+    }), error: null });
+    const assertResumable = vi.fn((current: Readonly<ProjectionPipelineLease>) => {
+      expect(current.revision).toBe(5);
+      if (current.lastError === "nst_persistence_unconfirmed") throw new Error("manual review");
+    });
+    await expect(acquireProjectionPipelineLease({ supabase,
+      operationKey: "canonical:2026-07-19:2026-07-19", rangeStartDate: "2026-07-19",
+      rangeEndDate: "2026-07-19", initialCursorDate: "2026-07-19", assertResumable,
+    })).rejects.toThrow("manual review");
+    expect(assertResumable).toHaveBeenCalledTimes(1);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it("does not reacquire when the guarded revision changes before the RPC", async () => {
+    mocks.maybeSingle.mockResolvedValueOnce({ data: stateRow({ revision: 5, status: "failed", last_error: "stage_handoff" }), error: null });
+    mocks.rpc.mockResolvedValueOnce({ data: null, error: { message: "PROJECTION_PIPELINE_REVISION_MISMATCH" } });
+    const assertResumable = vi.fn();
+    await expect(acquireProjectionPipelineLease({ supabase,
+      operationKey: "canonical:2026-07-19:2026-07-19", rangeStartDate: "2026-07-19",
+      rangeEndDate: "2026-07-19", initialCursorDate: "2026-07-19", assertResumable,
+    })).rejects.toThrow("PROJECTION_PIPELINE_REVISION_MISMATCH");
+    expect(assertResumable).toHaveBeenCalledWith(expect.objectContaining({ revision: 5 }));
+    expect(mocks.rpc).toHaveBeenCalledWith("advance_projection_pipeline_state_v1", expect.objectContaining({ p_expected_revision: 5 }));
+  });
+
   it("acquires an absent operation with revision zero and a bounded lease", async () => {
     mocks.rpc.mockImplementation(async (_name, args) => ({
       data: [

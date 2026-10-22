@@ -1,0 +1,22 @@
+$ /opt/homebrew/opt/postgresql@17/bin/initdb -D /private/tmp/fhfh-d4-_g17pzx7/data -U postgres -A trust --no-locale -E UTF8
+The files belonging to this database system will be owned by user "tim".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "C".
+The default text search configuration will be set to "english".
+
+Data page checksums are disabled.
+
+creating directory /private/tmp/fhfh-d4-_g17pzx7/data ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... sysv
+selecting default "max_connections" ... 25
+selecting default "shared_buffers" ... 400kB
+selecting default time zone ... America/New_York
+creating configuration files ... ok
+running bootstrap script ... 2026-10-22 08:36:25.701 EDT [57578] FATAL:  could not create shared memory segment: Operation not permitted
+2026-10-22 08:36:25.701 EDT [57578] DETAIL:  Failed system call was shmget(key=209483133, size=56, 03600).
+child process exited with exit code 1
+initdb: removing data directory "/private/tmp/fhfh-d4-_g17pzx7/data"
+
+[exit 1, 0.9s]

@@ -2,11 +2,35 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import research from "./fixtures/iftttSemanticResearch/semantic-family-cases.json";
+import comparison from "./fixtures/iftttComparisonObservations.json";
 
 // Integrity of provisional research only: no parser, identity resolver, storage or dispatch.
 const variants = new Map(research.text_variants.map((variant) => [variant.variant_id, variant]));
 
 describe("IFTTT provisional semantic research integrity", () => {
+  it("retains the comparison observations with their actual source and time limits", () => {
+    expect(comparison.records.map(({ id }) => id)).toEqual(["S04", "S06", "S10A", "S10B"]);
+    const [pp, replacement, tentative, correction] = comparison.records;
+    expect(pp!.text).toContain("power play groups same as yesterday, but one wrinkle");
+    expect(pp!.text).toContain("Misa doing some net front, which he did last year");
+    expect(pp!.text).toContain("PP2: Orlov-Misa-Stenberg-Toffoli-Marchment");
+    expect(pp!.typedContract).toEqual({
+      groupRecurrenceQualifier: "same as yesterday",
+      misaNetFront: "current observation, compared with last year",
+      ppMembership: "source-listed PP1 and PP2",
+      forbiddenInferences: ["Misa net-front role yesterday", "permanent net-front role"],
+      adapterExerciseStatus: "fixture_only_no_typed_interpreter_field",
+    });
+    expect(replacement!.text).toContain("Podkolzin will take RNH’s spot on the first unit powerplay");
+    expect([pp, replacement, tentative, correction].map((record) => [record!.gameId, record!.effectiveAt])).toEqual(Array(4).fill([null, null]));
+    expect(tentative!.receivedAt).toBeNull();
+    expect(correction!.interpretedAt).toBeNull();
+    expect(Date.parse(correction!.publishedAt)).toBeGreaterThan(Date.parse(tentative!.publishedAt));
+    expect(correction!.text).toContain("Turns out this was");
+    expect(correction!.text).toContain("This was a 5-on-3 drill");
+    expect(correction!.targetObservationId).toBeNull();
+  });
+
   it("retains the finite inventory and non-runtime provenance", () => {
     expect(research.format).toBe("ifttt-curated-semantic-research-v1");
     expect(research.status).toBe("provisional_offline_specification_not_executed");

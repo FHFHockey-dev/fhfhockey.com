@@ -6,6 +6,19 @@ import { describe, expect, it } from "vitest";
 import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
 
 describe("CronAuditEmail", () => {
+  it("keeps a planned continuation visible as in progress", () => {
+    const html = renderToStaticMarkup(<CronAuditEmail sinceDate="2026-10-20T00:00:00Z"
+      summary={{ auditRuns: 1, auditSuccesses: 0, auditFailures: 0, auditUnknown: 0, totalRowsUpserted: 1, totalFailedRows: 0 }}
+      audits={[{ key: "continued", label: "rolling", jobName: "rolling-in-progress", status: "continued",
+        runTimeDisplay: "UTC", method: "GET", route: "/rolling", routePath: "/rolling", targetTable: null,
+        statusCode: 207, durationMs: 180000, rowsUpserted: 1, rowsAffected: 1, failedRows: 0,
+        reason: "Resumes at the next cursor.", lastKnownSuccessDisplay: null, failedRowSamples: [] }]} />);
+    expect(html).toContain("CONTINUED / IN PROGRESS");
+    expect(html).toContain("rolling-in-progress");
+    expect(html).not.toContain(">OK</strong>");
+    expect(html).not.toContain(">FAIL</strong>");
+  });
+
   it("uses five exclusive sections, hides healthy rows, and keeps disabled and runtime warnings explicit", () => {
     const base = { key: "", label: "job", jobName: "", status: "success" as const,
       runTimeDisplay: "UTC / EDT", method: "GET", route: "/job", routePath: "/job", targetTable: null,

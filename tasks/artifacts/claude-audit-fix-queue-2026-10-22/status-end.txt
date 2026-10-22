@@ -1,0 +1,212 @@
+ M tasks/artifacts/release-r6-2026-10-19/PLAN.md
+ M tasks/diaries/2026-10-21-claude-forge-projection-audit.md
+ M tasks/ifttt-integration-2026-10-16/comparison-retry-execution-2026-10-19/aggregate-budget.sqlite
+ M tasks/sprint-2026-10-18/CHEF-REGISTER-2026-10-19.md
+ M web/__tests__/components/CronReportEmail/CronAuditEmail.test.tsx
+ M web/__tests__/components/DraftDashboard/YahooLiveDraftPanel.test.tsx
+ M web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx
+ M web/__tests__/components/account/AccountSettingsPage.test.tsx
+ M web/__tests__/pages/api/v1/account/fantrax/player-data.test.ts
+ M web/__tests__/pages/api/v1/account/yahoo/callback.test.ts
+ M web/__tests__/pages/api/v1/account/yahoo/connect.test.ts
+ M web/__tests__/pages/api/v1/db/cron-report.test.ts
+ M web/__tests__/pages/api/v1/db/update-wgo-skaters.types.test.ts
+ M web/__tests__/pages/api/v1/draft-pro/recommendations.test.ts
+ M web/__tests__/pages/start-chart.test.tsx
+ M web/__tests__/pages/stats/team/teamAbbreviation.test.tsx
+ M web/components/CronReportEmail/CronAuditEmail.tsx
+ M web/components/DraftDashboard/DraftDashboard.tsx
+ M web/components/DraftDashboard/FantraxLeagueSettingsPanel.tsx
+ M web/components/DraftDashboard/YahooLiveDraftPanel.tsx
+ M web/components/GameStateAnalysis/GameStateAnalysis.module.scss
+ M web/components/GameStateAnalysis/GameStateAnalysis.tsx
+ M web/components/GoalieShareChart/index.tsx
+ M web/components/PlayerPickupTable/PlayerPickupTable.tsx
+ M web/components/PlayerStats/PlayerRadarChart.test.tsx
+ M web/components/PlayerStats/PlayerRadarChart.tsx
+ M web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+ M web/components/StarterBoardYahoo.tsx
+ M web/components/TeamDashboard/AdvancedL10Metrics.module.scss
+ M web/components/TeamDashboard/AdvancedL10Metrics.tsx
+ M web/components/TeamDashboard/TeamDashboard.test.tsx
+ M web/components/TeamDashboard/TeamDashboard.tsx
+ M web/components/account/AccountSettingsPage.tsx
+ M web/components/account/FantraxImportPanel.test.tsx
+ M web/components/account/FantraxImportPanel.tsx
+ M web/hooks/useDraftProAccess.test.tsx
+ M web/hooks/useDraftProAccess.ts
+ M web/hooks/useFantraxDraftSync.test.tsx
+ M web/hooks/useFantraxDraftSync.ts
+ M web/hooks/useShotData.ts
+ M web/hooks/useYahooDraftSync.test.tsx
+ M web/hooks/useYahooDraftSync.ts
+ M web/lib/NHL/statsPageFetch.test.ts
+ M web/lib/NHL/statsPageFetch.ts
+ M web/lib/draft-pro/api-tests/dust.test.ts
+ M web/lib/draft-pro/api-tests/export.test.ts
+ M web/lib/draft-pro/dustRateLimit.ts
+ M web/lib/draft-pro/dustSeason.ts
+ M web/lib/game-predictions/featureBuilder.test.ts
+ M web/lib/game-predictions/featureBuilder.ts
+ M web/lib/in-season/access.test.ts
+ M web/lib/in-season/access.ts
+ M web/lib/in-season/commerce.test.ts
+ M web/lib/in-season/commerce.ts
+ M web/lib/in-season/server.ts
+ M web/lib/integrations/fantrax/http.ts
+ M web/lib/integrations/fantrax/liveDraftServer.test.ts
+ M web/lib/integrations/fantrax/liveDraftServer.ts
+ M web/lib/integrations/fantrax/server.test.ts
+ M web/lib/integrations/fantrax/server.ts
+ M web/lib/integrations/yahoo/discovery.ts
+ M web/lib/integrations/yahoo/liveDraftAccess.ts
+ M web/lib/integrations/yahoo/liveDraftApi.test.ts
+ M web/lib/integrations/yahoo/pickupApi.test.ts
+ M web/lib/integrations/yahoo/refresh.ts
+ M web/lib/integrations/yahoo/teamRoster.test.ts
+ M web/lib/integrations/yahoo/teamRoster.ts
+ M web/lib/sources/iftttSemanticResearch.test.ts
+ M web/lib/sources/tweetInterpretation.test.ts
+ M web/lib/sources/tweetNewsInference.ts
+ M web/lib/trends/strengthOfSchedule.test.ts
+ M web/lib/underlying-stats/teamScheduleStrength.test.ts
+ M web/lib/underlying-stats/teamScheduleStrength.ts
+ M web/next-env.d.ts
+ M web/pages/api/v1/account/fantrax/player-data.ts
+ M web/pages/api/v1/account/yahoo/callback.ts
+ M web/pages/api/v1/account/yahoo/connect.ts
+ M web/pages/api/v1/account/yahoo/pickup.ts
+ M web/pages/api/v1/account/yahoo/refresh.ts
+ M web/pages/api/v1/account/yahoo/starter-board.ts
+ M web/pages/api/v1/account/yahoo/team-roster.ts
+ M web/pages/api/v1/db/cron-report.ts
+ M web/pages/api/v1/db/update-wgo-skaters.ts
+ M web/pages/api/v1/draft-pro/dust.ts
+ M web/pages/api/v1/draft-pro/export.ts
+ M web/pages/api/v1/draft-pro/fantrax-player-data.ts
+ M web/pages/api/v1/draft-pro/recommendations.ts
+ M web/pages/api/v1/roster-schedule-optimizer/access.ts
+ M web/pages/api/v1/roster-schedule-optimizer/provider.ts
+ M web/pages/stats/index.tsx
+ M web/pages/stats/player/[playerId].tsx
+ M web/pages/stats/team/[teamAbbreviation].tsx
+?? supabase/migrations/20261021210000_in_season_sandbox_billing.sql
+?? supabase/tests/data_api_grants.sql
+?? supabase/tests/data_api_grants_defaults.sql
+?? supabase/tests/data_api_grants_rso_isolation.sql
+?? tasks/artifacts/claude-audit-fix-queue-2026-10-22/
+?? tasks/artifacts/codex-2026-10-20/A05-CONTINUATION-PROPOSAL.md
+?? tasks/artifacts/codex-2026-10-20/A21-ESPN.md
+?? tasks/artifacts/codex-2026-10-20/CANDIDATE-FILES.json
+?? tasks/artifacts/codex-2026-10-20/CRON-REPORT.md
+?? tasks/artifacts/codex-2026-10-20/D4.md
+?? tasks/artifacts/codex-2026-10-20/DRAFT-PRO-STATUS.md
+?? tasks/artifacts/codex-2026-10-20/F10.md
+?? tasks/artifacts/codex-2026-10-20/F9.md
+?? tasks/artifacts/codex-2026-10-20/I1.md
+?? tasks/artifacts/codex-2026-10-20/NPM-AUDIT-TRIAGE.md
+?? tasks/artifacts/codex-2026-10-20/NST-DATE.md
+?? tasks/artifacts/codex-2026-10-20/O1-TRACE-RECIPE.md
+?? tasks/artifacts/codex-2026-10-20/PRODUCTION-FINDINGS.md
+?? tasks/artifacts/codex-2026-10-20/PRODUCTION-READ-PLAN.md
+?? tasks/artifacts/codex-2026-10-20/PRODUCTION-READS.json
+?? tasks/artifacts/codex-2026-10-20/RESEARCH-KITS.md
+?? tasks/artifacts/codex-2026-10-20/WGO-LABELS.md
+?? tasks/artifacts/codex-2026-10-20/npm-audit.json
+?? tasks/artifacts/codex-2026-10-20/research/
+?? tasks/artifacts/codex-2026-10-20/sql-proposals/
+?? tasks/artifacts/cross-platform/2026-10-20-codex-to-claude-cron-game-data-metadata.md
+?? tasks/artifacts/cross-platform/2026-10-20-codex-to-claude-cron-test-typecheck.md
+?? tasks/artifacts/cross-platform/2026-10-20-codex-to-claude-draft-pro-refund-status.md
+?? tasks/artifacts/cross-platform/2026-10-20-codex-to-claude-production-followups.md
+?? tasks/artifacts/cross-platform/2026-10-20-codex-to-claude-status-and-nst-followups.md
+?? tasks/artifacts/d4-grants-2026-10-20/run-v5/
+?? tasks/artifacts/d4-grants-2026-10-20/run-v7/
+?? tasks/artifacts/d4-grants-2026-10-20/run-v8/
+?? tasks/artifacts/forge-pipeline-repair-2026-10-21/
+?? tasks/artifacts/in-season-billing-2026-10-21/
+?? tasks/artifacts/luna-identity-offline-2026-10-20/
+?? tasks/artifacts/provider-sync-paywall-2026-10-21/
+?? tasks/diaries/2026-10-20-claude-chef-orchestrator.md
+?? tasks/diaries/2026-10-20-claude-d4-grants.md
+?? tasks/diaries/2026-10-20-claude-forge-f1.md
+?? tasks/diaries/2026-10-20-claude-forge-reliability.md
+?? tasks/diaries/2026-10-20-claude-native-v2.md
+?? tasks/diaries/2026-10-20-claude-player-page.md
+?? tasks/diaries/2026-10-20-claude-rso-ownership-evidence.md
+?? tasks/diaries/2026-10-20-claude-rso-r5-r8.md
+?? tasks/diaries/2026-10-20-claude-rso-r6.md
+?? tasks/diaries/2026-10-20-claude-schedule-cron.md
+?? tasks/diaries/2026-10-20-codex-cron-report.md
+?? tasks/diaries/2026-10-20-codex-d1-policy.md
+?? tasks/diaries/2026-10-20-codex-d1.md
+?? tasks/diaries/2026-10-20-codex-d2.md
+?? tasks/diaries/2026-10-20-codex-d4.md
+?? tasks/diaries/2026-10-20-codex-draft-status.md
+?? tasks/diaries/2026-10-20-codex-f10.md
+?? tasks/diaries/2026-10-20-codex-f9.md
+?? tasks/diaries/2026-10-20-codex-i1.md
+?? tasks/diaries/2026-10-20-codex-luna-identity-offline.md
+?? tasks/diaries/2026-10-20-codex-nst-date.md
+?? tasks/diaries/2026-10-20-codex-ops-memos.md
+?? tasks/diaries/2026-10-20-codex-orchestrator.md
+?? tasks/diaries/2026-10-20-codex-research-kits.md
+?? tasks/diaries/2026-10-20-codex-wgo-labels.md
+?? tasks/diaries/2026-10-20-codex-wgo-skater-startdate-query.md
+?? tasks/diaries/2026-10-21-claude-capture-compute-only.md
+?? tasks/diaries/2026-10-21-claude-forge-pipeline-repair.md
+?? tasks/diaries/2026-10-21-claude-pipeline-sources.md
+?? tasks/diaries/2026-10-21-claude-rso-drop-chip.md
+?? tasks/diaries/2026-10-21-claude-stats-load-time.md
+?? tasks/diaries/2026-10-21-claude-stats-s01.md
+?? tasks/diaries/2026-10-21-codex-in-season-billing.md
+?? tasks/diaries/2026-10-21-codex-provider-sync-paywall.md
+?? tasks/diaries/2026-10-22-codex-claude-audit-fix-queue.md
+?? tasks/handoff-2026-10-20/
+?? web/components/GameStateAnalysis/GameStateAnalysis.test.tsx
+?? web/components/GoalieShareChart/GoalieShareChart.test.ts
+?? web/components/StarterBoardYahoo.test.tsx
+?? web/components/TeamDashboard/AdvancedL10Metrics.test.tsx
+?? web/components/account/InSeasonPanel.test.tsx
+?? web/components/account/InSeasonPanel.tsx
+?? web/components/account/ProviderSyncNotice.tsx
+?? web/hooks/useAccountAccess.ts
+?? web/hooks/useProviderSyncAccess.ts
+?? web/lib/in-season/billing.test.ts
+?? web/lib/in-season/billing.ts
+?? web/lib/in-season/billingConfig.ts
+?? web/lib/in-season/billingRoutes.test.ts
+?? web/lib/in-season/billingStore.ts
+?? web/lib/in-season/monthlyBilling.ts
+?? web/lib/in-season/monthlyExecutor.ts
+?? web/lib/in-season/monthlyIntegration.test.ts
+?? web/lib/in-season/monthlyLifecycle.test.ts
+?? web/lib/in-season/monthlyLifecycle.ts
+?? web/lib/in-season/monthlySchedule.ts
+?? web/lib/in-season/monthlyStore.ts
+?? web/lib/in-season/monthlyStripe.test.ts
+?? web/lib/in-season/monthlyStripe.ts
+?? web/lib/in-season/monthlyWebhook.ts
+?? web/lib/in-season/paymentAdjustments.ts
+?? web/lib/integrations/providerSyncAccess.test.ts
+?? web/lib/integrations/providerSyncAccess.ts
+?? web/lib/integrations/providerSyncAccessServer.ts
+?? web/lib/integrations/providerSyncPaywall.test.ts
+?? web/lib/sources/fixtures/iftttComparisonObservations.json
+?? web/lib/sources/fixtures/tweetIdentityDevelopmentComparison.ts
+?? web/lib/sources/fixtures/tweetIdentityOfflineFixture.ts
+?? web/lib/sources/playerIdentitySnapshot.ts
+?? web/lib/sources/tweetIdentityCandidates.test.ts
+?? web/lib/sources/tweetIdentityCandidates.ts
+?? web/lib/sources/tweetIdentityEvaluation.test.ts
+?? web/lib/sources/tweetIdentityEvaluation.ts
+?? web/lib/sources/tweetIdentityLocalReview.test.ts
+?? web/lib/sources/tweetIdentityLocalReview.ts
+?? web/lib/sources/tweetIdentityProposal.test.ts
+?? web/lib/sources/tweetIdentityProposal.ts
+?? web/lib/stats/
+?? web/lib/trends/strengthOfScheduleContract.ts
+?? web/pages/api/v1/account/in-season/
+?? web/pages/api/v1/account/provider-sync.ts
+?? web/pages/api/v1/webhooks/in-season-stripe.ts
+?? web/scripts/run-identity-offline-comparison.ts

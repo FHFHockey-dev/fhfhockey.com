@@ -1,0 +1,27 @@
+{
+  "kind": "independent_fresh_context_read_only_review",
+  "assignment": "s06_readonly_review",
+  "requestedModel": "gpt-6-luna",
+  "requestedReasoningEffort": "low",
+  "runtimeSettingsNote": "Explicit creation controls accepted; Chef actual settings not exposed, so no verified hierarchy claim.",
+  "changesMade": 0,
+  "externalCalls": 0,
+  "ledgerAccess": "SQLite URI mode=ro",
+  "conclusion": "Paid stop correct; candidate gate fails for RNH.",
+  "findings": [
+    "RNH has no initial or widened candidate; forcing owner-expected canonical ID fails identity_not_in_occurrence_candidates.",
+    "Export stayed within caps; IDs separated, undated aliases withheld, no roster/owner team or position hint inserted.",
+    "Source-time roster interval semantics reused; actual roster history not independently audited.",
+    "Owner labels are development evidence and excluded from request construction.",
+    "Ledger SHA/baseline, 36 attempts, old uncertain reserve/block and aggregate math independently verified.",
+    "No concrete defect requiring a code correction was identified in this checkpoint."
+  ],
+  "budget": {
+    "exposureNanoUsd": 262177193,
+    "unusedReserveNanoUsd": 231844800,
+    "peakNanoUsd": 494021993,
+    "capNanoUsd": 520000000,
+    "marginNanoUsd": 25978007
+  },
+  "nextStep": "Resolve missing RNH candidate retrieval evidence without gold hints or global alias learning, then rerun gate. No dispatch from current input."
+}

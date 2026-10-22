@@ -1,0 +1,64 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/reviewConsumerExposure.test.tsx lib/reviewShotOwnership.test.tsx
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-48vr9l03/isolation/snapshot/web
+
+(node:55839) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/reviewConsumerExposure.test.tsx > retains unknown exposure in the wgo_team_stats consumer sample
+FILTER_AWARE_EXPOSURE_OBSERVED {"table":"wgo_team_stats","field":"games_played","observed":"Power Play20.0%","incompleteNote":false}
+
+stdout | lib/reviewConsumerExposure.test.tsx > retains unknown exposure in the nst_team_5v5 consumer sample
+FILTER_AWARE_EXPOSURE_OBSERVED {"table":"nst_team_5v5","field":"gp","observed":"Corsi For %33.3%","incompleteNote":false}
+
+ ❯ lib/reviewConsumerExposure.test.tsx (2 tests | 2 failed) 32ms
+   × retains unknown exposure in the wgo_team_stats consumer sample 25ms
+     → expected 'Power Play20.0%' to contain '—'
+   × retains unknown exposure in the nst_team_5v5 consumer sample 7ms
+     → expected 'Corsi For %33.3%' to contain '—'
+(node:55839) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/reviewShotOwnership.test.tsx (3 tests) 14ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/reviewConsumerExposure.test.tsx > retains unknown exposure in the wgo_team_stats consumer sample
+AssertionError: expected 'Power Play20.0%' to contain '—'
+
+Expected: [32m"—"[39m
+Received: [31m"Power Play20.0%"[39m
+
+ ❯ lib/reviewConsumerExposure.test.tsx:50:20
+     48|   const observed = screen.getByText(label).parentElement?.textContent;
+     49|   console.log("FILTER_AWARE_EXPOSURE_OBSERVED", JSON.stringify({ table…
+     50|   expect(observed).toContain("—");
+       |                    ^
+     51|   expect(screen.getAllByText(/Incomplete game sample/).length).toBeGre…
+     52| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  lib/reviewConsumerExposure.test.tsx > retains unknown exposure in the nst_team_5v5 consumer sample
+AssertionError: expected 'Corsi For %33.3%' to contain '—'
+
+Expected: [32m"—"[39m
+Received: [31m"Corsi For %33.3%"[39m
+
+ ❯ lib/reviewConsumerExposure.test.tsx:50:20
+     48|   const observed = screen.getByText(label).parentElement?.textContent;
+     49|   console.log("FILTER_AWARE_EXPOSURE_OBSERVED", JSON.stringify({ table…
+     50|   expect(observed).toContain("—");
+       |                    ^
+     51|   expect(screen.getAllByText(/Incomplete game sample/).length).toBeGre…
+     52| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 3 passed (5)
+   Start at  08:29:38
+   Duration  974ms (transform 177ms, setup 13ms, collect 341ms, tests 46ms, environment 398ms, prepare 62ms)
+

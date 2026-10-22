@@ -1,0 +1,55 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ❯ lib/sources/tweetIdentityReplacementReview.test.ts (14 tests | 2 failed) 32ms
+   ✓ review-only two-subject replacement contract > stays off without reading inputs or transports 1ms
+   ✓ review-only two-subject replacement contract > uses an explicitly retrospective S06 development fixture with scripted identity output; retains literal direction and explicit PP1 while holding every effect and claim certainty 14ms
+   ✓ review-only two-subject replacement contract > holds reversed subject direction rather than trusting the supplied role labels 3ms
+   × review-only two-subject replacement contract > preserves a synthetic Unicode wrapper and hostile trailing source text without granting authority 3ms
+     → Cannot assign to read only property 'start' of object '#<Object>'
+   ✓ review-only two-subject replacement contract > rejects unmatched identity/source binding 1ms
+   ✓ review-only two-subject replacement contract > rejects invalid-id identity/source binding 1ms
+   ✓ review-only two-subject replacement contract > rejects duplicate-occurrence identity/source binding 1ms
+   ✓ review-only two-subject replacement contract > rejects tampered-source identity/source binding 1ms
+   × review-only two-subject replacement contract > rejects tampered-span identity/source binding 1ms
+     → Cannot assign to read only property 'start' of object '#<Object>'
+   ✓ review-only two-subject replacement contract > rejects wrong-directory identity/source binding 1ms
+   ✓ review-only two-subject replacement contract > rejects invented unit text, split offsets and cross-clause expansion 3ms
+   ✓ review-only two-subject replacement contract > keeps a synthetic source with no unit unknown instead of recovering PP1 from memory 1ms
+   ✓ review-only two-subject replacement contract > cannot turn identity confidence or hostile extra authority fields into permission 1ms
+   ✓ review-only two-subject replacement contract > rejects a consistently rebound conditional clause instead of reducing it to confirmed replacement 1ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts (16 tests) 14ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/sources/tweetIdentityReplacementReview.test.ts > review-only two-subject replacement contract > preserves a synthetic Unicode wrapper and hostile trailing source text without granting authority
+TypeError: Cannot assign to read only property 'start' of object '#<Object>'
+ ❯ lib/sources/tweetIdentityReplacementReview.test.ts:64:25
+     62|     }
+     63|     for (const proposal of a.proposal.occurrences) {
+     64|       proposal.evidence.start += prefix.length; proposal.evidence.end …
+       |                         ^
+     65|     }
+     66|     a.clause.evidence.start += prefix.length; a.clause.evidence.end +=…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  lib/sources/tweetIdentityReplacementReview.test.ts > review-only two-subject replacement contract > rejects tampered-span identity/source binding
+TypeError: Cannot assign to read only property 'start' of object '#<Object>'
+ ❯ lib/sources/tweetIdentityReplacementReview.test.ts:81:71
+     79|     if (kind === 'duplicate-occurrence') a.proposal.occurrences[1] = a…
+     80|     if (kind === 'tampered-source') a.request.content.source.text += '…
+     81|     if (kind === 'tampered-span') a.proposal.occurrences[1]!.evidence.…
+       |                                                                       ^
+     82|     if (kind === 'wrong-directory') a.proposal.directoryHash = '0'.rep…
+     83|     expect(prepareTweetIdentityReplacementReview(a)).toMatchObject({ s…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 28 passed (30)
+   Start at  09:11:18
+   Duration  388ms (transform 60ms, setup 3ms, collect 89ms, tests 46ms, environment 0ms, prepare 63ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/artifacts/luna-application-contracts-2026-10-22/test-results.json

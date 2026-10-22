@@ -20,12 +20,18 @@ export const IN_SEASON_COMMERCE = {
     initialCharge: { fullChargeThroughDay: 14, proratedFromDay: 15 },
     cancellationAccess: "ends_immediately",
     failedPayment: { graceHours: 48, retryAfterHours: [24, 48], maxFailedAttempts: 3 },
-    // null means undecided; adapters must obtain policy before implementing it.
-    unresolvedPolicies: {
-      prorationArithmetic: null,
-      prorationRounding: null,
-      refundTreatment: null,
-      postCutoffCollection: null,
+    proration: {
+      basis: "inclusive_signup_calendar_day", rounding: "nearest_cent_half_up",
+      belowVerifiedMinimum: "decline_signup",
+    },
+    refunds: {
+      review: "manual", cancellationCreatesRefund: false,
+      completedFullRefundAccess: "affected_payment_only", partialRefundAccess: "retain_unless_explicitly_adjusted",
+    },
+    disputes: { access: "suspend_affected_payment", futureBilling: "stop", won: "restore_original_unexpired_coverage_without_restart" },
+    seasonEnd: {
+      collection: "stop", unpaidInvoices: "void", pendingCharges: "clear",
+      accountingHistory: "retain", latePaymentAccess: "never_reopen",
     },
   },
 } as const;
@@ -93,7 +99,14 @@ const easternDate = new Intl.DateTimeFormat("en-US", {
   timeZone: IN_SEASON_COMMERCE.timeZone, year: "numeric", month: "numeric", day: "numeric", hour: "numeric", hourCycle: "h23",
 });
 
-/** Classifies the approved threshold; prorated amounts remain a proposal only. */
+/** Integer arithmetic rounds once, half up; no implicit minimum or carryover. */
+export function calendarDayProrationCents(day: number, daysInMonth: number) {
+  if (![28, 29, 30, 31].includes(daysInMonth) || !Number.isInteger(day) || day < 1 || day > daysInMonth) throw new Error("Invalid calendar-day proration input.");
+  const remaining = daysInMonth - day + 1;
+  return Math.floor((IN_SEASON_COMMERCE.plans.monthly.amountCents * remaining * 2 + daysInMonth) / (2 * daysInMonth));
+}
+
+/** Approved calendar-day charge; availability still requires a verified minimum. */
 export function previewInitialMonthlyCharge(activation: Date) {
   if (!canStartInSeasonPurchase(activation)) throw new Error("Activation must precede the in-season cutoff.");
   const parts = easternDate.formatToParts(activation);
@@ -112,14 +125,32 @@ export function previewInitialMonthlyCharge(activation: Date) {
   return {
     treatment,
     nextAnchorAt,
-    confirmedAmountCents: treatment === "full" ? IN_SEASON_COMMERCE.plans.monthly.amountCents : null,
-    proposedProration: treatment === "prorated" ? {
-      status: "proposed_only",
+    confirmedAmountCents: treatment === "full" ? IN_SEASON_COMMERCE.plans.monthly.amountCents : calendarDayProrationCents(day, daysInMonth),
+    proration: treatment === "prorated" ? {
+      status: "approved",
       basis: "inclusive_signup_calendar_day",
       remainingCalendarDays,
       daysInMonth,
       rounding: "nearest_cent_half_up",
-      amountCents: Math.floor((IN_SEASON_COMMERCE.plans.monthly.amountCents * remainingCalendarDays * 2 + daysInMonth) / (2 * daysInMonth)),
+      amountCents: calendarDayProrationCents(day, daysInMonth),
     } : null,
   } as const;
+}
+
+export type VerifiedStripeMinimum = {
+  accountId: string; chargeCurrency: string; settlementCurrency: string;
+  minimumChargeCents: number; verificationReference: string;
+};
+
+export function monthlySignupQuote(activation: Date, accountId: string, minimum: VerifiedStripeMinimum | null) {
+  if (!canStartInSeasonPurchase(activation)) return { available: false, reason: "season_ended", charge: null } as const;
+  const charge = previewInitialMonthlyCharge(activation);
+  if (!minimum || minimum.accountId !== accountId || !accountId.trim() || minimum.chargeCurrency !== IN_SEASON_COMMERCE.currency
+    || !/^[a-z]{3}$/.test(minimum.settlementCurrency) || !minimum.verificationReference.trim()
+    || !Number.isSafeInteger(minimum.minimumChargeCents) || minimum.minimumChargeCents <= 0) {
+    return { available: false, reason: "minimum_not_verified", charge } as const;
+  }
+  return charge.confirmedAmountCents < minimum.minimumChargeCents
+    ? { available: false, reason: "below_verified_minimum", charge } as const
+    : { available: true, reason: "available", charge } as const;
 }

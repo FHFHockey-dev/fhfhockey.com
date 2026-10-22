@@ -1,0 +1,12 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ ../tasks/artifacts/luna-dated-contracts-2026-10-22/replacement-contract.test.ts (14 tests) 15ms
+ ✓ ../tasks/artifacts/luna-dated-contracts-2026-10-22/map-saved-provenance.test.ts (16 tests) 8ms
+
+ Test Files  2 passed (2)
+      Tests  30 passed (30)
+   Start at  08:48:49
+   Duration  331ms (transform 57ms, setup 3ms, collect 85ms, tests 23ms, environment 0ms, prepare 62ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/artifacts/luna-dated-contracts-2026-10-22/test-results.json

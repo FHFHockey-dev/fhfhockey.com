@@ -1,0 +1,29 @@
+{
+  "directoryHash": "1e95394b5e380e815f16bbc9c7b2c84d8a36ce8144d807556b0179c64f517e30",
+  "occurrences": [
+    {
+      "canonicalId": "nhl:8481617",
+      "evidence": {
+        "end": 9,
+        "start": 0,
+        "text": "Podkolzin"
+      },
+      "identityConfidence": "strong",
+      "occurrenceId": "local-occurrence:1e1647440e5f57328d6495f0",
+      "status": "matched"
+    },
+    {
+      "canonicalId": "nhl:8476454",
+      "evidence": {
+        "end": 23,
+        "start": 20,
+        "text": "RNH"
+      },
+      "identityConfidence": "tentative",
+      "occurrenceId": "local-occurrence:fe9ab1a33c591651eac514b1",
+      "status": "matched"
+    }
+  ],
+  "requestHash": "bd3a20c74c2f45e5d6b745a635b9441cee0d4c22e9001f1cbf7b158482a04217",
+  "version": "tweet-identity-proposal-v1"
+}

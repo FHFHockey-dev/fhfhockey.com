@@ -1,0 +1,227 @@
+{
+  "beforeCutoff": {
+    "at": "2026-10-21T18:50:41.288Z",
+    "operation": "verify",
+    "frozenAt": "2027-07-01T03:59:59.000Z",
+    "subscription": {
+      "id": "sub_1UT4VqLaomqkve47ZuNVP0OP",
+      "status": "active",
+      "endedAt": null,
+      "canceledAt": 1811822400
+    },
+    "schedule": {
+      "id": "sub_sched_1UT4VqLaomqkve47dnlDaCf6",
+      "status": "active",
+      "completedAt": null,
+      "finalEnd": 1814414400
+    },
+    "invoices": [
+      {
+        "id": "in_1UT4ZHLaomqkve47XkWDDW20",
+        "status": "paid",
+        "amount": 499,
+        "created": 1811822400
+      },
+      {
+        "id": "in_1UT4Z2Laomqkve47DaFN7qPu",
+        "status": "paid",
+        "amount": 499,
+        "created": 1809144000
+      },
+      {
+        "id": "in_1UT4YNLaomqkve47k8IhnPTv",
+        "status": "paid",
+        "amount": 499,
+        "created": 1806552000
+      },
+      {
+        "id": "in_1UT4YFLaomqkve47lB8zZsNV",
+        "status": "paid",
+        "amount": 499,
+        "created": 1803877200
+      },
+      {
+        "id": "in_1UT4XVLaomqkve47xD5NNrN9",
+        "status": "paid",
+        "amount": 499,
+        "created": 1801458000
+      },
+      {
+        "id": "in_1UT4XOLaomqkve477dRu4OjJ",
+        "status": "paid",
+        "amount": 499,
+        "created": 1798779600
+      },
+      {
+        "id": "in_1UT4WxLaomqkve47fGH1wQal",
+        "status": "paid",
+        "amount": 499,
+        "created": 1796101200
+      },
+      {
+        "id": "in_1UT4WuLaomqkve47QadHH9mv",
+        "status": "paid",
+        "amount": 0,
+        "created": 1796097600
+      },
+      {
+        "id": "in_1UT4WlLaomqkve47bsymc0XN",
+        "status": "paid",
+        "amount": 499,
+        "created": 1793505600
+      },
+      {
+        "id": "in_1UT4VqLaomqkve47eDhiCGb5",
+        "status": "paid",
+        "amount": 177,
+        "created": 1792608320
+      }
+    ],
+    "storedPaidPeriods": 9,
+    "storedCancellationAt": null,
+    "access": {
+      "eligible": true,
+      "capabilities": [
+        "rso_sync",
+        "rso_account_save",
+        "rso_auto_upkeep"
+      ],
+      "grantingSources": [
+        "purchase"
+      ],
+      "expiresAt": "2027-07-01T04:00:00.000Z",
+      "reason": "eligible"
+    },
+    "jobs": [
+      {
+        "kind": "cutoff",
+        "status": "pending",
+        "snapshots": 0
+      }
+    ],
+    "outcomes": [],
+    "checkoutSessionsCreated": 0,
+    "virtualTimeInjected": true,
+    "stopOrCutoffWorkerExecuted": false,
+    "naturalCutoffVerified": false
+  },
+  "afterCutoff": {
+    "at": "2026-10-21T18:51:19.760Z",
+    "operation": "verify",
+    "frozenAt": "2027-07-01T07:00:00.000Z",
+    "subscription": {
+      "id": "sub_1UT4VqLaomqkve47ZuNVP0OP",
+      "status": "canceled",
+      "endedAt": 1814414400,
+      "canceledAt": 1811822400
+    },
+    "schedule": {
+      "id": "sub_sched_1UT4VqLaomqkve47dnlDaCf6",
+      "status": "completed",
+      "completedAt": 1814414400,
+      "finalEnd": 1814414400
+    },
+    "invoices": [
+      {
+        "id": "in_1UT4ZHLaomqkve47XkWDDW20",
+        "status": "paid",
+        "amount": 499,
+        "created": 1811822400
+      },
+      {
+        "id": "in_1UT4Z2Laomqkve47DaFN7qPu",
+        "status": "paid",
+        "amount": 499,
+        "created": 1809144000
+      },
+      {
+        "id": "in_1UT4YNLaomqkve47k8IhnPTv",
+        "status": "paid",
+        "amount": 499,
+        "created": 1806552000
+      },
+      {
+        "id": "in_1UT4YFLaomqkve47lB8zZsNV",
+        "status": "paid",
+        "amount": 499,
+        "created": 1803877200
+      },
+      {
+        "id": "in_1UT4XVLaomqkve47xD5NNrN9",
+        "status": "paid",
+        "amount": 499,
+        "created": 1801458000
+      },
+      {
+        "id": "in_1UT4XOLaomqkve477dRu4OjJ",
+        "status": "paid",
+        "amount": 499,
+        "created": 1798779600
+      },
+      {
+        "id": "in_1UT4WxLaomqkve47fGH1wQal",
+        "status": "paid",
+        "amount": 499,
+        "created": 1796101200
+      },
+      {
+        "id": "in_1UT4WuLaomqkve47QadHH9mv",
+        "status": "paid",
+        "amount": 0,
+        "created": 1796097600
+      },
+      {
+        "id": "in_1UT4WlLaomqkve47bsymc0XN",
+        "status": "paid",
+        "amount": 499,
+        "created": 1793505600
+      },
+      {
+        "id": "in_1UT4VqLaomqkve47eDhiCGb5",
+        "status": "paid",
+        "amount": 177,
+        "created": 1792608320
+      }
+    ],
+    "storedPaidPeriods": 9,
+    "storedCancellationAt": "2027-07-01T04:00:00.000Z",
+    "access": {
+      "eligible": false,
+      "capabilities": [],
+      "grantingSources": [],
+      "expiresAt": null,
+      "reason": "expired"
+    },
+    "jobs": [
+      {
+        "kind": "cutoff",
+        "status": "pending",
+        "snapshots": 0
+      },
+      {
+        "kind": "stop",
+        "status": "pending",
+        "snapshots": 0
+      }
+    ],
+    "outcomes": [
+      {
+        "id": "evt_1UT4bJLaomqkve47r8nZ6EQS",
+        "type": "customer.subscription.deleted",
+        "result": {
+          "processed": true
+        }
+      }
+    ],
+    "checkoutSessionsCreated": 0,
+    "virtualTimeInjected": true,
+    "stopOrCutoffWorkerExecuted": false,
+    "naturalCutoffVerified": true
+  },
+  "checkoutCasesUsed": 3,
+  "additionalCheckoutSessions": 0,
+  "additionalDirectClockSubscriptions": 1,
+  "manualCancellationCalls": 0,
+  "workerCalls": 0,
+  "paidCoveragePreserved": true
+}

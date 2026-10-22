@@ -1,5 +1,11 @@
 # D4 Data API grants: migrations 89–90, isolated receipt and grant-to-caller list
 
+**October 22 harness update:** [repair report](repair-2026-10-22/REPORT.md) and
+[fixed hashes / offline verification](repair-2026-10-22/verification.json). The harness now preserves
+orders 89–90 before the later ledger suffix, and the old matrix's 66 expectations are reconciled
+without failure exemptions. Fresh run-v9 was blocked by sandbox shared-memory allocation during
+`initdb`; it ran no SQL. The v7/v8 results below remain historical evidence.
+
 2026-10-20, Claude (ticket D4, Chef local_60e96358). **Local source only. Nothing was applied to a hosted
 project, and no migration command or production call was run.** Hosted apply of each migration needs
 TJ's separate explicit approval.

@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { loadDraftProAccess } from "lib/draft-pro/server";
+import { loadProviderSyncAccess } from "lib/integrations/providerSyncAccessServer";
 import { getFantraxDraftResults, getFantraxPlayerIds } from "./client";
 import { normalizeFantraxDraftResults } from "./draftResults";
 import { isFantraxLiveDraftEnabled, pollFantraxDraftSession, requireFantraxDraftAccess, startFantraxDraftSession, stopFantraxDraftSession } from "./liveDraftServer";
 import { discoverLinkedFantraxLeagues, getFantraxConnections } from "./server";
 
-vi.mock("lib/draft-pro/server", () => ({ loadDraftProAccess: vi.fn().mockResolvedValue({ eligible: true }) }));
+vi.mock("lib/integrations/providerSyncAccessServer", () => ({ loadProviderSyncAccess: vi.fn().mockResolvedValue({ eligible: true }) }));
 vi.mock("./client", async (importOriginal) => ({
   ...await importOriginal<typeof import("./client")>(),
   getFantraxDraftResults: vi.fn(),
@@ -216,7 +216,7 @@ describe("Fantrax live draft access and session lifecycle", () => {
   it("releases an active session on entitlement loss without polling Fantrax", async () => {
     vi.stubEnv("FANTRAX_LIVE_DRAFT_ENABLED", "true");
     vi.stubEnv("FANTRAX_API_ENABLED", "true");
-    vi.mocked(loadDraftProAccess).mockResolvedValueOnce({ eligible: false } as never);
+    vi.mocked(loadProviderSyncAccess).mockResolvedValueOnce({ eligible: false } as never);
     const row = {
       id: "session", user_id: "owner", status: "active", external_league_id: "league",
       external_team_id: "team", provider_status: "inProgress", last_polled_at: null,
@@ -240,4 +240,15 @@ describe("Fantrax live draft access and session lifecycle", () => {
     expect(client.rpc).not.toHaveBeenCalled();
     expect(getFantraxDraftResults).not.toHaveBeenCalled();
   });
+  it("defers transient entitlement failure without stopping or overwriting the saved draft", async () => {
+    vi.stubEnv("FANTRAX_LIVE_DRAFT_ENABLED", "true"); vi.stubEnv("FANTRAX_API_ENABLED", "true");
+    vi.mocked(loadProviderSyncAccess).mockResolvedValueOnce({ eligible: false, reason: "verification_unavailable" } as never);
+    const row = { id: "session", user_id: "owner", status: "active", snapshot: { picks: [], safeToApply: true } };
+    const lookup: any = { select: () => lookup, eq: () => lookup, maybeSingle: async () => ({ data: row, error: null }) };
+    const client = { from: vi.fn().mockReturnValue(lookup), rpc: vi.fn() };
+    await expect(pollFantraxDraftSession({ userId: "owner", sessionId: "session", client: client as never })).rejects.toMatchObject({ statusCode: 503, code: "FANTRAX_ACCESS_UNAVAILABLE" });
+    expect(client.from).toHaveBeenCalledTimes(1); expect(client.rpc).not.toHaveBeenCalled(); expect(getFantraxDraftResults).not.toHaveBeenCalled();
+    expect(row.status).toBe("active");
+  });
+
 });

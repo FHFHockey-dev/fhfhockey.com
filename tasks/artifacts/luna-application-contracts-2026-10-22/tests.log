@@ -1,0 +1,12 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts (14 tests) 30ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts (16 tests) 13ms
+
+ Test Files  2 passed (2)
+      Tests  30 passed (30)
+   Start at  09:12:14
+   Duration  362ms (transform 57ms, setup 3ms, collect 84ms, tests 43ms, environment 0ms, prepare 57ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/artifacts/luna-application-contracts-2026-10-22/test-results.json

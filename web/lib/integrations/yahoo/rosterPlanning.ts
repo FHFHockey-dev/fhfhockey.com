@@ -77,7 +77,9 @@ export async function yahooPastLineupPoints(db: SupabaseClient<any>, args: {
     if (!own) return 0;
     let total = 0;
     for (const [key, weight] of tier.weights) {
-      const value = Number(own[tier.columns[key]] ?? 0);
+      const raw = own[tier.columns[key]];
+      if (raw === null || raw === undefined || (typeof raw === "string" && raw.trim() === "")) return null;
+      const value = Number(raw);
       if (!Number.isFinite(value)) return null;
       total += value * weight;
     }

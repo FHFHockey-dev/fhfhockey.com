@@ -1,0 +1,160 @@
+{
+  "date": "2026-10-22",
+  "head": "d3f057c6c849d5d5474bc912a6f461f617c65b15",
+  "branch": "octoberBranch",
+  "scope": "Local unmodified function bodies and pure modules; query dependencies replaced with controlled fictional clients. No full app imports, credentials, historical records or network.",
+  "files": [
+    {
+      "path": "web/lib/sko/gap.ts",
+      "sha256": "a7447d66b99d89207d5d7c4e1330a7bb4475414c79beb05596c58f891bf197a3"
+    },
+    {
+      "path": "web/lib/skoElement/contract.ts",
+      "sha256": "36b482d8fd0b5916eb2c7c5398ea8c2c8dacfe5491a871d5d3494dc1120f0702"
+    },
+    {
+      "path": "web/lib/skoElement/interpret.ts",
+      "sha256": "660b73c836041f867f6207d0fa89e391570de6422a019bd4e3c5e46fddbf6466"
+    },
+    {
+      "path": "web/lib/skoElement/fixtures.ts",
+      "sha256": "b4e7e6b31c9fd9d1e541aba1e0f19993caa413bab8112b1cd05bc10e1b7f2fa2"
+    },
+    {
+      "path": "web/components/skoElement/SkoElementPreview.tsx",
+      "sha256": "7ed0ae5a35f3ba9ae1994841f2febc6994b0a5954bd14317b6d1a5b1d1776825"
+    },
+    {
+      "path": "web/lib/projections/goalieModel.ts",
+      "sha256": "fef53bc83fa3fadc7ef593eaa615325d2a947438d9f5213991f610dda347ad42"
+    },
+    {
+      "path": "web/lib/projections/constants/projection-weights.ts",
+      "sha256": "1200d9379191de7e569bed14f680777e307829df2d92520b2ed67609ea14792e"
+    },
+    {
+      "path": "web/lib/projections/utils/number-utils.ts",
+      "sha256": "46a78073bdc6336c44dfe0ffb5e33370c5c1730ab74c4fc23a7fe6937e858222"
+    },
+    {
+      "path": "web/lib/projections/utils/date-utils.ts",
+      "sha256": "2cffcc04886d2aad6f7d40ebf48ef91cece1ba8317fb0623b3baaf2ca9793c93"
+    },
+    {
+      "path": "web/lib/predictions/rollingWindows.ts",
+      "sha256": "f241f957b11f6fdeab46911d0c8cd1b6b087551de9cb3abdb6c30ffa0c3d2c90"
+    },
+    {
+      "path": "web/lib/projections/calculators/team-context-adjustments.ts",
+      "sha256": "5192c2e370cffbd10e24ff1b05338ace196e528e88e9bab0c10dc8ded23ad3c4"
+    },
+    {
+      "path": "web/lib/projections/calculators/goalie-save-pct-context.ts",
+      "sha256": "2bd8b67a6ec7d3c68947bab9a8280faa61d66d544efadb26be7cc22ba80f0a4d"
+    },
+    {
+      "path": "web/lib/projections/queries/goalie-queries.ts",
+      "sha256": "c102c5f8c5a065dfcd59885e11291d0f172aa0cb6ddc953538bc4992fb20a175"
+    },
+    {
+      "path": "web/lib/projections/queries/team-context-queries.ts",
+      "sha256": "8b8e8523431b0b94d24059e92c42130ab8cf01ec6382acd64804a17cecd84939"
+    },
+    {
+      "path": "web/lib/projections/stages/goalie-stage.ts",
+      "sha256": "7eb6abfcdef2505dc8743ce53dd8c2224198a8245da719573c7df594dec972a5"
+    },
+    {
+      "path": "web/lib/projections/derived/buildGoalieGameV2.ts",
+      "sha256": "4fc2a893cdc13fde134d68ec10553f30ac00ad12b01e49334e2bc8f1e9fe60b2"
+    },
+    {
+      "path": "web/lib/projections/derived/situation.ts",
+      "sha256": "98ef81ad1c3d855ff9da8cd9debce9d957934da52940617d40c3ecc1fbe6ee26"
+    },
+    {
+      "path": "web/lib/xg/aggregates.ts",
+      "sha256": "322f766bf8badfa2632c4ea2db52feff545d625ee5a7b59105486e9e2d434b3c"
+    },
+    {
+      "path": "web/lib/xg/flurryAdjusted.ts",
+      "sha256": "217d4337904dbf823cbdf58634eaa1cbb95546269c76cbee3772954fc1fd1220"
+    },
+    {
+      "path": "web/lib/xg/baselineDataset.ts",
+      "sha256": "9b345cc7258b628b04c9dbd2f4c64e272df28604bb117e61cd0125e867ee1f0f"
+    },
+    {
+      "path": "web/lib/xg/shotFeaturePersistence.ts",
+      "sha256": "9dc768b30b3630a127567f521522d4d6e0641bffaa8d5c8d06f068428b78e89a"
+    },
+    {
+      "path": "web/lib/rankings/xgDenominatorSemantics.ts",
+      "sha256": "0a54b2a84a30e270a4f30e404ee9fbaa9e5a3f21b6c2bc8ea148b8b16e612dc9"
+    },
+    {
+      "path": "supabase/migrations/20260716112908_production_schema_baseline.sql",
+      "sha256": "27067d2221516be147d5cf71492b1fee3f0fd377d0ccd14e49557931ad1b791d"
+    },
+    {
+      "path": "supabase/migrations/20260720105524_add_projection_materialization_transactions.sql",
+      "sha256": "04806d4ba5c2d2a832081c41ae599bd0e8617cf22167a4719e4be7878267ffe2"
+    },
+    {
+      "path": "web/lib/projections/types/run-forge-projections.types.ts",
+      "sha256": "2f7ddc868b55e8cb042abf2c0ef3c5904777cb8817b3d985440e1fe40f07e1a6"
+    },
+    {
+      "path": "web/pages/sko-element/preview.tsx",
+      "sha256": "d3c4566cc5df2359fb259efde56369904687f1aa157eb94e69812e2bd83160eb"
+    },
+    {
+      "path": "web/components/PlayerStats/playerStatsContract.ts",
+      "sha256": "a8f885fc0d50320bafe458ed92605b1515656a78d262945e004fd0d418fc1165"
+    },
+    {
+      "path": "web/components/PlayerStats/types.ts",
+      "sha256": "c97afe62bfb04d4ef5b6fb8c018103ba5663dafe2d5f33310e932509e628ac3d"
+    },
+    {
+      "path": "web/components/PlayerStats/PlayerContextualStats.tsx",
+      "sha256": "0158328a731330d18a3ea10f2b4d640ee2e0f426ffb9facc271740c04cfcdd47"
+    },
+    {
+      "path": "web/components/PlayerStats/PlayerSummaryStrip.tsx",
+      "sha256": "9581b77429c45d8ab1fd0fc3c08365f380f2b3607e32878c76d32d9564e9c92a"
+    },
+    {
+      "path": "web/pages/stats/player/[playerId].tsx",
+      "sha256": "66c899dcb7dc01c6f21e8f1fa2892ea53f666158d9bd28359b291570a377b74a"
+    },
+    {
+      "path": "web/lib/NHL/statsPageFetch.ts",
+      "sha256": "fa6995792ee57154f3fa30245b3d7ac5d423ede0d9f0db632a4b90660ee0cee1"
+    },
+    {
+      "path": "web/pages/stats/index.tsx",
+      "sha256": "f9e1252344a76d6ef621c0408c30b52bcd117d0289c56ecba3eca0e701ac86e0"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/sko-vudu/PHASE0-CONTRACT.md",
+      "sha256": "c2c9fc753cb08aa441ad805b44620ee078068d3c33ef1023f45dd625cd7368aa"
+    },
+    {
+      "path": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "sha256": "5d0126088c72f2216b6c6a89381798156a387a26cb85891cbfc2d4c750924b2a"
+    },
+    {
+      "path": "tasks/TASKS/sko-charts/sko-modeling-notes.md",
+      "sha256": "2ddaa7c4c182ea7c280d7359931be55976ec6c776955d9516ab8de93793a55a3"
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/WORK-PACKETS.md",
+      "sha256": "05950c81b84ff823e3518d75d4ffa5fc6735224adc047b61d254085af569ca34"
+    }
+  ],
+  "supplement": {
+    "reason": "Parent requested P02 overlap; additional cited source and existing contract documents pinned without refreshing original hashes.",
+    "head": "d3f057c6c849d5d5474bc912a6f461f617c65b15"
+  }
+}

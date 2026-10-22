@@ -1933,7 +1933,7 @@ describe("RosterScheduleOptimizer workspace", () => {
 
   it.each([
     { user: null, sync: false, teamId: "team", reason: "Sign in to check access for provider synchronization." },
-    { user: { id: "manager" }, sync: false, teamId: "team", reason: "Provider synchronization requires active in-season access. Your account connection is unchanged." },
+    { user: { id: "manager" }, sync: false, teamId: "team", reason: "Yahoo and Fantrax sync require premium access: $4.99 monthly or a $24.99 season pass ending July 1, 2027. Your account connection is unchanged." },
     { user: { id: "manager" }, sync: true, teamId: "manual", reason: "Select an owned team before refreshing provider inputs." },
     { user: { id: "manager" }, sync: true, teamId: " ", reason: "Select an owned team before refreshing provider inputs." },
   ])("explains unavailable provider refresh for user $user, sync $sync and team '$teamId'", async ({ user, sync, teamId, reason }) => {

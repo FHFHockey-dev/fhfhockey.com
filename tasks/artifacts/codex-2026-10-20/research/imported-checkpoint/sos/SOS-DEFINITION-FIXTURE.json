@@ -1,0 +1,25 @@
+{
+  "kind": "actual_export_SOS_definition_counterexample",
+  "scope": "Synthetic snapshot-shaped fixtures only, no season reconstruction, DB or network.",
+  "comparison": {
+    "trendsWinPct": {
+      "TOR": 0.5,
+      "MTL": 0.4
+    },
+    "underlyingPointsTwoHop": {
+      "TOR": 0.5,
+      "MTL": 0.6333333333333333
+    },
+    "rankOrderReverses": true
+  },
+  "empty": {
+    "trends": 0,
+    "underlying": null
+  },
+  "guard": {
+    "blockedNetwork": [],
+    "blockedClientCreates": 0,
+    "blockedEnvLoads": 0
+  },
+  "limitation": "Different definitions can legitimately rank differently; this proves ambiguous cross-surface SOS semantics, not which metric predicts NHL outcomes better."
+}

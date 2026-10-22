@@ -1,0 +1,11 @@
+--- /Users/tim/Code/fhfhockey.com/tasks/artifacts/claude-audit-fix-queue-2026-10-22/repros/auditTemporalCutoff.test.ts	2026-10-21 23:54:39
++++ /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-forge-ledger-lease-review-i86qaoq1/isolation/snapshot/web/lib/auditTemporalCutoff.test.ts	2026-10-22 08:02:34
+@@ -1,7 +1,7 @@
+ import { expect,it,vi } from "vitest";
+ vi.mock("lib/supabase/server",()=>({default:{from:()=>{
+  let rows=[{player_id:11,date:"2026-10-20",nst_shots_per_60:99,nst_ixg_per_60:9,nst_oi_xgf_per_60:99},{player_id:11,date:"2026-10-19",nst_shots_per_60:10,nst_ixg_per_60:1,nst_oi_xgf_per_60:2}];
+- const q:any={select:()=>q,in:()=>q,lte:(c:string,v:string)=>{rows=rows.filter(r=>(r as any)[c]<=v);return q;},gte:(c:string,v:string)=>{rows=rows.filter(r=>(r as any)[c]>=v);return q;},order:()=>q,limit:()=>q,then:(resolve:any)=>resolve({data:rows,error:null})};return q;
++ const q:any={select:()=>q,in:()=>q,lt:(c:string,v:string)=>{rows=rows.filter(r=>(r as any)[c]<v);return q;},lte:(c:string,v:string)=>{rows=rows.filter(r=>(r as any)[c]<=v);return q;},gte:(c:string,v:string)=>{rows=rows.filter(r=>(r as any)[c]>=v);return q;},order:()=>q,limit:()=>q,then:(resolve:any)=>resolve({data:rows,error:null})};return q;
+ }}}));
+ import { fetchLatestSkaterContextProfiles } from "./projections/queries/skater-queries";
+ it("reconstruction excludes the target game's observed per-game context",async()=>{

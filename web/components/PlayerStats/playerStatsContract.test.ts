@@ -214,6 +214,48 @@ describe("summary aggregation", () => {
     expect(aggregateSummaryStat(log, "save_pct")).toBeCloseTo(37 / 40);
   });
 
+  it("P02: GAA pools goals against over numeric seconds, including relief exposure", () => {
+    const log = [
+      { date: "1", games_played: 1, goals_against: 3, time_on_ice: 3600, goals_against_avg: 3 },
+      { date: "2", games_played: 1, goals_against: 1, time_on_ice: 600, goals_against_avg: 6 }
+    ];
+    expect(aggregateSummaryStat(log, "goals_against_avg")).toBeCloseTo(4 * 3600 / 4200);
+  });
+
+  it.each([null, undefined, "", " ", "60:00", -1, NaN, Infinity, false])(
+    "P02: GAA is unavailable with unsupported exposure %s",
+    (time_on_ice) => {
+      expect(aggregateSummaryStat([
+        { date: "1", games_played: 1, goals_against: 3, time_on_ice: 3600, goals_against_avg: 3 },
+        { date: "2", games_played: 1, goals_against: 1, time_on_ice, goals_against_avg: 6 }
+      ], "goals_against_avg")).toBeNull();
+    }
+  );
+
+  it("P02: GAA preserves observed zero and withholds zero exposure", () => {
+    expect(aggregateSummaryStat([{ date: "1", goals_against: 0, time_on_ice: 3600 }], "goals_against_avg")).toBe(0);
+    expect(aggregateSummaryStat([{ date: "1", goals_against: 0, time_on_ice: 0 }], "goals_against_avg")).toBeNull();
+    expect(aggregateSummaryStat([{ date: "1", goals_against: null, time_on_ice: 3600 }], "goals_against_avg")).toBeNull();
+  });
+
+  it.each([
+    { saves: null, shots_against: 10 },
+    { saves: 9, shots_against: null },
+    { saves: " ", shots_against: 10 },
+    { saves: false, shots_against: 10 },
+    { saves: 11, shots_against: 10 },
+    { saves: -1, shots_against: 10 }
+  ])("P02: SV% withholds incomplete or invalid paired support %j", (partial) => {
+    expect(aggregateSummaryStat([
+      { date: "1", games_played: 1, saves: 27, shots_against: 30 },
+      { date: "2", games_played: 1, ...partial }
+    ], "save_pct")).toBeNull();
+  });
+
+  it("P02: zero saves on observed shots is a valid zero SV%", () => {
+    expect(aggregateSummaryStat([{ date: "1", saves: 0, shots_against: 10 }], "save_pct")).toBe(0);
+  });
+
   it("partial data: null rows are skipped, never treated as zero", () => {
     const log = [
       { date: "1", games_played: 1, cf_pct: 60, goals_per_60: 0, hits: null },

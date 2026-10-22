@@ -1,0 +1,268 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts components/GoalieShareChart/GoalieShareChart.pagination.test.tsx hooks/useShotData.test.tsx -t keeps cached A|withholds every window|short page
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-3_hiunsv/isolation/snapshot/web
+
+(node:49297) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ hooks/useShotData.test.tsx (11 tests | 2 failed | 9 skipped) 11ms
+   × useShotData request ownership > keeps cached A after A → B → A while B games are pending 9ms
+     → expected [ { xcoord: 10, ycoord: 5, …(3) } ] to deeply equal []
+   × useShotData request ownership > keeps cached A after A → B → A while B shots are pending 2ms
+     → expected [ { xcoord: 10, ycoord: 5, …(3) } ] to deeply equal []
+   ↓ useShotData request ownership > ignores stale success and finally while the current request is loading
+   ↓ useShotData request ownership > ignores stale empty and finally while the current request is loading
+   ↓ useShotData request ownership > ignores stale error and finally while the current request is loading
+   ↓ useShotData request ownership > defers hidden reads and preserves the loaded key across tab visibility and equal filters
+   ↓ useShotData request ownership > retires a pending hidden-tab request and fetches again when shown
+   ↓ useShotData request ownership > owns pending reads by event filter as well as team
+   ↓ useShotData request ownership > owns pending reads by game filter as well as team
+   ↓ useShotData request ownership > owns pending reads by season filter as well as team
+   ↓ useShotData request ownership > clears the previous error when loading a different key
+(node:49297) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ components/GoalieShareChart/GoalieShareChart.pagination.test.tsx (12 tests | 6 failed | 6 skipped) 63ms
+   × GoalieShareChart complete page sets > withholds every window after repeated 429s at offset 0 38ms
+     → Unable to find an accessible element with the role "alert"
+
+Here are the accessible roles:
+
+  button:
+
+  Name "L10":
+  [36m<button[39m
+    [33mclass[39m=[32m"_spanButton_f647ec "[39m
+  [36m/>[39m
+
+  Name "L20":
+  [36m<button[39m
+    [33mclass[39m=[32m"_spanButton_f647ec "[39m
+  [36m/>[39m
+
+  Name "L30":
+  [36m<button[39m
+    [33mclass[39m=[32m"_spanButton_f647ec "[39m
+  [36m/>[39m
+
+  Name "Season":
+  [36m<button[39m
+    [33mclass[39m=[32m"_spanButton_f647ec _active_f647ec"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_goalieShareChart_f647ec"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_buttonContainer_f647ec"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"_spanButton_f647ec "[39m
+        [36m>[39m
+          [0mL10[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"_spanButton_f647ec "[39m
+        [36m>[39m
+          [0mL20[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"_spanButton_f647ec "[39m
+        [36m>[39m
+          [0mL30[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"_spanButton_f647ec _active_f647ec"[39m
+        [36m>[39m
+          [0mSeason[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_noDataMessage_f647ec"[39m
+      [36m>[39m
+        [0mNo goalie data available for the selected timeframe.[0m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × GoalieShareChart complete page sets > withholds every window after repeated 429s at offset 100 13ms
+     → expected [ <pre data-testid="chart"></pre> ] to have a length of +0 but got 1
+   × GoalieShareChart complete page sets > withholds every window after repeated 429s at offset 200 4ms
+     → expected [ <pre data-testid="chart"></pre> ] to have a length of +0 but got 1
+   × GoalieShareChart complete page sets > rejects a successful but short page at offset 0 3ms
+     → expected [ <pre data-testid="chart"></pre> ] to have a length of +0 but got 1
+   × GoalieShareChart complete page sets > rejects a successful but short page at offset 100 3ms
+     → expected [ <pre data-testid="chart"></pre> ] to have a length of +0 but got 1
+   × GoalieShareChart complete page sets > rejects a successful but short page at offset 200 2ms
+     → expected [ <pre data-testid="chart"></pre> ] to have a length of +0 but got 1
+   ↓ GoalieShareChart complete page sets > rejects invalid completeness metadata: {"data":[{"gameId":1,"gameDate":"2025-10-01","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":2,"gameDate":"2025-10-02","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":3,"gameDate":"2025-10-03","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":4,"gameDate":"2025-10-04","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":5,"gameDate":"2025-10-05","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":6,"gameDate":"2025-10-06","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":7,"gameDate":"2025-10-07","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":8,"gameDate":"2025-10-08","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":9,"gameDate":"2025-10-09","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":10,"gameDate":"2025-10-10","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":11,"gameDate":"2025-10-11","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":12,"gameDate":"2025-10-12","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":13,"gameDate":"2025-10-13","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":14,"gameDate":"2025-10-14","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":15,"gameDate":"2025-10-15","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":16,"gameDate":"2025-10-16","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":17,"gameDate":"2025-10-17","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":18,"gameDate":"2025-10-18","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":19,"gameDate":"2025-10-19","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":20,"gameDate":"2025-10-20","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":21,"gameDate":"2025-10-21","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":22,"gameDate":"2025-10-22","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":23,"gameDate":"2025-10-23","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":24,"gameDate":"2025-10-24","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":25,"gameDate":"2025-10-25","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":26,"gameDate":"2025-10-26","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":27,"gameDate":"2025-10-27","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":28,"gameDate":"2025-10-28","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":29,"gameDate":"2025-10-29","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":30,"gameDate":"2025-10-30","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":31,"gameDate":"2025-10-31","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":32,"gameDate":"2025-11-01","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":33,"gameDate":"2025-11-02","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":34,"gameDate":"2025-11-03","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":35,"gameDate":"2025-11-04","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":36,"gameDate":"2025-11-05","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":37,"gameDate":"2025-11-06","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":38,"gameDate":"2025-11-07","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":39,"gameDate":"2025-11-08","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":40,"gameDate":"2025-11-09","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":41,"gameDate":"2025-11-10","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":42,"gameDate":"2025-11-11","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":43,"gameDate":"2025-11-12","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":44,"gameDate":"2025-11-13","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":45,"gameDate":"2025-11-14","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":46,"gameDate":"2025-11-15","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":47,"gameDate":"2025-11-16","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":48,"gameDate":"2025-11-17","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":49,"gameDate":"2025-11-18","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":50,"gameDate":"2025-11-19","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":51,"gameDate":"2025-11-20","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":52,"gameDate":"2025-11-21","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":53,"gameDate":"2025-11-22","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":54,"gameDate":"2025-11-23","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":55,"gameDate":"2025-11-24","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":56,"gameDate":"2025-11-25","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":57,"gameDate":"2025-11-26","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":58,"gameDate":"2025-11-27","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":59,"gameDate":"2025-11-28","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":60,"gameDate":"2025-11-29","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":61,"gameDate":"2025-11-30","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":62,"gameDate":"2025-12-01","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":63,"gameDate":"2025-12-02","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":64,"gameDate":"2025-12-03","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":65,"gameDate":"2025-12-04","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":66,"gameDate":"2025-12-05","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":67,"gameDate":"2025-12-06","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":68,"gameDate":"2025-12-07","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":69,"gameDate":"2025-12-08","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":70,"gameDate":"2025-12-09","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":71,"gameDate":"2025-12-10","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":72,"gameDate":"2025-12-11","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":73,"gameDate":"2025-12-12","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":74,"gameDate":"2025-12-13","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":75,"gameDate":"2025-12-14","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":76,"gameDate":"2025-12-15","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":77,"gameDate":"2025-12-16","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":78,"gameDate":"2025-12-17","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":79,"gameDate":"2025-12-18","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":80,"gameDate":"2025-12-19","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":81,"gameDate":"2025-12-20","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":82,"gameDate":"2025-12-21","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":83,"gameDate":"2025-12-22","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":84,"gameDate":"2025-12-23","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":85,"gameDate":"2025-12-24","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":86,"gameDate":"2025-12-25","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":87,"gameDate":"2025-12-26","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":88,"gameDate":"2025-12-27","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":89,"gameDate":"2025-12-28","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":90,"gameDate":"2025-12-29","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":91,"gameDate":"2025-12-30","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":92,"gameDate":"2025-12-31","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":93,"gameDate":"2026-01-01","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":94,"gameDate":"2026-01-02","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":95,"gameDate":"2026-01-03","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":96,"gameDate":"2026-01-04","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":97,"gameDate":"2026-01-05","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":98,"gameDate":"2026-01-06","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":99,"gameDate":"2026-01-07","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600},{"gameId":100,"gameDate":"2026-01-08","teamAbbrev":"PHI","playerId":1,"goalieFullName":"Starter One","gamesPlayed":1,"wins":0,"losses":0,"otLosses":0,"saves":27,"shotsAgainst":30,"goalsAgainst":3,"timeOnIce":3600}]}
+   ↓ GoalieShareChart complete page sets > rejects invalid completeness metadata: {"total":250,"data":null}
+   ↓ GoalieShareChart complete page sets > rejects invalid completeness metadata: {"total":-1,"data":[]}
+   ↓ GoalieShareChart complete page sets > rejects totals that change between pages
+   ↓ GoalieShareChart complete page sets > recovers within the retry budget and re-slices complete data without fetching
+   ↓ GoalieShareChart complete page sets > keeps a verified empty season distinct from a failed page
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  hooks/useShotData.test.tsx > useShotData request ownership > keeps cached A after A → B → A while B games are pending
+ FAIL  hooks/useShotData.test.tsx > useShotData request ownership > keeps cached A after A → B → A while B shots are pending
+AssertionError: expected [ { xcoord: 10, ycoord: 5, …(3) } ] to deeply equal []
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [][39m
+[31m+ [[39m
+[31m+   {[39m
+[31m+     "eventownerteamid": 1,[39m
+[31m+     "hometeamdefendingside": undefined,[39m
+[31m+     "typedesckey": "goal",[39m
+[31m+     "xcoord": 10,[39m
+[31m+     "ycoord": 5,[39m
+[31m+   },[39m
+[31m+ ][39m
+
+ ❯ hooks/useShotData.test.tsx:54:37
+     52|     rerender({ team: 2 });
+     53|     await flush();
+     54|     expect(result.current.shotData).toEqual([]);
+       |                                     ^
+     55|     rerender({ team: 1 });
+     56|     expect(result.current.isLoading).toBe(false);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  components/GoalieShareChart/GoalieShareChart.pagination.test.tsx > GoalieShareChart complete page sets > withholds every window after repeated 429s at offset 0
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+
+Here are the accessible roles:
+
+  button:
+
+  Name "L10":
+  [36m<button[39m
+    [33mclass[39m=[32m"_spanButton_f647ec "[39m
+  [36m/>[39m
+
+  Name "L20":
+  [36m<button[39m
+    [33mclass[39m=[32m"_spanButton_f647ec "[39m
+  [36m/>[39m
+
+  Name "L30":
+  [36m<button[39m
+    [33mclass[39m=[32m"_spanButton_f647ec "[39m
+  [36m/>[39m
+
+  Name "Season":
+  [36m<button[39m
+    [33mclass[39m=[32m"_spanButton_f647ec _active_f647ec"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_goalieShareChart_f647ec"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_buttonContainer_f647ec"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"_spanButton_f647ec "[39m
+        [36m>[39m
+          [0mL10[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"_spanButton_f647ec "[39m
+        [36m>[39m
+          [0mL20[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"_spanButton_f647ec "[39m
+        [36m>[39m
+          [0mL30[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"_spanButton_f647ec _active_f647ec"[39m
+        [36m>[39m
+          [0mSeason[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_noDataMessage_f647ec"[39m
+      [36m>[39m
+        [0mNo goalie data available for the selected timeframe.[0m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/GoalieShareChart/GoalieShareChart.pagination.test.tsx:71:19
+     69| 
+     70|     expect(screen.queryAllByTestId("chart")).toHaveLength(0);
+     71|     expect(screen.getByRole("alert").textContent).toMatch(/unavailable…
+       |                   ^
+     72|     const failedCalls = mocks.fetch.mock.calls.filter(([url]) =>
+     73|       new URL(url).searchParams.get("start") === String(failedStart));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  components/GoalieShareChart/GoalieShareChart.pagination.test.tsx > GoalieShareChart complete page sets > withholds every window after repeated 429s at offset 100
+ FAIL  components/GoalieShareChart/GoalieShareChart.pagination.test.tsx > GoalieShareChart complete page sets > withholds every window after repeated 429s at offset 200
+AssertionError: expected [ <pre data-testid="chart"></pre> ] to have a length of +0 but got 1
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 0[39m
+[31m+ 1[39m
+
+ ❯ components/GoalieShareChart/GoalieShareChart.pagination.test.tsx:70:46
+     68|     await finishRequests();
+     69| 
+     70|     expect(screen.queryAllByTestId("chart")).toHaveLength(0);
+       |                                              ^
+     71|     expect(screen.getByRole("alert").textContent).toMatch(/unavailable…
+     72|     const failedCalls = mocks.fetch.mock.calls.filter(([url]) =>
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  components/GoalieShareChart/GoalieShareChart.pagination.test.tsx > GoalieShareChart complete page sets > rejects a successful but short page at offset 0
+ FAIL  components/GoalieShareChart/GoalieShareChart.pagination.test.tsx > GoalieShareChart complete page sets > rejects a successful but short page at offset 100
+ FAIL  components/GoalieShareChart/GoalieShareChart.pagination.test.tsx > GoalieShareChart complete page sets > rejects a successful but short page at offset 200
+AssertionError: expected [ <pre data-testid="chart"></pre> ] to have a length of +0 but got 1
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 0[39m
+[31m+ 1[39m
+
+ ❯ components/GoalieShareChart/GoalieShareChart.pagination.test.tsx:90:46
+     88|     render(<GoalieShareChart />);
+     89|     await finishRequests();
+     90|     expect(screen.queryAllByTestId("chart")).toHaveLength(0);
+       |                                              ^
+     91|     expect(screen.getByRole("alert").textContent).toMatch(/unavailable…
+     92|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  8 failed | 15 skipped (23)
+   Start at  08:06:56
+   Duration  756ms (transform 141ms, setup 12ms, collect 274ms, tests 74ms, environment 245ms, prepare 50ms)
+

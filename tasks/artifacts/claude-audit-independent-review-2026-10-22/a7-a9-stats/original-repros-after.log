@@ -1,0 +1,52 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/auditEdgecases.test.ts lib/auditStatsAsync.test.tsx -t unpaired missing count|incomplete page set|obsolete team request
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-48vr9l03/isolation/snapshot/web
+
+(node:55292) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/auditEdgecases.test.ts > independent audit reproductions > does not produce season percentages from unpaired missing count columns
+AGGREGATE_OBSERVED {"nst":null,"wgo":null,"shots":null}
+
+ ✓ lib/auditEdgecases.test.ts (6 tests | 5 skipped) 1ms
+(node:55292) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | lib/auditStatsAsync.test.tsx > does not publish an incomplete page set as a complete season chart
+NHL API rate-limited some requests (429). Goalie data is unavailable.
+
+stdout | lib/auditStatsAsync.test.tsx > does not publish an incomplete page set as a complete season chart
+INCOMPLETE_PAGE_CHART_OBSERVED {"charts":[],"partialVisible":true}
+
+stdout | lib/auditStatsAsync.test.tsx > does not let an obsolete team request overwrite the cached current team's shots
+useShotData called with teamId: [33m1[39m season: 20262027
+
+stdout | lib/auditStatsAsync.test.tsx > does not let an obsolete team request overwrite the cached current team's shots
+Fetched games for team [33m1[39m : [33m1[39m
+
+stdout | lib/auditStatsAsync.test.tsx > does not let an obsolete team request overwrite the cached current team's shots
+All events count: [33m1[39m
+Processed 1 team shots and 0 opponent shots
+Sample team shot: {
+  xcoord: [33m10[39m,
+  ycoord: [33m5[39m,
+  typedesckey: [32m'goal'[39m,
+  hometeamdefendingside: [90mundefined[39m,
+  eventownerteamid: [33m1[39m
+}
+Final shot counts - Team: 1, Opponent: 0
+
+stdout | lib/auditStatsAsync.test.tsx > does not let an obsolete team request overwrite the cached current team's shots
+useShotData called with teamId: [33m2[39m season: 20262027
+
+stdout | lib/auditStatsAsync.test.tsx > does not let an obsolete team request overwrite the cached current team's shots
+SHOT_CACHE_OBSERVED {"visibleTeam":1,"shots":[{"xcoord":10,"ycoord":5,"typedesckey":"goal","eventownerteamid":1}],"calls":3}
+
+ ✓ lib/auditStatsAsync.test.tsx (2 tests) 18ms
+
+ Test Files  2 passed (2)
+      Tests  3 passed | 5 skipped (8)
+   Start at  08:28:02
+   Duration  940ms (transform 373ms, setup 13ms, collect 481ms, tests 19ms, environment 274ms, prepare 52ms)
+

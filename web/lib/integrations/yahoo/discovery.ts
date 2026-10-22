@@ -1,3 +1,4 @@
+import { requireProviderSyncAccess } from "lib/integrations/providerSyncAccessServer";
 import YahooFantasy from "yahoo-fantasy";
 
 import serviceRoleClient from "lib/supabase/server";
@@ -247,6 +248,7 @@ export async function syncYahooDiscovery({
   providerUserId,
   redirectUri,
 }: YahooSyncOptions): Promise<YahooDiscoverySummary> {
+  await requireProviderSyncAccess(userId);
   const { clientId, clientSecret } = getYahooClientCredentials();
   const configuredSeason = getYahooLiveDraftSeasonConfig();
   const yahoo = new YahooFantasy(

@@ -1,0 +1,106 @@
+{
+  "version": "saved-public-player-evidence-v1",
+  "cohort": "owner_exposed_development_not_holdout",
+  "players": [
+    {
+      "nhlId": 8476454,
+      "registryId": 9521,
+      "fullName": "Ryan Nugent-Hopkins",
+      "lastName": "Nugent-Hopkins",
+      "position": "C",
+      "provenance": "approved-export:5d12304f908740f84a580ab5314ffd592174cbf0dbb900bacb65196b3a553918:players:8476454",
+      "knownAt": "2026-10-20T22:38:15Z"
+    },
+    {
+      "nhlId": 8481617,
+      "registryId": 10190,
+      "fullName": "Vasily Podkolzin",
+      "lastName": "Podkolzin",
+      "position": "R",
+      "provenance": "approved-export:5d12304f908740f84a580ab5314ffd592174cbf0dbb900bacb65196b3a553918:players:8481617",
+      "knownAt": "2026-10-20T22:38:15Z"
+    }
+  ],
+  "aliases": [
+    {
+      "registryId": 10190,
+      "nhlId": null,
+      "text": "Vasily Podkolzin",
+      "verified": true,
+      "scope": null,
+      "knownAt": "2026-10-20T22:38:15Z",
+      "effective": null,
+      "provenance": "approved-export:5d12304f908740f84a580ab5314ffd592174cbf0dbb900bacb65196b3a553918:registry_alias:5489006c-aa12-4712-a071-b9cc891be5d3"
+    },
+    {
+      "registryId": 9521,
+      "nhlId": null,
+      "text": "Ryan Nugent-Hopkins",
+      "verified": true,
+      "scope": null,
+      "knownAt": "2026-10-20T22:38:15Z",
+      "effective": null,
+      "provenance": "approved-export:5d12304f908740f84a580ab5314ffd592174cbf0dbb900bacb65196b3a553918:registry_alias:966b31ad-21e8-484d-8478-652a4ccb7dcc"
+    },
+    {
+      "registryId": null,
+      "nhlId": 8481617,
+      "text": "Podkolzin",
+      "verified": false,
+      "scope": {
+        "kind": "team",
+        "teamId": 22
+      },
+      "knownAt": "2026-10-20T22:38:15Z",
+      "effective": null,
+      "provenance": "approved-export:5d12304f908740f84a580ab5314ffd592174cbf0dbb900bacb65196b3a553918:lineup_alias:verification_not_exported"
+    },
+    {
+      "registryId": 9521,
+      "nhlId": 8476454,
+      "text": "RNH",
+      "verified": true,
+      "scope": {
+        "kind": "global"
+      },
+      "knownAt": "2026-10-20T23:03:35Z",
+      "recordCreatedAt": "2026-10-20T23:07:11.812724+00:00",
+      "effective": null,
+      "provenance": "owner-confirmation-receipt:7194aa8d332f149222720334bc91408da6f89e71fc955158e2678bbe1f902660:alias:49ecf910-d9fd-469d-856a-73b80a0689d8:global_identity_only_no_historical_membership"
+    }
+  ],
+  "memberships": [
+    {
+      "nhlId": 8476454,
+      "teamId": 22,
+      "knownAt": "2026-10-20T22:38:15Z",
+      "effective": null,
+      "recordInterval": {
+        "createdAt": "2026-09-19T00:57:26.215689+00:00",
+        "endedAt": null,
+        "isCurrent": true,
+        "seasonId": 20262027
+      },
+      "provenance": "approved-export:5d12304f908740f84a580ab5314ffd592174cbf0dbb900bacb65196b3a553918:rosters:database_record_interval_only"
+    },
+    {
+      "nhlId": 8481617,
+      "teamId": 22,
+      "knownAt": "2026-10-20T22:38:15Z",
+      "effective": null,
+      "recordInterval": {
+        "createdAt": "2026-09-19T00:57:30.050085+00:00",
+        "endedAt": null,
+        "isCurrent": true,
+        "seasonId": 20262027
+      },
+      "provenance": "approved-export:5d12304f908740f84a580ab5314ffd592174cbf0dbb900bacb65196b3a553918:rosters:database_record_interval_only"
+    }
+  ],
+  "completeness": {
+    "status": "partial",
+    "scope": "Two-player Podkolzin/Nugent-Hopkins development universe",
+    "omittedRecords": null
+  },
+  "truncated": false
+}

@@ -1,0 +1,30 @@
+--- original-review-fixture
++++ r1-query-adapted-fixture
+@@ -20,6 +20,18 @@
+   }
+   q.order = (field: string, { ascending }: { ascending: boolean }) => {
+     rows.sort((a, b) => (a[field] < b[field] ? -1 : a[field] > b[field] ? 1 : 0) * (ascending ? 1 : -1));
++    return q;
++  };
++  q.or = (expression: string) => {
++    const branches = expression.split(",").map((branch) => {
++      const match = /^(\w+)\.(neq|is)\.(0|null)$/.exec(branch);
++      if (!match) throw new Error(`Unsupported predicate: ${branch}`);
++      const [, field, op, value] = match;
++      if (op === "is" && value === "null") return (row: any) => row[field] == null;
++      if (op === "neq" && value === "0") return (row: any) => row[field] != null && row[field] !== 0;
++      throw new Error(`Unsupported predicate: ${branch}`);
++    });
++    rows = rows.filter(row => branches.some(test => test(row)));
+     return q;
+   };
+   q.limit = (count: number) => { rows = rows.slice(0, count); return q; };
+@@ -46,7 +58,7 @@
+   render(<AdvancedL10Metrics teamId="4" teamAbbrev="PHI" seasonId="20262027" />);
+   await waitFor(() => expect(screen.getByText("Corsi For %")).toBeTruthy());
+   const observed = screen.getByText(label).parentElement?.textContent;
+-  console.log("FILTER_AWARE_EXPOSURE_OBSERVED", JSON.stringify({ table, field, observed, incompleteNote: !!screen.queryByText(/Incomplete game sample/) }));
++  console.log("FILTER_AWARE_EXPOSURE_OBSERVED", JSON.stringify({ table, field, observed, incompleteNote: screen.queryAllByText(/Incomplete game sample/).length > 0 }));
+   expect(observed).toContain("—");
+   expect(screen.getAllByText(/Incomplete game sample/).length).toBeGreaterThan(0);
+ });

@@ -1,0 +1,65 @@
+{
+  "checked_at": "2026-10-22T12:53:34.539720+00:00",
+  "head": "d3f057c6c849d5d5474bc912a6f461f617c65b15",
+  "branch": "octoberBranch",
+  "candidate_sha256": "9676ea6d91dc9602be94a4c6934e6ac69d368bc2aaac6febff6040ea34e1c227",
+  "r1_patch_sha256": "3780ca42acc106216aaf207ca076945ee20f64cbed3e5d57e971080c16d31bdc",
+  "cumulative_patch_sha256": "2a61cd0205a5a98c2a46df2ae900e1c0fa3b967e250046c2c7e7490a034cf7a8",
+  "all_13_current_and_snapshot_hashes_match": true,
+  "all_13_cumulative_reverse_states_match_original_before": true,
+  "a8_a9_four_files_identical_to_prior_independent_review": true,
+  "source_files": [
+    {
+      "path": "web/lib/stats/percentUnits.ts",
+      "sha256": "d9db23a7f88e52d99b01792bcdb7fbffdff3f0a4391b92ed655763fa67d3dad3"
+    },
+    {
+      "path": "web/lib/stats/percentUnits.test.ts",
+      "sha256": "b1131e0b47df19d01a90375f291f9d378d5040242bc81e72883ca8e3364a0e4a"
+    },
+    {
+      "path": "web/components/GoalieShareChart/index.tsx",
+      "sha256": "eaf214966a91a931c5a67eba2f723f7db943a1905f2bb9f89ab26a33d07bee7b"
+    },
+    {
+      "path": "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+      "sha256": "8358449fbb8a3ce4b96c47afe3fc6907af1de077b04612df6874add87e04ba7a"
+    },
+    {
+      "path": "web/hooks/useShotData.ts",
+      "sha256": "cc659fb7526cfd9f0ff2f1986c3dcc7a517a09e9a887e032240cd5fd2da276fb"
+    },
+    {
+      "path": "web/hooks/useShotData.test.tsx",
+      "sha256": "cc4a4e3f48d4ca6a6af42e4e24e02d88fccf15e46e102882fb2ac1d7c7051b5b"
+    },
+    {
+      "path": "web/components/GameStateAnalysis/GameStateAnalysis.tsx",
+      "sha256": "d0612c49ba567fba04f41f1bbc5761f4242f25b08c690d0bad776a38c1407ef2"
+    },
+    {
+      "path": "web/components/GameStateAnalysis/GameStateAnalysis.test.tsx",
+      "sha256": "7eade418baa9e4a1ba18aae4e49e8ddabc25fad99d30821e081d13de1e758c88"
+    },
+    {
+      "path": "web/components/TeamDashboard/AdvancedL10Metrics.tsx",
+      "sha256": "9d1143bb2bcc9d6edab3c2605121eaf66b22b647f638a10508c7fddfad43b439"
+    },
+    {
+      "path": "web/components/TeamDashboard/AdvancedL10Metrics.test.tsx",
+      "sha256": "ff094834f973187cba5b29343f110a056918488e9107c7d9a9a3a01726d190f5"
+    },
+    {
+      "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+      "sha256": "a04e27bea27c4346e2c30e7a1f2dca21c1a092fc241e29a60a34ab6d2ae01f64"
+    },
+    {
+      "path": "web/components/TeamDashboard/TeamDashboard.test.tsx",
+      "sha256": "28a540e820d4fb38b954fa9b07b6ff95ee6033b48c8239f3ae91077f39740bc7"
+    },
+    {
+      "path": "web/lib/stats/teamCountConsumers.test.tsx",
+      "sha256": "5b53c8e3975290074c86226ada9de60fa8c532b2a1fc496f42b6e28aab7dbbfa"
+    }
+  ]
+}

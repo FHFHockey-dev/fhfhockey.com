@@ -1,0 +1,41 @@
+{
+  "head": "a811b0762ffe29006c3df7eaa4c19bf18deecda3",
+  "branch": "octoberBranch",
+  "applicationFilesEditedThisPass": [],
+  "checks": {
+    "testsPassed": 252,
+    "testsFailed": 0,
+    "filesPassed": 11,
+    "identityTestsIncluded": 91,
+    "finalGuardDiagnostics": false,
+    "currentPins": 33,
+    "currentPinChanges": [],
+    "historicalTrialPins": 40,
+    "historicalTrialPinChanges": [],
+    "referenceSha256": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+    "missingReportLinks": [],
+    "trailingWhitespace": []
+  },
+  "notRun": [
+    "new provider requests",
+    "hosted database reads/writes",
+    "spending ledger execution/mutation",
+    "full TypeScript",
+    "lint",
+    "build",
+    "browser",
+    "disposable Postgres",
+    "production checks"
+  ],
+  "artifacts": [
+    "tasks/artifacts/luna-ifttt-readiness-2026-10-22/READINESS.md",
+    "tasks/artifacts/luna-ifttt-readiness-2026-10-22/SOURCE-PINS.json",
+    "tasks/artifacts/luna-ifttt-readiness-2026-10-22/empty-global.npmrc",
+    "tasks/artifacts/luna-ifttt-readiness-2026-10-22/network-guard.cjs",
+    "tasks/artifacts/luna-ifttt-readiness-2026-10-22/npm-preflight.log",
+    "tasks/artifacts/luna-ifttt-readiness-2026-10-22/vitest-first-run.log",
+    "tasks/artifacts/luna-ifttt-readiness-2026-10-22/vitest-results.json",
+    "tasks/artifacts/luna-ifttt-readiness-2026-10-22/vitest.config.mjs",
+    "tasks/artifacts/luna-ifttt-readiness-2026-10-22/vitest.log"
+  ]
+}

@@ -1,3 +1,4 @@
+import { requireProviderSyncAccess } from "lib/integrations/providerSyncAccessServer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import serviceRoleClient from "lib/supabase/server";
@@ -120,6 +121,7 @@ export async function runYahooManualRefresh({
   now = () => new Date(),
   sync = syncYahooDiscovery,
 }: RunYahooManualRefreshOptions): Promise<YahooManualRefreshResult> {
+  await requireProviderSyncAccess(userId);
   const { data: connectedAccount, error: accountError } = await client
     .from("connected_accounts")
     .select("*")

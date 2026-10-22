@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-h71qkf0k/isolation/snapshot/web
+
+(node:79128) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx (8 tests) 213ms
+
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+   Start at  09:25:20
+   Duration  955ms (transform 196ms, setup 10ms, collect 370ms, tests 213ms, environment 259ms, prepare 34ms)
+

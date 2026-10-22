@@ -1,0 +1,472 @@
+2026-10-20 18:37:50.799 EDT [62325] LOG:  starting PostgreSQL 17.11 (Homebrew) on aarch64-apple-darwin27.0.0, compiled by Apple clang version 21.0.0 (clang-2100.3.34.2), 64-bit
+2026-10-20 18:37:50.799 EDT [62325] LOG:  listening on Unix socket "/private/tmp/fhfh-d4-7_cianlq/socket/.s.PGSQL.61020"
+2026-10-20 18:37:50.802 EDT [62328] LOG:  database system was shut down at 2026-10-20 18:37:50 EDT
+2026-10-20 18:37:50.805 EDT [62325] LOG:  database system is ready to accept connections
+2026-10-20 18:37:50.917 EDT [62337] WARNING:  "wal_level" is insufficient to publish logical changes
+2026-10-20 18:37:50.917 EDT [62337] HINT:  Set "wal_level" to "logical" before creating subscriptions.
+2026-10-20 18:37:53.269 EDT [62585] WARNING:  D4TAP not ok 38 - service_role REFERENCES public.draft_pro_access_code_attempts matches reviewed allow/deny matrix
+2026-10-20 18:37:53.269 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.269 EDT [62585] WARNING:  D4TAP not ok 40 - service_role TRIGGER public.draft_pro_access_code_attempts matches reviewed allow/deny matrix
+2026-10-20 18:37:53.269 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.269 EDT [62585] WARNING:  D4TAP not ok 41 - service_role TRUNCATE public.draft_pro_access_code_attempts matches reviewed allow/deny matrix
+2026-10-20 18:37:53.269 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.269 EDT [62585] WARNING:  D4TAP not ok 59 - service_role REFERENCES public.draft_pro_access_codes matches reviewed allow/deny matrix
+2026-10-20 18:37:53.269 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.269 EDT [62585] WARNING:  D4TAP not ok 61 - service_role TRIGGER public.draft_pro_access_codes matches reviewed allow/deny matrix
+2026-10-20 18:37:53.269 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.269 EDT [62585] WARNING:  D4TAP not ok 62 - service_role TRUNCATE public.draft_pro_access_codes matches reviewed allow/deny matrix
+2026-10-20 18:37:53.269 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.269 EDT [62585] WARNING:  D4TAP not ok 80 - service_role REFERENCES public.draft_pro_drafts matches reviewed allow/deny matrix
+2026-10-20 18:37:53.269 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.269 EDT [62585] WARNING:  D4TAP not ok 82 - service_role TRIGGER public.draft_pro_drafts matches reviewed allow/deny matrix
+2026-10-20 18:37:53.269 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.269 EDT [62585] WARNING:  D4TAP not ok 83 - service_role TRUNCATE public.draft_pro_drafts matches reviewed allow/deny matrix
+2026-10-20 18:37:53.269 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.269 EDT [62585] WARNING:  D4TAP not ok 101 - service_role REFERENCES public.draft_pro_private_import_blobs matches reviewed allow/deny matrix
+2026-10-20 18:37:53.269 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.269 EDT [62585] WARNING:  D4TAP not ok 103 - service_role TRIGGER public.draft_pro_private_import_blobs matches reviewed allow/deny matrix
+2026-10-20 18:37:53.269 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.269 EDT [62585] WARNING:  D4TAP not ok 104 - service_role TRUNCATE public.draft_pro_private_import_blobs matches reviewed allow/deny matrix
+2026-10-20 18:37:53.269 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.269 EDT [62585] WARNING:  D4TAP not ok 122 - service_role REFERENCES public.draft_pro_private_import_uploads matches reviewed allow/deny matrix
+2026-10-20 18:37:53.269 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.269 EDT [62585] WARNING:  D4TAP not ok 124 - service_role TRIGGER public.draft_pro_private_import_uploads matches reviewed allow/deny matrix
+2026-10-20 18:37:53.269 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.269 EDT [62585] WARNING:  D4TAP not ok 125 - service_role TRUNCATE public.draft_pro_private_import_uploads matches reviewed allow/deny matrix
+2026-10-20 18:37:53.269 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.269 EDT [62585] WARNING:  D4TAP not ok 143 - service_role REFERENCES public.draft_pro_private_imports matches reviewed allow/deny matrix
+2026-10-20 18:37:53.269 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.269 EDT [62585] WARNING:  D4TAP not ok 145 - service_role TRIGGER public.draft_pro_private_imports matches reviewed allow/deny matrix
+2026-10-20 18:37:53.269 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.269 EDT [62585] WARNING:  D4TAP not ok 146 - service_role TRUNCATE public.draft_pro_private_imports matches reviewed allow/deny matrix
+2026-10-20 18:37:53.269 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 164 - service_role REFERENCES public.draft_pro_provider_events matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 166 - service_role TRIGGER public.draft_pro_provider_events matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 167 - service_role TRUNCATE public.draft_pro_provider_events matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 185 - service_role REFERENCES public.draft_pro_purchases matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 187 - service_role TRIGGER public.draft_pro_purchases matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 188 - service_role TRUNCATE public.draft_pro_purchases matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 206 - service_role REFERENCES public.draft_pro_refund_requests matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 208 - service_role TRIGGER public.draft_pro_refund_requests matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 209 - service_role TRUNCATE public.draft_pro_refund_requests matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 227 - service_role REFERENCES public.draft_pro_reports matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 229 - service_role TRIGGER public.draft_pro_reports matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 230 - service_role TRUNCATE public.draft_pro_reports matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 248 - service_role REFERENCES public.draft_pro_save_sessions matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 250 - service_role TRIGGER public.draft_pro_save_sessions matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 251 - service_role TRUNCATE public.draft_pro_save_sessions matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 269 - service_role REFERENCES public.draft_pro_scenarios matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 271 - service_role TRIGGER public.draft_pro_scenarios matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 272 - service_role TRUNCATE public.draft_pro_scenarios matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 330 - service_role DELETE public.forge_board_dispatch_observations matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 332 - service_role REFERENCES public.forge_board_dispatch_observations matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 334 - service_role TRIGGER public.forge_board_dispatch_observations matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 335 - service_role TRUNCATE public.forge_board_dispatch_observations matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 336 - service_role UPDATE public.forge_board_dispatch_observations matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 351 - service_role DELETE public.forge_board_news_events matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 353 - service_role REFERENCES public.forge_board_news_events matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 355 - service_role TRIGGER public.forge_board_news_events matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 356 - service_role TRUNCATE public.forge_board_news_events matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 357 - service_role UPDATE public.forge_board_news_events matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 372 - service_role DELETE public.forge_board_visibility_observations matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 374 - service_role REFERENCES public.forge_board_visibility_observations matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 376 - service_role TRIGGER public.forge_board_visibility_observations matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 377 - service_role TRUNCATE public.forge_board_visibility_observations matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 378 - service_role UPDATE public.forge_board_visibility_observations matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 393 - service_role DELETE public.forge_final_pregame_revisions matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 395 - service_role REFERENCES public.forge_final_pregame_revisions matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 397 - service_role TRIGGER public.forge_final_pregame_revisions matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 398 - service_role TRUNCATE public.forge_final_pregame_revisions matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 399 - service_role UPDATE public.forge_final_pregame_revisions matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 414 - service_role DELETE public.forge_game_revisions matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 416 - service_role REFERENCES public.forge_game_revisions matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 418 - service_role TRIGGER public.forge_game_revisions matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 419 - service_role TRUNCATE public.forge_game_revisions matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 420 - service_role UPDATE public.forge_game_revisions matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 435 - service_role DELETE public.forge_game_selection_events matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 437 - service_role REFERENCES public.forge_game_selection_events matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 439 - service_role TRIGGER public.forge_game_selection_events matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 440 - service_role TRUNCATE public.forge_game_selection_events matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 441 - service_role UPDATE public.forge_game_selection_events matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.270 EDT [62585] WARNING:  D4TAP not ok 458 - service_role REFERENCES public.in_season_grants matches reviewed allow/deny matrix
+2026-10-20 18:37:53.270 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.271 EDT [62585] WARNING:  D4TAP not ok 460 - service_role TRIGGER public.in_season_grants matches reviewed allow/deny matrix
+2026-10-20 18:37:53.271 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.271 EDT [62585] WARNING:  D4TAP not ok 461 - service_role TRUNCATE public.in_season_grants matches reviewed allow/deny matrix
+2026-10-20 18:37:53.271 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.271 EDT [62585] WARNING:  D4TAP not ok 479 - service_role REFERENCES public.in_season_workspaces matches reviewed allow/deny matrix
+2026-10-20 18:37:53.271 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.271 EDT [62585] WARNING:  D4TAP not ok 481 - service_role TRIGGER public.in_season_workspaces matches reviewed allow/deny matrix
+2026-10-20 18:37:53.271 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.271 EDT [62585] WARNING:  D4TAP not ok 482 - service_role TRUNCATE public.in_season_workspaces matches reviewed allow/deny matrix
+2026-10-20 18:37:53.271 EDT [62585] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 1 - future postgres public table: anon denied SELECT until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 2 - future postgres public table: authenticated denied SELECT until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 3 - future postgres public table: service_role denied SELECT until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 4 - future postgres public table: anon denied INSERT until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 5 - future postgres public table: authenticated denied INSERT until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 6 - future postgres public table: service_role denied INSERT until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 7 - future postgres public table: anon denied UPDATE until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 8 - future postgres public table: authenticated denied UPDATE until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 9 - future postgres public table: service_role denied UPDATE until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 10 - future postgres public table: anon denied DELETE until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 11 - future postgres public table: authenticated denied DELETE until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 12 - future postgres public table: service_role denied DELETE until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 13 - future postgres public table: anon denied TRUNCATE until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 14 - future postgres public table: authenticated denied TRUNCATE until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 15 - future postgres public table: service_role denied TRUNCATE until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 16 - future postgres public table: anon denied REFERENCES until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 17 - future postgres public table: authenticated denied REFERENCES until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 18 - future postgres public table: service_role denied REFERENCES until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 19 - future postgres public table: anon denied TRIGGER until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 20 - future postgres public table: authenticated denied TRIGGER until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 21 - future postgres public table: service_role denied TRIGGER until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 22 - future postgres public sequence: anon denied USAGE until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 23 - future postgres public sequence: anon denied SELECT until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 24 - future postgres public sequence: anon denied UPDATE until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 25 - future postgres public sequence: authenticated denied USAGE until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 26 - future postgres public sequence: authenticated denied SELECT until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 27 - future postgres public sequence: authenticated denied UPDATE until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 28 - future postgres public sequence: service_role denied USAGE until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 29 - future postgres public sequence: service_role denied SELECT until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 30 - future postgres public sequence: service_role denied UPDATE until explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 31 - anon cannot execute future postgres function without explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 32 - authenticated cannot execute future postgres function without explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 33 - service_role cannot execute future postgres function without explicit grant
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.293 EDT [62587] WARNING:  D4TAP not ok 34 - future function has no implicit PUBLIC EXECUTE (global default checked)
+2026-10-20 18:37:53.293 EDT [62587] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.326 EDT [62592] WARNING:  D4TAP not ok 27 - service cannot update FORGE game revisions (no error raised)
+2026-10-20 18:37:53.326 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+	PL/pgSQL function throws_ok(text,character,text,text) line 11 at RETURN
+2026-10-20 18:37:53.327 EDT [62592] WARNING:  D4TAP not ok 28 - service cannot truncate FORGE board events (no error raised)
+2026-10-20 18:37:53.327 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+	PL/pgSQL function throws_ok(text,character,text,text) line 11 at RETURN
+2026-10-20 18:37:53.328 EDT [62592] WARNING:  D4TAP not ok 29 - service cannot truncate Draft Pro purchases (got 0A000: cannot truncate a table referenced in a foreign key constraint)
+2026-10-20 18:37:53.328 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+	PL/pgSQL function throws_ok(text,character,text,text) line 9 at RETURN
+2026-10-20 18:37:53.328 EDT [62592] WARNING:  D4TAP not ok 30 - service cannot truncate saved RSO plans (no error raised)
+2026-10-20 18:37:53.328 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+	PL/pgSQL function throws_ok(text,character,text,text) line 11 at RETURN
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 33 - service_role REFERENCES public.connected_accounts matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 35 - service_role TRIGGER public.connected_accounts matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 36 - service_role TRUNCATE public.connected_accounts matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 38 - service_role DELETE public.draft_pro_access_code_attempts matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 39 - service_role INSERT public.draft_pro_access_code_attempts matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 40 - service_role REFERENCES public.draft_pro_access_code_attempts matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 42 - service_role TRIGGER public.draft_pro_access_code_attempts matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 43 - service_role TRUNCATE public.draft_pro_access_code_attempts matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 44 - service_role UPDATE public.draft_pro_access_code_attempts matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 45 - service_role DELETE public.draft_pro_access_codes matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 46 - service_role INSERT public.draft_pro_access_codes matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 47 - service_role REFERENCES public.draft_pro_access_codes matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 49 - service_role TRIGGER public.draft_pro_access_codes matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 50 - service_role TRUNCATE public.draft_pro_access_codes matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 51 - service_role UPDATE public.draft_pro_access_codes matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 52 - service_role DELETE public.draft_pro_drafts matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 53 - service_role INSERT public.draft_pro_drafts matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 54 - service_role REFERENCES public.draft_pro_drafts matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 56 - service_role TRIGGER public.draft_pro_drafts matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 57 - service_role TRUNCATE public.draft_pro_drafts matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 58 - service_role UPDATE public.draft_pro_drafts matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 59 - service_role DELETE public.draft_pro_private_import_blobs matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 60 - service_role INSERT public.draft_pro_private_import_blobs matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 61 - service_role REFERENCES public.draft_pro_private_import_blobs matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 62 - service_role SELECT public.draft_pro_private_import_blobs matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 63 - service_role TRIGGER public.draft_pro_private_import_blobs matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 64 - service_role TRUNCATE public.draft_pro_private_import_blobs matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 65 - service_role UPDATE public.draft_pro_private_import_blobs matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 66 - service_role DELETE public.draft_pro_private_import_uploads matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 67 - service_role INSERT public.draft_pro_private_import_uploads matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 68 - service_role REFERENCES public.draft_pro_private_import_uploads matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 69 - service_role SELECT public.draft_pro_private_import_uploads matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 70 - service_role TRIGGER public.draft_pro_private_import_uploads matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 71 - service_role TRUNCATE public.draft_pro_private_import_uploads matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 72 - service_role UPDATE public.draft_pro_private_import_uploads matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 73 - service_role DELETE public.draft_pro_private_imports matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 74 - service_role INSERT public.draft_pro_private_imports matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 75 - service_role REFERENCES public.draft_pro_private_imports matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 77 - service_role TRIGGER public.draft_pro_private_imports matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 78 - service_role TRUNCATE public.draft_pro_private_imports matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 80 - service_role DELETE public.draft_pro_provider_events matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 82 - service_role REFERENCES public.draft_pro_provider_events matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 84 - service_role TRIGGER public.draft_pro_provider_events matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 85 - service_role TRUNCATE public.draft_pro_provider_events matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 87 - service_role DELETE public.draft_pro_purchases matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 88 - service_role INSERT public.draft_pro_purchases matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 89 - service_role REFERENCES public.draft_pro_purchases matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 91 - service_role TRIGGER public.draft_pro_purchases matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 92 - service_role TRUNCATE public.draft_pro_purchases matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 94 - service_role DELETE public.draft_pro_refund_requests matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 96 - service_role REFERENCES public.draft_pro_refund_requests matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 98 - service_role TRIGGER public.draft_pro_refund_requests matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 99 - service_role TRUNCATE public.draft_pro_refund_requests matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 101 - service_role DELETE public.draft_pro_reports matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 103 - service_role REFERENCES public.draft_pro_reports matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 105 - service_role TRIGGER public.draft_pro_reports matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 106 - service_role TRUNCATE public.draft_pro_reports matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 107 - service_role UPDATE public.draft_pro_reports matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 108 - service_role DELETE public.draft_pro_save_sessions matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 109 - service_role INSERT public.draft_pro_save_sessions matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 110 - service_role REFERENCES public.draft_pro_save_sessions matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 111 - service_role SELECT public.draft_pro_save_sessions matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 112 - service_role TRIGGER public.draft_pro_save_sessions matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 113 - service_role TRUNCATE public.draft_pro_save_sessions matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 114 - service_role UPDATE public.draft_pro_save_sessions matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 115 - service_role DELETE public.draft_pro_scenarios matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 117 - service_role REFERENCES public.draft_pro_scenarios matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 119 - service_role TRIGGER public.draft_pro_scenarios matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 120 - service_role TRUNCATE public.draft_pro_scenarios matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 121 - service_role UPDATE public.draft_pro_scenarios matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 124 - service_role REFERENCES public.external_leagues matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 126 - service_role TRIGGER public.external_leagues matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 127 - service_role TRUNCATE public.external_leagues matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 131 - service_role REFERENCES public.external_teams matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 133 - service_role TRIGGER public.external_teams matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 134 - service_role TRUNCATE public.external_teams matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 136 - service_role DELETE public.in_season_grants matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 137 - service_role INSERT public.in_season_grants matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 138 - service_role REFERENCES public.in_season_grants matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 140 - service_role TRIGGER public.in_season_grants matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 141 - service_role TRUNCATE public.in_season_grants matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 142 - service_role UPDATE public.in_season_grants matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 143 - service_role DELETE public.in_season_workspaces matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 145 - service_role REFERENCES public.in_season_workspaces matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 147 - service_role TRIGGER public.in_season_workspaces matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 148 - service_role TRUNCATE public.in_season_workspaces matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 151 - service_role INSERT public.player_forecast_champion_history matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 158 - service_role INSERT public.player_forecast_season_completeness_waivers matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.330 EDT [62592] WARNING:  D4TAP not ok 164 - service_role DELETE public.player_forecast_season_release_teams matches the caller audit
+2026-10-20 18:37:53.330 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 166 - service_role REFERENCES public.player_forecast_season_release_teams matches the caller audit
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 168 - service_role TRIGGER public.player_forecast_season_release_teams matches the caller audit
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 169 - service_role TRUNCATE public.player_forecast_season_release_teams matches the caller audit
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 170 - service_role UPDATE public.player_forecast_season_release_teams matches the caller audit
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 171 - service_role DELETE public.player_forecast_season_runs matches the caller audit
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 173 - service_role REFERENCES public.player_forecast_season_runs matches the caller audit
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 175 - service_role TRIGGER public.player_forecast_season_runs matches the caller audit
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 176 - service_role TRUNCATE public.player_forecast_season_runs matches the caller audit
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 178 - service_role DELETE public.player_forecast_season_team_aggregates matches the caller audit
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 180 - service_role REFERENCES public.player_forecast_season_team_aggregates matches the caller audit
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 182 - service_role TRIGGER public.player_forecast_season_team_aggregates matches the caller audit
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 183 - service_role TRUNCATE public.player_forecast_season_team_aggregates matches the caller audit
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 184 - service_role UPDATE public.player_forecast_season_team_aggregates matches the caller audit
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 185 - service_role DELETE public.provider_sync_runs matches the caller audit
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 187 - service_role REFERENCES public.provider_sync_runs matches the caller audit
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 189 - service_role TRIGGER public.provider_sync_runs matches the caller audit
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 190 - service_role TRUNCATE public.provider_sync_runs matches the caller audit
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 194 - service_role cannot execute the uncalled model-promotion RPC
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 195 - service_role has USAGE but not SELECT on the schedule identity sequence
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.331 EDT [62592] WARNING:  D4TAP not ok 196 - postgres public defaults grant nothing to the Data API roles
+2026-10-20 18:37:53.331 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.332 EDT [62592] WARNING:  D4TAP not ok 197 - anon gets no SELECT on a new public table
+2026-10-20 18:37:53.332 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.332 EDT [62592] WARNING:  D4TAP not ok 198 - authenticated gets no SELECT on a new public table
+2026-10-20 18:37:53.332 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.332 EDT [62592] WARNING:  D4TAP not ok 199 - service_role gets no SELECT on a new public table
+2026-10-20 18:37:53.332 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.332 EDT [62592] WARNING:  D4TAP not ok 200 - anon gets no USAGE on a new serial sequence
+2026-10-20 18:37:53.332 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.332 EDT [62592] WARNING:  D4TAP not ok 201 - authenticated gets no USAGE on a new serial sequence
+2026-10-20 18:37:53.332 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.332 EDT [62592] WARNING:  D4TAP not ok 202 - service_role gets no USAGE on a new serial sequence
+2026-10-20 18:37:53.332 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.332 EDT [62592] WARNING:  D4TAP not ok 203 - new postgres function outside public has no PUBLIC EXECUTE
+2026-10-20 18:37:53.332 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+2026-10-20 18:37:53.333 EDT [62592] WARNING:  D4TAP not ok 205 - SELECT grant does not imply INSERT (no error raised)
+2026-10-20 18:37:53.333 EDT [62592] CONTEXT:  PL/pgSQL function ok(boolean,text) line 11 at RAISE
+	PL/pgSQL function throws_ok(text,character,text,text) line 11 at RETURN
+2026-10-20 18:37:53.354 EDT [62325] LOG:  received fast shutdown request
+2026-10-20 18:37:53.354 EDT [62325] LOG:  aborting any active transactions
+2026-10-20 18:37:53.355 EDT [62325] LOG:  background worker "logical replication launcher" (PID 62331) exited with exit code 1
+2026-10-20 18:37:53.355 EDT [62326] LOG:  shutting down
+2026-10-20 18:37:53.355 EDT [62326] LOG:  checkpoint starting: shutdown immediate
+2026-10-20 18:37:53.369 EDT [62326] LOG:  checkpoint complete: wrote 2459 buffers (15.0%); 0 WAL file(s) added, 0 removed, 2 recycled; write=0.013 s, sync=0.001 s, total=0.014 s; sync files=0, longest=0.000 s, average=0.000 s; distance=27629 kB, estimate=27629 kB; lsn=0/3015EF8, redo lsn=0/3015EF8
+2026-10-20 18:37:53.373 EDT [62325] LOG:  database system is shut down

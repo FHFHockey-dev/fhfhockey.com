@@ -1,0 +1,3 @@
+Source contract inspected read-only: /Users/tim/Code/fhfhockey.com/supabase/migrations/20260720105524_add_projection_materialization_transactions.sql
+Not executed against a database.
+RPC acquire checks revision + live-owner exclusion. Advance/complete also require a non-expired lease; fail permits expired owner with matching revision. The implementer route fixture omits the expired advance/complete check; independent harness includes it.

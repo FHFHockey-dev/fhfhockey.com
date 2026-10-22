@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from "chart.js";
 import { teamsInfo } from "../../lib/teamsInfo";
@@ -7,20 +7,6 @@ import styles from "./GoalieShareChart.module.scss";
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
-
-interface GameData {
-  gameId: number;
-  gameDate: string;
-}
-
-interface TeamGameData {
-  [teamAbbrev: string]: GameData[];
-}
-
-interface SeasonData {
-  seasonId: number;
-  startDate: string;
-}
 
 interface GoalieData {
   playerId: number;
@@ -41,7 +27,109 @@ interface TeamGoalieStats {
   };
 }
 
+/** One goalie appearance from the NHL stats API (isGame=true, isAggregate=false). */
+export interface GoalieGameRow {
+  gameId: number;
+  gameDate: string;
+  teamAbbrev: string;
+  playerId: number;
+  goalieFullName: string;
+  gamesPlayed: number;
+  wins: number;
+  losses: number;
+  otLosses: number;
+  saves: number;
+  shotsAgainst: number;
+  goalsAgainst: number;
+  timeOnIce: number;
+}
+
 type SpanType = "L10" | "L20" | "L30" | "Season";
+
+// The CORS proxy accepts at most 100 rows per stats request.
+const GOALIE_GAME_PAGE_SIZE = 100;
+const GOALIE_GAME_PAGE_CONCURRENCY = 8;
+
+const SPAN_GAMES: Record<SpanType, number | null> = {
+  L10: 10,
+  L20: 20,
+  L30: 30,
+  Season: null
+};
+
+/**
+ * Per-team goalie workload over each team's last N completed games (or the
+ * season). A team's games are the distinct games its goalies appeared in, so
+ * the window never reaches into unplayed games. Rates use summed saves, shots
+ * and time on ice.
+ */
+export function buildGoalieShareByTeam(
+  rows: readonly GoalieGameRow[],
+  span: SpanType
+): TeamGoalieStats {
+  const rowsByTeam = new Map<string, GoalieGameRow[]>();
+  rows.forEach((row) => {
+    if (!row.teamAbbrev) return;
+    const teamRows = rowsByTeam.get(row.teamAbbrev) ?? [];
+    teamRows.push(row);
+    rowsByTeam.set(row.teamAbbrev, teamRows);
+  });
+
+  const result: TeamGoalieStats = {};
+  Object.keys(teamsInfo)
+    .sort()
+    .forEach((teamAbbrev) => {
+      const teamRows = rowsByTeam.get(teamAbbrev);
+      if (!teamRows?.length) return;
+
+      const gameDates = new Map<number, string>();
+      teamRows.forEach((row) => gameDates.set(row.gameId, row.gameDate));
+      const games = Array.from(gameDates).sort(
+        ([idA, dateA], [idB, dateB]) =>
+          dateA.localeCompare(dateB) || idA - idB
+      );
+      const limit = SPAN_GAMES[span];
+      const windowGames = new Set(
+        (limit === null ? games : games.slice(-limit)).map(([gameId]) => gameId)
+      );
+
+      const byGoalie = new Map<number, GoalieGameRow[]>();
+      teamRows
+        .filter((row) => windowGames.has(row.gameId))
+        .forEach((row) => {
+          const goalieRows = byGoalie.get(row.playerId) ?? [];
+          goalieRows.push(row);
+          byGoalie.set(row.playerId, goalieRows);
+        });
+
+      const goalies: GoalieData[] = Array.from(byGoalie, ([playerId, goalieRows]) => {
+        const sum = (read: (row: GoalieGameRow) => number) =>
+          goalieRows.reduce((total, row) => total + (read(row) || 0), 0);
+        const shotsAgainst = sum((row) => row.shotsAgainst);
+        const timeOnIce = sum((row) => row.timeOnIce);
+        return {
+          playerId,
+          goalieFullName: goalieRows[goalieRows.length - 1].goalieFullName,
+          gamesPlayed: sum((row) => row.gamesPlayed),
+          timeOnIce,
+          wins: sum((row) => row.wins),
+          losses: sum((row) => row.losses),
+          otLosses: sum((row) => row.otLosses),
+          savePct: shotsAgainst > 0 ? sum((row) => row.saves) / shotsAgainst : 0,
+          goalsAgainstAverage:
+            timeOnIce > 0 ? (sum((row) => row.goalsAgainst) * 3600) / timeOnIce : 0
+        };
+      }).sort((a, b) => b.gamesPlayed - a.gamesPlayed);
+
+      if (goalies.length > 0) {
+        result[teamAbbrev] = {
+          goalies,
+          totalGames: goalies.reduce((total, goalie) => total + goalie.gamesPlayed, 0)
+        };
+      }
+    });
+  return result;
+}
 
 function inferCurrentSeasonId(): number {
   const now = new Date();
@@ -71,11 +159,10 @@ function isRateLimitError(error: unknown): boolean {
 }
 
 const GoalieShareChart: React.FC = () => {
-  const [seasonData, setSeasonData] = useState<SeasonData | null>(null);
-  const [teamGameData, setTeamGameData] = useState<TeamGameData>({});
+  const [goalieGames, setGoalieGames] = useState<GoalieGameRow[]>([]);
   const [selectedSpan, setSelectedSpan] = useState<SpanType>("Season");
-  const [goalieStats, setGoalieStats] = useState<TeamGoalieStats>({});
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string>(() => {
     // Default to first team alphabetically
     const sortedTeamAbbrevs = Object.keys(teamsInfo).sort();
@@ -89,7 +176,7 @@ const GoalieShareChart: React.FC = () => {
     if (hasLoggedRateLimit.current) return;
     hasLoggedRateLimit.current = true;
     console.warn(
-      "NHL API rate-limited some requests (429). Showing partial goalie data."
+      "NHL API rate-limited some requests (429). Goalie data is unavailable."
     );
   }, []);
 
@@ -97,7 +184,7 @@ const GoalieShareChart: React.FC = () => {
     url: string,
     context: string,
     maxAttempts = 2
-  ): Promise<any | null> => {
+  ): Promise<any> => {
     let lastError: unknown = null;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -129,7 +216,6 @@ const GoalieShareChart: React.FC = () => {
 
     if (isRateLimitError(lastError)) {
       logRateLimitOnce();
-      return null;
     }
     throw lastError;
   }, [logRateLimitOnce]);
@@ -146,180 +232,69 @@ const GoalieShareChart: React.FC = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const fetchGameDatesForAllTeams = useCallback(async (seasonId: number): Promise<void> => {
-    const gameData: TeamGameData = {};
-    const teamAbbrevs = Object.keys(teamsInfo);
-    const chunkSize = 2;
-
-    for (let i = 0; i < teamAbbrevs.length; i += chunkSize) {
-      const chunk = teamAbbrevs.slice(i, i + chunkSize);
-      await Promise.all(
-        chunk.map(async (teamAbbrev) => {
-          const url = `https://api-web.nhle.com/v1/club-schedule-season/${teamAbbrev}/${seasonId}`;
-          try {
-            const response = await fetchJsonWithRetry(
-              url,
-              `Schedule request failed for ${teamAbbrev}`
-            );
-            if (!response) {
-              return;
-            }
-            const payload = unwrapProxyPayload(
-              response,
-              `Schedule request failed for ${teamAbbrev}`
-            );
-            const games = Array.isArray(payload?.games) ? payload.games : [];
-            gameData[teamAbbrev] = games
-              .filter((game: any) => game.gameType === 2)
-              .map((game: any) => ({
-                gameId: game.id,
-                gameDate: game.gameDate.split("T")[0]
-              }));
-          } catch (error) {
-            if (!isRateLimitError(error)) {
-              console.error(`Failed to fetch games for ${teamAbbrev}:`, error);
-            }
-          }
-        })
-      );
-    }
-
-    setTeamGameData(gameData);
-  }, [fetchJsonWithRetry]);
-
-  const calculateGameSpan = useCallback((
-    teamGames: GameData[]
-  ): { startDate: string; endDate: string } => {
-    if (!teamGames?.length) {
-      return { startDate: "", endDate: "" };
-    }
-
-    const today = new Date().toISOString().split("T")[0];
-    const gameCount = teamGames.length;
-    let startDate: string;
-    let endDate: string;
-
-    switch (selectedSpan) {
-      case "L10":
-        startDate = teamGames[Math.max(gameCount - 10, 0)].gameDate;
-        break;
-      case "L20":
-        startDate = teamGames[Math.max(gameCount - 20, 0)].gameDate;
-        break;
-      case "L30":
-        startDate = teamGames[Math.max(gameCount - 30, 0)].gameDate;
-        break;
-      case "Season":
-      default:
-        startDate = teamGames[0]?.gameDate || "";
-        break;
-    }
-
-    let endIndex = gameCount - 1;
-    while (endIndex >= 0) {
-      if (teamGames[endIndex].gameDate <= today) {
-        break;
+  // One league-wide read of every goalie appearance this season; the span
+  // buttons only re-slice it, so they make no further requests. The proxy
+  // caps pages at 100 rows: the first page gives the total, the rest run in
+  // parallel batches.
+  const fetchGoalieGames = useCallback(async (seasonId: number): Promise<void> => {
+    const context = "Goalie game request failed";
+    const pageUrl = (start: number) => {
+      const params = new URLSearchParams({
+        isAggregate: "false",
+        isGame: "true",
+        start: String(start),
+        limit: String(GOALIE_GAME_PAGE_SIZE),
+        sort: '[{"property":"gameDate","direction":"ASC"},{"property":"gameId","direction":"ASC"},{"property":"playerId","direction":"ASC"}]',
+        cayenneExp: `seasonId=${seasonId} and gameTypeId=2`
+      });
+      return `https://api.nhle.com/stats/rest/en/goalie/summary?${params.toString()}`;
+    };
+    const readPage = async (start: number): Promise<{ rows: GoalieGameRow[]; total: number }> => {
+      const response = await fetchJsonWithRetry(pageUrl(start), context);
+      const payload = unwrapProxyPayload(response, context);
+      if (!Array.isArray(payload?.data) || !Number.isInteger(payload.total) || payload.total < 0) {
+        throw new Error(`${context}: invalid page metadata`);
       }
-      endIndex--;
-    }
+      const expectedRows = Math.min(GOALIE_GAME_PAGE_SIZE, Math.max(0, payload.total - start));
+      if (payload.data.length !== expectedRows) {
+        throw new Error(`${context}: incomplete page at ${start}`);
+      }
+      return {
+        rows: payload.data,
+        total: payload.total
+      };
+    };
 
-    endIndex = Math.min(endIndex, gameCount - 1);
-    endDate = teamGames[endIndex]?.gameDate || "";
-    return { startDate, endDate };
-  }, [selectedSpan]);
+    const firstPage = await readPage(0);
+    const starts: number[] = [];
+    for (let start = GOALIE_GAME_PAGE_SIZE; start < firstPage.total; start += GOALIE_GAME_PAGE_SIZE) {
+      starts.push(start);
+    }
+    const rows = [...firstPage.rows];
+    for (let index = 0; index < starts.length; index += GOALIE_GAME_PAGE_CONCURRENCY) {
+      const pages = await Promise.all(
+        starts.slice(index, index + GOALIE_GAME_PAGE_CONCURRENCY).map(readPage)
+      );
+      pages.forEach((page) => {
+        if (page.total !== firstPage.total) {
+          throw new Error(`${context}: total changed between pages`);
+        }
+        rows.push(...page.rows);
+      });
+    }
+    setGoalieGames(rows);
+  }, [fetchJsonWithRetry]);
 
   const handleSpanButtonClick = (span: SpanType): void => {
     setSelectedSpan(span);
   };
 
-  const fetchGoalieData = useCallback(async (
-    franchiseId: number,
-    startDate: string,
-    endDate: string
-  ): Promise<GoalieData[]> => {
-    const cayenneExp = `franchiseId=${franchiseId} and gameDate<="${endDate}" and gameDate>="${startDate}" and gameTypeId=2`;
-    const params = new URLSearchParams({
-      isAggregate: "true",
-      isGame: "true",
-      start: "0",
-      limit: "50",
-      factCayenneExp: "gamesPlayed>=1",
-      cayenneExp
-    });
-    const url = `https://api.nhle.com/stats/rest/en/goalie/summary?${params.toString()}`;
-
-    try {
-      const data = unwrapProxyPayload(
-        await fetchJsonWithRetry(
-          url,
-          `Goalie request failed for franchiseId ${franchiseId}`
-        ),
-        `Goalie request failed for franchiseId ${franchiseId}`
-      );
-      return Array.isArray(data?.data) ? data.data : [];
-    } catch (error) {
-      if (!isRateLimitError(error)) {
-        console.error(
-          `Error fetching goalie data for franchiseId ${franchiseId}:`,
-          error
-        );
-      }
-      return [];
-    }
-  }, [fetchJsonWithRetry]);
-
-  const fetchAllGoalieData = useCallback(async (): Promise<void> => {
-    setLoading(true);
-    const allGoalieStats: TeamGoalieStats = {};
-
-    const teamAbbrevs = Object.keys(teamGameData);
-    const chunkSize = 2;
-
-    for (let i = 0; i < teamAbbrevs.length; i += chunkSize) {
-      const chunk = teamAbbrevs.slice(i, i + chunkSize);
-      await Promise.all(
-        chunk.map(async (teamAbbrev) => {
-          const teamGames = teamGameData[teamAbbrev];
-          const { startDate, endDate } = calculateGameSpan(teamGames);
-          const franchiseId =
-            teamsInfo[teamAbbrev as keyof typeof teamsInfo]?.franchiseId;
-
-          if (franchiseId && startDate && endDate) {
-            try {
-              const goalieData = await fetchGoalieData(
-                franchiseId,
-                startDate,
-                endDate
-              );
-              if (goalieData && goalieData.length > 0) {
-                const totalGames = goalieData.reduce(
-                  (sum, goalie) => sum + goalie.gamesPlayed,
-                  0
-                );
-                allGoalieStats[teamAbbrev] = {
-                  goalies: goalieData,
-                  totalGames
-                };
-              }
-            } catch (error) {
-              if (!isRateLimitError(error)) {
-                console.error(`Error fetching goalie data for ${teamAbbrev}:`, error);
-              }
-            }
-          }
-        })
-      );
-    }
-
-    setGoalieStats(allGoalieStats);
-    setLoading(false);
-  }, [calculateGameSpan, fetchGoalieData, teamGameData]);
-
   useEffect(() => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
-    const fetchSeasonData = async () => {
+    const loadGoalieGames = async () => {
+      let seasonId = inferCurrentSeasonId();
       try {
         const seasonParams = new URLSearchParams({
           sort: '[{"property":"id","direction":"DESC"}]'
@@ -331,38 +306,34 @@ const GoalieShareChart: React.FC = () => {
         if (!response) throw new Error("Season request rate-limited");
         const payload = unwrapProxyPayload(response, "Season request failed");
         const firstSeason = Array.isArray(payload?.data) ? payload.data[0] : null;
-        if (!firstSeason?.id || !firstSeason?.startDate) {
+        if (!firstSeason?.id) {
           throw new Error("Season API returned an unexpected payload shape");
         }
-        await fetchGameDatesForAllTeams(firstSeason.id);
-        setSeasonData({
-          seasonId: firstSeason.id,
-          startDate: firstSeason.startDate.split("T")[0]
-        });
+        seasonId = firstSeason.id;
       } catch (error) {
         if (!isRateLimitError(error)) console.error("Error fetching season data:", error);
-        const fallbackSeasonId = inferCurrentSeasonId();
-        try {
-          await fetchGameDatesForAllTeams(fallbackSeasonId);
-          setSeasonData({
-            seasonId: fallbackSeasonId,
-            startDate: `${String(fallbackSeasonId).slice(0, 4)}-09-01`
-          });
-        } catch (fallbackError) {
-          if (!isRateLimitError(fallbackError)) {
-            console.error("Fallback season fetch failed:", fallbackError);
-          }
-          setLoading(false);
+      }
+
+      try {
+        await fetchGoalieGames(seasonId);
+      } catch (error) {
+        setGoalieGames([]);
+        setLoadError("Goalie data is unavailable because the complete season could not be loaded.");
+        if (!isRateLimitError(error)) {
+          console.error("Error fetching goalie game data:", error);
         }
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchSeasonData();
-  }, [fetchGameDatesForAllTeams, fetchJsonWithRetry]);
+    loadGoalieGames();
+  }, [fetchGoalieGames, fetchJsonWithRetry]);
 
-  useEffect(() => {
-    if (Object.keys(teamGameData).length > 0) fetchAllGoalieData();
-  }, [fetchAllGoalieData, teamGameData]);
+  const goalieStats = useMemo(
+    () => buildGoalieShareByTeam(goalieGames, selectedSpan),
+    [goalieGames, selectedSpan]
+  );
 
   const generateChartData = (teamAbbrev: string) => {
     const teamStats = goalieStats[teamAbbrev];
@@ -659,6 +630,8 @@ const GoalieShareChart: React.FC = () => {
 
       {loading ? (
         <div className={styles.loadingMessage}>Loading goalie data...</div>
+      ) : loadError ? (
+        <div className={styles.noDataMessage} role="alert">{loadError}</div>
       ) : (
         <>
           {Object.keys(goalieStats).length > 0 ? (

@@ -1,0 +1,8 @@
+{
+  "head": "c0589bd14831eefdd93abc90de4858147cdd34dd",
+  "files": {
+    "web/lib/in-season/monthlyExecutor.ts": "689f9c2a658751f21b8d307d4ddb8b6029fd2adff61af63f203a3e6a938d203b",
+    "web/lib/in-season/monthlyStore.ts": "dffa8304aba85028f2af5de1df20c9caa463b2cb15807f8bca936303167a7cf2",
+    "web/lib/in-season/monthlyIntegration.test.ts": "6c46111989499d853ff8f938dcef5161dcdb85bc2e19de97ea32d428c707bfde"
+  }
+}

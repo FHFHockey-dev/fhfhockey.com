@@ -9,7 +9,7 @@ interface AuditEntry {
   key: string;
   label: string;
   jobName: string;
-  status: "success" | "failure" | "unknown" | "disabled";
+  status: "success" | "failure" | "unknown" | "disabled" | "continued";
   runTimeDisplay: string;
   method: string | null;
   route: string | null;
@@ -70,12 +70,12 @@ interface CronAuditEmailProps {
 const skipped = (row: AuditEntry) => (row.missingObservationWarnings ?? []).some((warning) => warning.includes("Operation was skipped"));
 const missing = (row: AuditEntry) => row.status === "unknown" && (row.missingObservationWarnings ?? []).some((warning) => warning.includes("No cron or audit observation matched"));
 const nearLimit = (row: AuditEntry) => isNearRepositoryLimit(row.durationMs, row.repositoryLimitMs ?? null) || isNearRepositoryLimit(row.durationMs, row.runtimeBudgetMs ?? null);
-const priority = (row: AuditEntry) => row.status === "failure" ? 0 : nearLimit(row) ? 1 : row.status === "unknown" || skipped(row) || (row.failedRows ?? 0) > 0 ? 2 : row.status === "disabled" ? 3 : 4;
+const priority = (row: AuditEntry) => row.status === "failure" ? 0 : nearLimit(row) ? 1 : row.status === "unknown" || row.status === "continued" || skipped(row) || (row.failedRows ?? 0) > 0 ? 2 : row.status === "disabled" ? 3 : 4;
 const section = (row: AuditEntry) => row.status === "failure" ? "failure"
   : missing(row) ? "missing"
   : skipped(row) ? "partial"
   : row.status === "unknown" || row.status === "disabled" || (row.missingObservationWarnings ?? []).length > 0 ? "gap"
-  : (row.failedRows ?? 0) > 0 || (row.failedOperations ?? 0) > 0 || nearLimit(row) ? "partial" : "success";
+  : row.status === "continued" || (row.failedRows ?? 0) > 0 || (row.failedOperations ?? 0) > 0 || nearLimit(row) ? "partial" : "success";
 const clean = (text: string) => text.replace(/\s+/g, " ").trim();
 const concise = (text: string) => clean(text).length > 220 ? `${clean(text).slice(0, 219)}…` : clean(text);
 
@@ -97,7 +97,7 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
   const renderJobs = (group: AuditEntry[], compact: boolean) => <table role="presentation" style={{ borderCollapse: "collapse", width: "100%", tableLayout: "fixed" }}><tbody>
       {group.map((row) => {
         const isSkipped = skipped(row);
-        const label = row.status === "failure" ? "FAIL" : isSkipped ? "SKIPPED / NO OUTPUT" : missing(row) ? "MISSING" : row.status === "success" ? (row.failedRows ?? 0) > 0 ? "PARTIAL" : "OK" : row.status.toUpperCase();
+        const label = row.status === "failure" ? "FAIL" : row.status === "continued" ? "CONTINUED / IN PROGRESS" : isSkipped ? "SKIPPED / NO OUTPUT" : missing(row) ? "MISSING" : row.status === "success" ? (row.failedRows ?? 0) > 0 ? "PARTIAL" : "OK" : row.status.toUpperCase();
         const color = row.status === "failure" ? "#991B1B" : row.status === "success" && !isSkipped ? "#166534" : "#92400E";
         const warnings = (row.missingObservationWarnings ?? []).filter((warning) => !warning.includes("Telemetry source unavailable") && !warning.includes("timing metadata") && !warning.includes("Operation was skipped"));
         const reason = row.reason && !row.reason.includes("Telemetry source unavailable") ? row.reason : null;

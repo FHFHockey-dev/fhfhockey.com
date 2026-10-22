@@ -1,0 +1,12 @@
+{
+  "head": "2d62f390c7f000567557abd9c4c307c01eb706f0",
+  "files": {
+    "web/lib/integrations/fantrax/server.ts": "42af10207f58a108204e31e2d50495cd5feb70b6ff036a61394d5f23091be1ea",
+    "web/lib/integrations/fantrax/server.test.ts": "58e1734a6614b55fa678a87ad6a6e443bd085d8008a00b9c36c10e82b0b9fe65",
+    "web/lib/in-season/monthlyWebhook.ts": "23040d624fa54678ebed87a35d02512ffc8ea5db28b97e28411b244785f33e60",
+    "web/lib/in-season/monthlyExecutor.ts": "ce8c63ba96d98041e03c2517a1b16cab0c2e42d8ddccd5c8d29ff30dc0240999",
+    "web/lib/in-season/monthlyLifecycle.ts": "462ad6d1f5dda21aededb14073e9ea6c914bb43f38ae5ae3864576a914eb487a",
+    "web/lib/in-season/monthlyIntegration.test.ts": "b8cf2e09ddcc84f1d8bd83dd86342d5694e19be65f1b67742374327d11219291",
+    "web/lib/in-season/monthlyLifecycle.test.ts": "281922f87f50ed0cb4d193afdd5904d45d3912a166e486f710520d82bb5d9c00"
+  }
+}

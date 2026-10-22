@@ -1,0 +1,20 @@
+{
+  "decision": "qualified_acceptance_local_guardrails_only",
+  "new_demonstrated_defects": 0,
+  "existing_assertions_passed": 366,
+  "original_reproductions_passed": 5,
+  "independent_lease_assertions_passed": 7,
+  "unrelated_filtered_skips": 2,
+  "total_passed": 378,
+  "scoped_lint_exit": 0,
+  "scoped_diff_exit": 0,
+  "patch_check_exit": 0,
+  "held_gates": [
+    "A1 historical exact-candidate requalification",
+    "A3 authoritative finality/completeness/provenance integration",
+    "A4 durable independent universe and snapshot completeness",
+    "A6 actual concurrency and quiescent/new-run rollout",
+    "parent combined-candidate snapshot pass"
+  ],
+  "no_external_actions": true
+}

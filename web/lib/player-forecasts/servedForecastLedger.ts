@@ -26,6 +26,8 @@ export type LedgerRow = {
 export type LedgerGame = { gameId: number; date: string; scheduledAt: string | null; status: string; homeTeamId: number; awayTeamId: number };
 /** `planningId` is the bridge forecast's `playerId` (identity id); `nhlId` keys WGO rows and the ledger. */
 export type LedgerPlayer = { nhlId: number; planningId: string; playerClass: Class; teamId: number };
+/** Independent snapshot membership, including players with no forecast or history. Requires separate durable storage. */
+export type LedgerUniverseRow = Pick<LedgerRow, "served_date" | "season_id" | "player_id" | "game_id" | "player_class" | "team_id" | "dressed">;
 export type BuildLedgerInput = {
   date: string; seasonId: number; now: Date; games: LedgerGame[]; players: LedgerPlayer[];
   bridgeForecasts: GameForecast[]; /** forge_runs run_id → as_of_date */ runDates: Map<string, string>;
@@ -77,7 +79,7 @@ const EMPTY = { run_id: null, source_watermark: null, method_version: null, cuto
   act_shots_against: null, act_win: null, act_shutout: null, act_fantasy_points: null, dressed: null, started: null, settled_at: null, outcome_source: null };
 
 /** One row per source per identified player-game; games already started (or not scheduled) are refused and listed. */
-export function buildLedgerRows(input: BuildLedgerInput): { rows: LedgerRow[]; skippedGameIds: number[] } {
+export function buildLedgerRows(input: BuildLedgerInput): { rows: LedgerRow[]; universe: LedgerUniverseRow[]; skippedGameIds: number[] } {
   const { date, seasonId, now } = input, nowIso = now.toISOString();
   const datesByTeam = new Map<number, string[]>(), gamesByTeam = new Map<number, Row[]>();
   for (const row of [...input.scheduleGames].sort((a, b) => String(a.date).localeCompare(String(b.date)) || Number(a.id) - Number(b.id)))
@@ -96,11 +98,13 @@ export function buildLedgerRows(input: BuildLedgerInput): { rows: LedgerRow[]; s
   for (const row of input.goalieGameRows) if (finite(row.goalie_id) && String(row.date) < date && Number(row.games_started) > 0)
     goalieStarts.set(row.goalie_id, [...(goalieStarts.get(row.goalie_id) ?? []), row]);
   const byDateDesc = (a: Row, b: Row) => String(b.date).localeCompare(String(a.date)) || Number(b.game_id ?? 0) - Number(a.game_id ?? 0);
-  const rows: LedgerRow[] = [], skippedGameIds: number[] = [];
+  const rows: LedgerRow[] = [], universe: LedgerUniverseRow[] = [], skippedGameIds: number[] = [];
   for (const game of [...input.games].sort((a, b) => a.gameId - b.gameId)) {
     if (game.status !== "scheduled" || !game.scheduledAt || !(Date.parse(game.scheduledAt) > now.getTime())) { skippedGameIds.push(game.gameId); continue; }
     const players = input.players.filter(player => player.teamId === game.homeTeamId || player.teamId === game.awayTeamId).sort((a, b) => a.nhlId - b.nhlId);
     for (const player of players) {
+      universe.push({ served_date: date, season_id: seasonId, player_id: player.nhlId, game_id: game.gameId,
+        player_class: player.playerClass, team_id: player.teamId, dressed: null });
       const isHome = player.teamId === game.homeTeamId, opponent = isHome ? game.awayTeamId : game.homeTeamId;
       const base = { ...EMPTY, served_date: date, season_id: seasonId, player_id: player.nhlId, game_id: game.gameId, player_class: player.playerClass,
         team_id: player.teamId, opponent_team_id: opponent, is_home: isHome, scheduled_at: new Date(game.scheduledAt).toISOString(),
@@ -153,22 +157,46 @@ export function buildLedgerRows(input: BuildLedgerInput): { rows: LedgerRow[]; s
       }
     }
   }
-  return { rows, skippedGameIds };
+  return { rows, universe, skippedGameIds };
 }
 
-export type LedgerActuals = { skaters: Row[]; goalies: Row[]; skaterSource?: string; goalieSource?: string };
-/** Fills settlement columns from per-game rows keyed (game_id, player_id) — never player_id alone. A game with no
- * actual rows of the player's class stays unsettled; a player missing from a settled game did not dress (zero output).
- * A null stat in an actual row stays null. */
-export function settleLedgerRows(rows: LedgerRow[], actuals: LedgerActuals, settledAt: string): LedgerRow[] {
+export type LedgerActuals = {
+  skaters: Row[]; goalies: Row[]; skaterSource?: string; goalieSource?: string;
+  /** Trusted ingestion receipts, not inferred from row counts or an unrelated player's presence. */
+  completeScopes?: Array<{ gameId: number; teamId: number; playerClass: Class; final: boolean; complete: boolean }>;
+};
+function settlementEvidence(actuals: LedgerActuals) {
   const index = (list: Row[]) => new Map(list.filter(row => finite(Number(row.game_id)) && finite(Number(row.player_id))).map(row => [`${Number(row.game_id)}:${Number(row.player_id)}`, row]));
   const skaters = index(actuals.skaters), goalies = index(actuals.goalies);
-  const skaterGames = new Set([...skaters.keys()].map(key => key.split(":")[0])), goalieGames = new Set([...goalies.keys()].map(key => key.split(":")[0]));
+  const complete = new Set((actuals.completeScopes ?? []).filter(scope => scope.final === true && scope.complete === true)
+    .map(scope => `${scope.gameId}:${scope.teamId}:${scope.playerClass}`));
+  return (row: LedgerUniverseRow) => ({
+    actual: (row.player_class === "skater" ? skaters : goalies).get(`${row.game_id}:${row.player_id}`),
+    absenceProven: complete.has(`${row.game_id}:${row.team_id}:${row.player_class}`),
+  });
+}
+
+export function settleLedgerUniverse(rows: LedgerUniverseRow[], actuals: LedgerActuals): LedgerUniverseRow[] {
+  const evidence = settlementEvidence(actuals);
+  return rows.map(row => {
+    const { actual, absenceProven } = evidence(row);
+    return { ...row, dressed: actual ? true : absenceProven ? false : null };
+  });
+}
+
+/** Known per-game actuals can settle individually. Absence is DNP only with final, complete team/class evidence.
+ * A null stat remains null; a previous settlement unsupported by the current evidence becomes unknown. */
+export function settleLedgerRows(rows: LedgerRow[], actuals: LedgerActuals, settledAt: string): LedgerRow[] {
+  const evidence = settlementEvidence(actuals);
   const flag = (value: unknown) => finite(value) ? (value > 0 ? 1 : 0) : null;
   return rows.map(row => {
-    const skater = row.player_class === "skater", games = skater ? skaterGames : goalieGames;
-    if (!games.has(String(row.game_id))) return row;
-    const actual = (skater ? skaters : goalies).get(`${row.game_id}:${row.player_id}`);
+    const skater = row.player_class === "skater", { actual, absenceProven } = evidence(row);
+    if (!actual && !absenceProven) {
+      const out = { ...row };
+      for (const key of Object.keys(EMPTY).filter(key => key.startsWith("act_") || ["dressed", "started", "settled_at", "outcome_source"].includes(key)))
+        (out as Row)[key] = null;
+      return out;
+    }
     const out: LedgerRow = { ...row, settled_at: settledAt, outcome_source: skater ? actuals.skaterSource ?? "wgo_skater_stats" : actuals.goalieSource ?? "goalie_stats_unified", dressed: !!actual };
     if (skater) for (const [head, column] of Object.entries(WGO_SKATER)) (out as Row)[`act_${head}`] = actual ? num(actual[column]) : 0;
     else Object.assign(out, actual ? { act_saves: num(actual.saves), act_goals_against: num(actual.goals_against), act_shots_against: num(actual.shots_against),
@@ -181,7 +209,8 @@ export function settleLedgerRows(rows: LedgerRow[], actuals: LedgerActuals, sett
 
 export type ErrorStat = { n: number; mae: Num; bias: Num };
 export type ReliabilityBin = { bin: number; n: number; predicted: number; observed: number };
-export type LedgerScore = { source: LedgerSource; player_class: Class; n: number; dressed: number; covered: number; coverage: Num; phantoms: number;
+export type LedgerScore = { source: LedgerSource; player_class: Class; n: number; dressed: Num; covered: number; coverage: Num;
+  coverageStatus: "known" | "unavailable" | "incomplete"; phantoms: number;
   heads: Record<string, ErrorStat>; fantasyPoints: ErrorStat; decile10: { n: number; expected: number; actual: number; ratio: Num } | null;
   reliability: Partial<Record<"win" | "shutout" | "start", ReliabilityBin[]>>; b2b: { heads: Record<string, ErrorStat>; fantasyPoints: ErrorStat } };
 const SCORED_HEADS: Record<Class, string[]> = { skater: ["goals", "assists", "pp_points", "shots", "hits", "blocks"], goalie: ["saves", "goals_against", "shots_against"] };
@@ -200,8 +229,9 @@ function reliability(pairs: Array<[Num, Num | boolean | null]>): ReliabilityBin[
     predicted: round(list.reduce((s, x) => s + x[0], 0) / list.length)!, observed: round(list.reduce((s, x) => s + x[1], 0) / list.length)! }));
 }
 
-/** Per source × player class over settled rows. With `weights`, fantasy points are recomputed from the heads. */
-export function scoreLedger(rows: LedgerRow[], weights?: FantasyWeights): LedgerScore[] {
+/** Per-source errors use each source's own observed sample, not a paired model comparison.
+ * Coverage requires an independently captured and settled universe; forecast rows cannot supply it. */
+export function scoreLedger(rows: LedgerRow[], weights?: FantasyWeights, universe?: LedgerUniverseRow[]): LedgerScore[] {
   const settled = rows.filter(row => row.settled_at !== null);
   const fp = (row: LedgerRow): [Num, Num] => weights ? [ledgerFantasyPoints(row.player_class, expHeads(row), weights), ledgerFantasyPoints(row.player_class, actHeads(row), weights)]
     : [row.exp_fantasy_points, row.act_fantasy_points];
@@ -211,16 +241,20 @@ export function scoreLedger(rows: LedgerRow[], weights?: FantasyWeights): Ledger
   const out: LedgerScore[] = [];
   for (const playerClass of ["skater", "goalie"] as const) {
     const classRows = settled.filter(row => row.player_class === playerClass);
-    const dressed = new Set(classRows.filter(row => row.dressed).map(row => `${row.player_id}:${row.game_id}`)).size;
+    const key = (row: LedgerUniverseRow) => `${row.served_date}:${row.player_id}:${row.game_id}`;
+    const members = universe?.filter(row => row.player_class === playerClass);
+    const coverageStatus = members === undefined ? "unavailable" : members.some(row => row.dressed === null) ? "incomplete" : "known";
+    const dressedKeys = new Set(members?.filter(row => row.dressed === true).map(key));
+    const dressed = coverageStatus === "known" ? dressedKeys.size : null;
     for (const source of LEDGER_SOURCES) {
       const list = classRows.filter(row => row.source === source);
       if (!list.length) continue;
-      const covered = new Set(list.filter(row => row.dressed).map(row => `${row.player_id}:${row.game_id}`)).size;
+      const covered = new Set(list.filter(row => row.dressed && (members === undefined || dressedKeys.has(key(row)))).map(key)).size;
       const ranked = list.filter(row => finite(row.exp_goals) && finite(row.act_goals)).sort((a, b) => b.exp_goals! - a.exp_goals! || a.player_id - b.player_id || a.game_id - b.game_id);
       const top = ranked.slice(0, Math.ceil(ranked.length / 10)), expected = top.reduce((s, row) => s + row.exp_goals!, 0), actual = top.reduce((s, row) => s + row.act_goals!, 0);
       const bins = { win: reliability(list.map(row => [row.exp_win_prob, row.act_win])), shutout: reliability(list.map(row => [row.exp_shutout_prob, row.act_shutout])),
         start: playerClass === "goalie" ? reliability(list.map(row => [row.start_probability, row.started])) : undefined };
-      out.push({ source, player_class: playerClass, n: list.length, dressed, covered, coverage: dressed ? round(covered / dressed) : null,
+      out.push({ source, player_class: playerClass, n: list.length, dressed, covered, coverageStatus, coverage: dressed ? round(covered / dressed) : null,
         phantoms: list.filter(row => row.dressed === false).length, ...errors(list, playerClass),
         decile10: top.length ? { n: top.length, expected: round(expected)!, actual: round(actual)!, ratio: expected > 0 ? round(actual / expected) : null } : null,
         reliability: Object.fromEntries(Object.entries(bins).filter(([, value]) => value)), b2b: errors(list.filter(row => row.team_rest_days === 1), playerClass) });

@@ -559,7 +559,8 @@ export async function fetchLatestSkaterContextProfiles(
       "player_id,date,nst_shots_per_60,nst_ixg_per_60,nst_rush_attempts_per_60,nst_rebounds_created_per_60,nst_oi_xgf_per_60,nst_oi_xga_per_60,nst_oi_cf_pct_rates,nst_oi_cf_pct,possession_pct_safe"
     )
     .in("player_id", playerIds)
-    .lte("date", cutoffDate)
+    // These are per-game actuals; the target slate is not pregame context.
+    .lt("date", cutoffDate)
     .gte("date", oneYearAgo)
     .order("date", { ascending: false })
     .limit(5000);

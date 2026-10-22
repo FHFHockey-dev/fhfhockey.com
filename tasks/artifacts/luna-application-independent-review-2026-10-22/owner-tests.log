@@ -1,0 +1,12 @@
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-luna-contract-independent-hzqxptn7/web
+
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts (14 tests) 29ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts (16 tests) 14ms
+
+ Test Files  2 passed (2)
+      Tests  30 passed (30)
+   Start at  09:25:31
+   Duration  345ms (transform 60ms, setup 0ms, collect 96ms, tests 43ms, environment 0ms, prepare 58ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/artifacts/luna-application-independent-review-2026-10-22/owner-tests.json

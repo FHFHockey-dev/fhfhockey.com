@@ -1,0 +1,109 @@
+import type Stripe from "stripe";
+import { IN_SEASON_SANDBOX_CATALOG as catalog, verifyInSeasonSandboxAccount } from "./billingConfig";
+import { acceptMonthlyCancellation, reduceMonthlyEvent, type MonthlyState } from "./monthlyLifecycle";
+import { monthlyLineSubscriptionId, verifiedMonthlyAdjustment, verifiedMonthlyFailure, verifiedMonthlyPayment, verifyMonthlyInvoice, verifyMonthlySubscription } from "./monthlyStripe";
+import type { MonthlyStore } from "./monthlyStore";
+import { monthlyScheduleParameters } from "./monthlySchedule";
+
+const id = (value: string | { id?: string } | null | undefined) => typeof value === "string" ? value : value?.id;
+
+/** Called only after raw signature verification; fresh reads occur under a fenced lease. */
+export async function fulfillMonthlyEvent({ stripe, store, event, now = new Date() }: { stripe: Stripe; store: MonthlyStore; event: Stripe.Event; now?: Date }) {
+  if (event.livemode !== false) throw new Error("Live events prohibited.");
+  const isInvoice = ["invoice.paid", "invoice.payment_succeeded", "invoice.payment_failed", "invoice.payment_action_required"].includes(event.type);
+  const isSubscription = ["customer.subscription.deleted", "customer.subscription.updated"].includes(event.type);
+  const isAdjustment = ["refund.created", "refund.updated", "refund.failed", "charge.refunded", "charge.dispute.created", "charge.dispute.updated", "charge.dispute.closed"].includes(event.type);
+  if (!isInvoice && !isSubscription && !isAdjustment) return { processed: false };
+  if (!event.id || !Number.isSafeInteger(event.created) || event.created <= 0 || event.created > now.getTime() / 1000) throw new Error("Invalid event time.");
+  await verifyInSeasonSandboxAccount(stripe);
+  let invoiceId: string | undefined; let subscriptionId: string | undefined;
+  if (isInvoice) invoiceId = (event.data.object as Stripe.Invoice).id;
+  else if (isSubscription) subscriptionId = (event.data.object as Stripe.Subscription).id;
+  else {
+    const paymentIntentId = id((event.data.object as Stripe.Refund | Stripe.Dispute | Stripe.Charge).payment_intent);
+    if (!paymentIntentId) return { processed: false };
+    const allocations = await stripe.invoicePayments.list({ payment: { type: "payment_intent", payment_intent: paymentIntentId }, limit: 2 });
+    if (!allocations.data.length && !allocations.has_more) return { processed: false }; // One-time season checkout.
+    if (allocations.has_more || allocations.data.length !== 1) throw new Error("Adjustment invoice allocation ambiguous.");
+    invoiceId = id(allocations.data[0].invoice);
+  }
+  if (invoiceId) {
+    const discovery = await stripe.invoices.retrieve(invoiceId);
+    subscriptionId = id(discovery.parent?.subscription_details?.subscription);
+  }
+  if (!subscriptionId) return { processed: false };
+  const discovery = await stripe.subscriptions.retrieve(subscriptionId);
+  if (discovery.metadata.in_season_plan !== "monthly") return { processed: false };
+  if (isSubscription && discovery.status !== "canceled") return { processed: false };
+  const claim = await store.claim(subscriptionId, event.id);
+  if ("duplicate" in claim) return { processed: true, duplicate: true };
+  let state = claim.state;
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const price = await stripe.prices.retrieve(catalog.monthlyPriceId);
+  const schedule = state.binding.scheduleId ? await stripe.subscriptionSchedules.retrieve(state.binding.scheduleId) : undefined;
+  verifyMonthlySubscription(state.binding, subscription, price, schedule);
+  const apply = (fact: Parameters<typeof reduceMonthlyEvent>[1]) => { state = reduceMonthlyEvent(state, fact, now); };
+  if (isSubscription) {
+    // canceled_at can be the earlier request that scheduled cancellation. Use
+    // the actual end so natural season expiry preserves already-paid coverage.
+    const at = subscription.ended_at;
+    if (!at) throw new Error("Cancellation time unavailable.");
+    const disputed = subscription.cancellation_details?.reason === "payment_disputed" || Object.values(state.invoices).some((invoice) => Object.keys(invoice.disputes).length > 0);
+    apply(disputed && !state.cancelledAt
+      ? { kind: "billing_stopped", eventId: event.id, userId: state.binding.userId, subscriptionId, stoppedAt: new Date(at * 1000).toISOString() }
+      : { kind: "cancelled", eventId: event.id, userId: state.binding.userId, subscriptionId, cancelledAt: new Date(at * 1000).toISOString() });
+  } else {
+    if (!invoiceId) throw new Error("Invoice identity unavailable.");
+    const invoice = await stripe.invoices.retrieve(invoiceId);
+    if (invoice.total === 0 && invoice.status === "paid" && state.binding.scheduleId) {
+      const parameters = monthlyScheduleParameters(state.binding);
+      let phaseStart = parameters.start_date as number;
+      const trialWindows = parameters.phases!.flatMap((phase, index) => {
+        const from = phaseStart; phaseStart = phase.end_date!;
+        return index > 0 && phase.trial_end ? [{ from, to: phase.trial_end, index }] : [];
+      });
+      if (invoice.livemode !== false || id(invoice.customer) !== state.binding.customerId || id(invoice.parent?.subscription_details?.subscription) !== subscriptionId
+        || invoice.currency !== "usd" || invoice.amount_paid !== 0 || invoice.lines.has_more || invoice.lines.data.length !== 1
+        || invoice.lines.data.some((line) => line.amount !== 0 || line.quantity !== 1 || line.pricing?.price_details?.price !== catalog.monthlyPriceId
+          || monthlyLineSubscriptionId(line) !== subscriptionId || !trialWindows.some((window) => invoice.created === window.from
+            && invoice.parent?.subscription_details?.metadata?.in_season_period === String(window.index)
+            // Stripe can retain the original trial start on a later trial line.
+            && [window.from, parameters.start_date].includes(line.period.start) && line.period.end === window.to))) throw new Error("Unexpected zero-value invoice.");
+      apply({ kind: "observed", eventId: event.id, userId: state.binding.userId, subscriptionId, observedAt: now.toISOString() });
+      await store.commit(subscriptionId, event.id, claim.token, state, now);
+      return { processed: true };
+    }
+    const paidLine = invoice.lines.data.find((line) => line.amount !== 0);
+    const initialPrice = state.binding.scheduleId && paidLine?.pricing?.price_details?.price !== catalog.monthlyPriceId && paidLine?.pricing?.price_details?.price
+      ? await stripe.prices.retrieve(paidLine.pricing.price_details.price) : undefined;
+    verifyMonthlyInvoice(state.binding, invoice, initialPrice);
+    if (invoice.status === "paid") {
+      const allocations = await stripe.invoicePayments.list({ invoice: invoiceId, status: "paid", limit: 2 });
+      const payment = allocations.data[0]; const intentId = id(payment?.payment.payment_intent);
+      if (allocations.has_more || allocations.data.length !== 1 || !intentId) throw new Error("Paid invoice allocation ambiguous.");
+      const intent = await stripe.paymentIntents.retrieve(intentId, { expand: ["latest_charge"] });
+      const input = { eventId: `${event.id}:paid`, binding: state.binding, invoice, payment, intent, subscription, price, schedule, initialPrice };
+      apply(verifiedMonthlyPayment(input));
+      const charge = intent.latest_charge as Stripe.Charge;
+      const refunds = await stripe.refunds.list({ charge: charge.id, limit: 100 });
+      const disputes = await stripe.disputes.list({ charge: charge.id, limit: 100 });
+      if (refunds.has_more || disputes.has_more || (charge.disputed && !disputes.data.length) || (charge.amount_refunded > 0 && !refunds.data.length)) throw new Error("Adjustment inventory incomplete.");
+      for (const refund of refunds.data) apply(verifiedMonthlyAdjustment({ ...input, eventId: `${event.id}:refund:${refund.id}`, kind: "refund", adjustment: refund, observedAt: now }));
+      for (const dispute of disputes.data) apply(verifiedMonthlyAdjustment({ ...input, eventId: `${event.id}:dispute:${dispute.id}`, kind: "dispute", adjustment: dispute }));
+    } else if (event.type === "invoice.payment_failed" || event.type === "invoice.payment_action_required") {
+      apply(verifiedMonthlyFailure(state.binding, event, initialPrice));
+    } else throw new Error("Invoice payment is not verified.");
+  }
+  await store.commit(subscriptionId, event.id, claim.token, state, now);
+  return { processed: true };
+}
+
+/** Caller supplies the authenticated owner; persist before attempting cancellation. */
+export async function cancelMonthlyBilling(store: MonthlyStore, userId: string, subscriptionId: string, requestId: string, now = new Date()) {
+  const existing = await store.load(subscriptionId);
+  if (!existing || existing.binding.userId !== userId) throw new Error("Monthly subscription not found for this account.");
+  const claim = await store.claim(subscriptionId, `cancel:${requestId}`);
+  if ("duplicate" in claim) return;
+  const state: MonthlyState = acceptMonthlyCancellation(claim.state, userId, requestId, now);
+  await store.commit(subscriptionId, `cancel:${requestId}`, claim.token, state, now);
+}

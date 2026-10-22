@@ -1,0 +1,404 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/player-forecasts/servedForecastLedger.test.ts __tests__/pages/api/v1/db/forge-served-forecast-snapshot.test.ts __tests__/pages/api/v1/db/forge-served-forecast-settle.test.ts tests/api/forge-scoreboard.test.ts __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-ah_xhhr5/isolation/snapshot/web
+
+(node:49630) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > returns 405 for unsupported methods
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > runs the daily incremental coordinator and reports stage-level results
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > lets the implicit Vercel schedule use the durable projection backlog
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > fails the implicit schedule closed before derived work when relationships fail
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > stops after a blocking failure and retains bounded audit context: legacy
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > stops after a blocking failure and retains bounded audit context: busy
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > stops after a blocking failure and retains bounded audit context: dependency
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > stops after a blocking failure and retains bounded audit context: malformed
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > uses the overnight execution profile for the rolling recompute stage
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > does not include retired support-only WGO routes in the upstream stage
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > keeps the downstream stage accuracy-only after retiring the legacy start-chart materializer
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > completes every stage in order across several invocations, continuing a partial rolling step
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > completes every stage in order across several invocations, continuing a partial rolling step
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > completes every stage in order across several invocations, continuing a partial rolling step
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > completes every stage in order across several invocations, continuing a partial rolling step
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > points the source steps at the last completed date, not the run date
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > pauses on a continuation, replays its query with a fresh deadline, and runs WGO only once NST finishes
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > advances to WGO on the expected no-completed-games skip
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks on a provider failure (>= 400): the step fails, nothing advances and WGO does not run
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks on incomplete work (200, success false): the step fails, nothing advances and WGO does not run
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks on a 207 that is not a continuation: the step fails, nothing advances and WGO does not run
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks on a cursor that is not positive: the step fails, nothing advances and WGO does not run
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks on a non-integer cursor: the step fails, nothing advances and WGO does not run
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks on a missing cursor: the step fails, nothing advances and WGO does not run
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks on a query whose scope differs from the one sent: the step fails, nothing advances and WGO does not run
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks on a query with a field this pipeline did not send: the step fails, nothing advances and WGO does not run
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks on no replayable query: the step fails, nothing advances and WGO does not run
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks a resumed step whose cursor does not increase, keeping the stored cursor
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > does not advance when the cursor cannot be stored: the next invocation repeats from the last stored cursor
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > does not advance when the cursor cannot be stored: the next invocation repeats from the last stored cursor
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > an NST source outage degrades the day instead of blocking it > with NST step resume false: WGO and the later stages run, and the response names the degraded step
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > an NST source outage degrades the day instead of blocking it > with NST step resume true: WGO and the later stages run, and the response names the degraded step
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > an NST source outage degrades the day instead of blocking it > degrades the route's 503 source_down answer (NST 520-527) the same way
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > an NST source outage degrades the day instead of blocking it > still blocks a 503 that is not a source_down answer
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > an NST source outage degrades the day instead of blocking it > still blocks when the NST route itself errors
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > while NST step resume is inactive, today's NST responses behave as before > success: WGO still runs and nothing is stored
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > while NST step resume is inactive, today's NST responses behave as before > incomplete work: WGO still runs and nothing is stored
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > while NST step resume is inactive, today's NST responses behave as before > an error: WGO still runs and nothing is stored
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > while NST step resume is inactive, today's NST responses behave as before > a continuation: WGO still runs and nothing is stored
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > stops on a real stage failure, retries it once on the next invocation, then stays stopped
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > stops on a real stage failure, retries it once on the next invocation, then stays stopped
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > stops on a real stage failure, retries it once on the next invocation, then stays stopped
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > resumes a partial projection run on later invocations without using failed attempts
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > does not run a stage another invocation holds
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > runs the rolling step in chunks and stores the cursor after every chunk
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > stops the rolling chunks at the claim budget and resumes them next invocation
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > stops the rolling chunks at the claim budget and resumes them next invocation
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > counts a death after a late checkpoint once per lease owner, preserving its cursor and the kill cap
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > counts a death after a late checkpoint once per lease owner, preserving its cursor and the kill cap
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > counts a death after a late checkpoint once per lease owner, preserving its cursor and the kill cap
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > projects the next day after the run date, remembering finished dates across invocations
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > runs the goalie step on the first projection invocation only, also while the run date's projection stays partial
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > runs the goalie step on the first projection invocation only, also while the run date's projection stays partial
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > retries a failed goalie step on the next invocation even after the projection dates finished
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > retries a failed goalie step on the next invocation even after the projection dates finished
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > records a failed next-day projection as a warning and completes the run date's downstream stages
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > defers the next day's projection to the following invocation when the run date used the budget
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > defers the next day's projection to the following invocation when the run date used the budget
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > backfills the completed games' lines, retries once when a game still lacks them, then continues degraded
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > backfills the completed games' lines, retries once when a game still lacks them, then continues degraded
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > reports a partial rolling step in an explicit-date run as unfinished, not failed
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+ ❯ __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts (49 tests | 6 failed) 71ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > returns 405 for unsupported methods 11ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > runs the daily incremental coordinator and reports stage-level results 4ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > lets the implicit Vercel schedule use the durable projection backlog 3ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > fails the implicit schedule closed before derived work when relationships fail 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > stops after a blocking failure and retains bounded audit context: legacy 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > stops after a blocking failure and retains bounded audit context: busy 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > stops after a blocking failure and retains bounded audit context: dependency 2ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > stops after a blocking failure and retains bounded audit context: malformed 2ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > uses the overnight execution profile for the rolling recompute stage 2ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > does not include retired support-only WGO routes in the upstream stage 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > keeps the downstream stage accuracy-only after retiring the legacy start-chart materializer 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > completes every stage in order across several invocations, continuing a partial rolling step 4ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > points the source steps at the last completed date, not the run date 1ms
+   × /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > pauses on a continuation, replays its query with a fresh deadline, and runs WGO only once NST finishes 6ms
+     → expected { …(13) } to match object { Object (status, cursor_game_id) }
+(11 matching properties omitted from actual)
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > advances to WGO on the expected no-completed-games skip 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks on a provider failure (>= 400): the step fails, nothing advances and WGO does not run 0ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks on incomplete work (200, success false): the step fails, nothing advances and WGO does not run 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks on a 207 that is not a continuation: the step fails, nothing advances and WGO does not run 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks on a cursor that is not positive: the step fails, nothing advances and WGO does not run 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks on a non-integer cursor: the step fails, nothing advances and WGO does not run 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks on a missing cursor: the step fails, nothing advances and WGO does not run 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks on a query whose scope differs from the one sent: the step fails, nothing advances and WGO does not run 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks on a query with a field this pipeline did not send: the step fails, nothing advances and WGO does not run 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks on no replayable query: the step fails, nothing advances and WGO does not run 1ms
+   × /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks a resumed step whose cursor does not increase, keeping the stored cursor 1ms
+     → expected { …(13) } to match object { Object (status, cursor_game_id) }
+(11 matching properties omitted from actual)
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > does not advance when the cursor cannot be stored: the next invocation repeats from the last stored cursor 2ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > an NST source outage degrades the day instead of blocking it > with NST step resume false: WGO and the later stages run, and the response names the degraded step 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > an NST source outage degrades the day instead of blocking it > with NST step resume true: WGO and the later stages run, and the response names the degraded step 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > an NST source outage degrades the day instead of blocking it > degrades the route's 503 source_down answer (NST 520-527) the same way 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > an NST source outage degrades the day instead of blocking it > still blocks a 503 that is not a source_down answer 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > an NST source outage degrades the day instead of blocking it > still blocks when the NST route itself errors 0ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > while NST step resume is inactive, today's NST responses behave as before > success: WGO still runs and nothing is stored 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > while NST step resume is inactive, today's NST responses behave as before > incomplete work: WGO still runs and nothing is stored 0ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > while NST step resume is inactive, today's NST responses behave as before > an error: WGO still runs and nothing is stored 0ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > while NST step resume is inactive, today's NST responses behave as before > a continuation: WGO still runs and nothing is stored 0ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > stops on a real stage failure, retries it once on the next invocation, then stays stopped 2ms
+   × /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > resumes a partial projection run on later invocations without using failed attempts 1ms
+     → expected { …(13) } to match object { status: 'running', last_error: null }
+(11 matching properties omitted from actual)
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > does not run a stage another invocation holds 1ms
+   × /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > runs the rolling step in chunks and stores the cursor after every chunk 2ms
+     → expected 207 to be 200 // Object.is equality
+   × /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > stops the rolling chunks at the claim budget and resumes them next invocation 1ms
+     → expected 207 to be 200 // Object.is equality
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > counts a death after a late checkpoint once per lease owner, preserving its cursor and the kill cap 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > counts a kill receipt once across concurrent recorders and a recorder interrupted after acquisition 0ms
+   × /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > projects the next day after the run date, remembering finished dates across invocations 1ms
+     → expected { …(13) } to match object { Object (status, cursor_game_id) }
+(11 matching properties omitted from actual)
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > runs the goalie step on the first projection invocation only, also while the run date's projection stays partial 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > retries a failed goalie step on the next invocation even after the projection dates finished 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > records a failed next-day projection as a warning and completes the run date's downstream stages 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > defers the next day's projection to the following invocation when the run date used the budget 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > backfills the completed games' lines, retries once when a game still lacks them, then continues degraded 1ms
+   ✓ /api/v1/db/run-rolling-forge-pipeline > reports a partial rolling step in an explicit-date run as unfinished, not failed 0ms
+(node:49630) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/player-forecasts/servedForecastLedger.test.ts (11 tests) 4ms
+(node:49630) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/api/v1/db/forge-served-forecast-settle.test.ts (4 tests) 5ms
+(node:49630) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/api/v1/db/forge-served-forecast-snapshot.test.ts (3 tests) 5ms
+(node:49630) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ tests/api/forge-scoreboard.test.ts (3 tests) 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > pauses on a continuation, replays its query with a fresh deadline, and runs WGO only once NST finishes
+AssertionError: expected { …(13) } to match object { Object (status, cursor_game_id) }
+(11 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[2m    "cursor_game_id": 7,[22m
+[32m-   "status": "running",[39m
+[31m+   "status": "failed",[39m
+[2m  }[22m
+
+ ❯ __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts:861:31
+    859|         expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+    860|         expect(updateWgoTotalsMock).not.toHaveBeenCalled();
+    861|         expect(nstStageRow()).toMatchObject({ status: "running", curso…
+       |                               ^
+    862| 
+    863|         const second = await invokeScheduled("2026-10-19T10:10:00.000Z…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > NST step resume (agreed contract; inactive until Codex ships it) > blocks a resumed step whose cursor does not increase, keeping the stored cursor
+AssertionError: expected { …(13) } to match object { Object (status, cursor_game_id) }
+(11 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[2m    "cursor_game_id": 7,[22m
+[32m-   "status": "running",[39m
+[31m+   "status": "failed",[39m
+[2m  }[22m
+
+ ❯ __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts:923:31
+    921| 
+    922|         await invokeScheduled("2026-10-19T10:05:00.000Z");
+    923|         expect(nstStageRow()).toMatchObject({ status: "running", curso…
+       |                               ^
+    924|         const second = await invokeScheduled("2026-10-19T10:10:00.000Z…
+    925| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > resumes a partial projection run on later invocations without using failed attempts
+AssertionError: expected { …(13) } to match object { status: 'running', last_error: null }
+(11 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "last_error": null,[39m
+[32m-   "status": "running",[39m
+[31m+   "last_error": "stage_handoff",[39m
+[31m+   "status": "failed",[39m
+[2m  }[22m
+
+ ❯ __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts:1143:33
+    1141|           "rolling_forge_pipeline|daily_incremental:2026-10-19|project…
+    1142|         );
+    1143|         expect(projectionState).toMatchObject({ status: "running", las…
+       |                                 ^
+    1144|       }
+    1145|       // Each call gets the time left in its invocation, after the ear…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > runs the rolling step in chunks and stores the cursor after every chunk
+AssertionError: expected 207 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 207[39m
+
+ ❯ __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts:1256:30
+    1254|       const res = await invokeScheduled(at);
+    1255| 
+    1256|       expect(res.statusCode).toBe(200);
+       |                              ^
+    1257|       expect(res.body.termination).toMatchObject({ state: "completed" …
+    1258|       const queries = updateRollingPlayerAveragesMock.mock.calls.map((…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > stops the rolling chunks at the claim budget and resumes them next invocation
+AssertionError: expected 207 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 207[39m
+
+ ❯ __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts:1313:33
+    1311|       const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
+    1312| 
+    1313|       expect(second.statusCode).toBe(200);
+       |                                 ^
+    1314|       expect([...pipelineStateRows.values()].filter(row => row.operati…
+    1315|       expect(updateRollingPlayerAveragesMock.mock.calls[2]?.[0]?.query…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts > /api/v1/db/run-rolling-forge-pipeline > resumable scheduled run > projects the next day after the run date, remembering finished dates across invocations
+AssertionError: expected { …(13) } to match object { Object (status, cursor_game_id) }
+(11 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[2m    "cursor_game_id": 1,[22m
+[32m-   "status": "running",[39m
+[31m+   "status": "failed",[39m
+[2m  }[22m
+
+ ❯ __tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts:1436:71
+    1434|       expect(runProjectionV2Mock.mock.calls.map((call: any[]) => call[…
+    1435|       expect(Number(runProjectionV2Mock.mock.calls[1][0].query.maxDura…
+    1436|       expect(pipelineStateRows.get(stageKey("projection_execution"))).…
+       |                                                                       ^
+    1437| 
+    1438|       const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  1 failed | 4 passed (5)
+      Tests  6 failed | 64 passed (70)
+   Start at  08:08:58
+   Duration  1.56s (transform 224ms, setup 27ms, collect 268ms, tests 90ms, environment 778ms, prepare 149ms)
+

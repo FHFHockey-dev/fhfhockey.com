@@ -60,3 +60,5 @@ describe("Fantrax dashboard player data access", () => {
     });
   });
 });
+
+vi.mock("lib/integrations/providerSyncAccessServer", async (importOriginal) => ({ ...await importOriginal<typeof import("lib/integrations/providerSyncAccessServer")>(), requireProviderSyncAccess: vi.fn().mockResolvedValue({ eligible: true }) }));

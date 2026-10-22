@@ -1,0 +1,146 @@
+import { ProviderSyncAccessError, requireProviderSyncAccess } from "lib/integrations/providerSyncAccessServer";
+import { runFantraxScheduledSync, refreshFantrax } from "./server";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({
+  getFantraxLeagues: vi.fn(),
+  getFantraxLeagueInfo: vi.fn(),
+  rpc: vi.fn(),
+}));
+
+vi.mock("./client", () => ({
+  FantraxApiError: class FantraxApiError extends Error {},
+  getFantraxLeagues: mocks.getFantraxLeagues,
+  getFantraxLeagueInfo: mocks.getFantraxLeagueInfo,
+}));
+vi.mock("lib/supabase/server", () => ({
+  default: { rpc: mocks.rpc },
+}));
+
+import {
+  discoverFantraxLeagues,
+  linkFantraxAccount,
+} from "./server";
+
+const discovery = {
+  "league-1": {
+    name: "Fixture League",
+    sport: "NHL",
+    teamId: "team-1",
+    teamName: "Fixture Team",
+  },
+};
+
+const unsupportedLeagueInfo = {
+  leagueName: "Fixture League",
+  sport: "MLB",
+  teamCount: 2,
+  rosterInfo: {
+    positionConstraints: { C: 2, G: 2 },
+  },
+  scoringSystem: {
+    type: "HEAD_TO_HEAD_POINTS",
+    scoringCategorySettings: [
+      {
+        group: "SKATER",
+        configs: [
+          {
+            position: "SKATER",
+            scoringCategory: { code: "G", name: "Goals" },
+            points: 3,
+          },
+        ],
+      },
+    ],
+  },
+  teamInfo: {
+    "team-1": { id: "team-1", name: "Fixture Team" },
+    "team-2": { id: "team-2", name: "Other Team" },
+  },
+  draftSettings: { draftType: "SNAKE" },
+};
+
+describe("Fantrax settings service", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubEnv("FANTRAX_API_ENABLED", "true");
+    mocks.getFantraxLeagues.mockResolvedValue(discovery);
+    mocks.getFantraxLeagueInfo.mockResolvedValue(unsupportedLeagueInfo);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("previews unsupported mappings transiently but fails closed before persistence", async () => {
+    const preview = await discoverFantraxLeagues({
+      userId: "user-1",
+      secretId: "secret",
+      selectedLeagueKeys: ["league-1"],
+    });
+    expect(preview.previews[0].diagnostics.status).toBe("unsupported");
+
+    await expect(
+      linkFantraxAccount({
+        userId: "user-1",
+        secretId: "secret",
+        accountLabel: "Fixture",
+        selectedLeagueKeys: ["league-1"],
+        consentVersion: "fantrax-settings-v1",
+      }),
+    ).rejects.toMatchObject({
+      code: "FANTRAX_SETTINGS_UNSUPPORTED",
+      statusCode: 422,
+    });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it("rejects a selected league key that was not returned by discovery", async () => {
+    await expect(
+      linkFantraxAccount({
+        userId: "user-1",
+        secretId: "secret",
+        accountLabel: "Fixture",
+        selectedLeagueKeys: ["tampered-league"],
+        consentVersion: "fantrax-settings-v1",
+      }),
+    ).rejects.toMatchObject({
+      code: "FANTRAX_SELECTION_INVALID",
+      statusCode: 400,
+    });
+    expect(mocks.getFantraxLeagueInfo).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+});
+
+vi.mock("lib/integrations/providerSyncAccessServer", async (importOriginal) => ({ ...await importOriginal<typeof import("lib/integrations/providerSyncAccessServer")>(), requireProviderSyncAccess: vi.fn().mockResolvedValue({ eligible: true }) }));
+
+function storedClient(rows: Record<string, unknown[]>) {
+  const filters: unknown[] = [];
+  const rpc = vi.fn();
+  const from = vi.fn((table: string) => {
+    const query: any = { select: () => query, eq: (key: string, value: unknown) => { filters.push([table, key, value]); return query; }, in: () => query, contains: () => query, or: () => query, order: () => query, limit: () => query,
+      maybeSingle: () => Promise.resolve({ data: rows[table]?.[0] ?? null, error: null }),
+      then: (resolve: (v: unknown) => unknown) => Promise.resolve({ data: rows[table] ?? [], error: null }).then(resolve) };
+    return query;
+  });
+  return { from, rpc, filters };
+}
+it.each([403, 503])("scheduled Fantrax rechecks each account before credentials and provider calls (%s)", async (status) => {
+  vi.clearAllMocks(); vi.stubEnv("FANTRAX_API_ENABLED", "true");
+  vi.mocked(requireProviderSyncAccess).mockRejectedValueOnce(new ProviderSyncAccessError(status, "fixture-denial", "Access denied"));
+  const client = storedClient({ external_leagues: [{ id: "league", connected_account_id: "account", user_id: "owner", league_metadata: { api_sync_enabled: true } }], connected_accounts: [{ id: "account", user_id: "owner" }] });
+  expect(await runFantraxScheduledSync({ client: client as any })).toEqual({ processed: 0, changed: 0, failed: status === 503 ? 1 : 0 });
+  expect(requireProviderSyncAccess).toHaveBeenCalledWith("owner");
+  expect(client.rpc).not.toHaveBeenCalled(); expect(mocks.getFantraxLeagues).not.toHaveBeenCalled(); expect(mocks.getFantraxLeagueInfo).not.toHaveBeenCalled();
+  vi.unstubAllEnvs();
+});
+it("rejects a paid account's attempt to refresh another account before credentials", async () => {
+  vi.clearAllMocks(); vi.stubEnv("FANTRAX_API_ENABLED", "true");
+  const client = storedClient({});
+  await expect(refreshFantrax({ userId: "owner", accountId: "foreign", client: client as any })).rejects.toMatchObject({ statusCode: 404 });
+  expect(client.filters).toContainEqual(["connected_accounts", "user_id", "owner"]);
+  expect(client.filters).toContainEqual(["connected_accounts", "id", "foreign"]);
+  expect(client.rpc).not.toHaveBeenCalled(); expect(mocks.getFantraxLeagues).not.toHaveBeenCalled();
+  vi.unstubAllEnvs();
+});

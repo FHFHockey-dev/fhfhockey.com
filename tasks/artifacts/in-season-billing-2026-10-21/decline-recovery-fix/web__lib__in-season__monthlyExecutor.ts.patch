@@ -1,0 +1,16 @@
+--- web/lib/in-season/monthlyExecutor.ts (baseline)
++++ web/lib/in-season/monthlyExecutor.ts
+@@ -80,6 +80,13 @@
+           if (intent.livemode !== false || id(intent.customer) !== state.binding.customerId || intent.currency !== "usd" || intent.amount !== invoice.total || intent.amount_received !== 0
+             || !["requires_payment_method", "canceled"].includes(intent.status)) throw new Error("Retry payment outcome is still uncertain.");
+         }
++        if (!Number.isSafeInteger(invoice.attempt_count) || invoice.attempt_count < 0) throw new Error("Retry attempt count is not verified.");
++        if (invoice.attempt_count > 0) {
++          // Recovery records the provider's cumulative count, never an extra
++          // attempt or a new grace window based on the delayed observation.
++          state = reduceMonthlyEvent(state, { kind: "failed", eventId: `recovered-decline:${job.id}`, userId: job.user_id, subscriptionId: job.subscription_id,
++            invoiceId: job.invoice_id, period, failedAttempts: invoice.attempt_count, firstFailureAt: state.invoices[job.invoice_id].firstFailureAt }, now);
++        }
+       } else if (!declined && !["void", "uncollectible"].includes(invoice.status ?? "")) {
+         throw new Error("Invoice is not retryable.");
+       }

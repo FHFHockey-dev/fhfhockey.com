@@ -1,3 +1,4 @@
+import { ProviderSyncAccessError, requireProviderSyncAccess } from "lib/integrations/providerSyncAccessServer";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { requireApiUser } from "lib/api/requireApiUser";
@@ -18,6 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
+    await requireProviderSyncAccess(user.id);
     const next = sanitizeYahooNextPath(req.body?.next);
     const { authorizationUrl, browserCookie } =
       await createYahooAuthorizationRequest({ next, userId: user.id });
@@ -25,6 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader("Set-Cookie", browserCookie);
     return res.status(200).json({ authorizationUrl });
   } catch (error) {
+    if (error instanceof ProviderSyncAccessError) return res.status(error.statusCode).json({ error: error.message, code: error.code });
     console.error("Yahoo connect failed", error);
     return res.status(500).json({
       error: "Yahoo authorization could not be started.",

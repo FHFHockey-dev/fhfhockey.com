@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-10-21T18:53:45.568150+00:00",
+  "taskPortsClosed": [
+    3107,
+    56421,
+    56422,
+    56424,
+    65439
+  ],
+  "stripeForwarderStopped": true,
+  "httpHarnessStopped": true,
+  "supabaseStopped": true,
+  "colimaTaskProfileStopped": true,
+  "nativePostgresStopped": true,
+  "dataRetained": true,
+  "privateDirectoryMode": "0700",
+  "credentialAndTargetFileModes": "0600",
+  "productionConfigurationChanged": false
+}

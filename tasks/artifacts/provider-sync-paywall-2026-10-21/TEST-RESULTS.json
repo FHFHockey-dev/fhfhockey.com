@@ -1,0 +1,181 @@
+{
+  "files": 35,
+  "tests": 636,
+  "results": {
+    "__tests__/pages/api/v1/account/fantrax/import.test.ts": {
+      "tests": 6,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-1.log",
+      "status": "passed"
+    },
+    "lib/in-season/commerce.test.ts": {
+      "tests": 49,
+      "sourceLog": "/tmp/fhfh-provider-sync-final-regressions.log",
+      "status": "passed"
+    },
+    "lib/in-season/access.test.ts": {
+      "tests": 20,
+      "sourceLog": "/tmp/fhfh-provider-sync-final-regressions.log",
+      "status": "passed"
+    },
+    "lib/integrations/fantrax/liveDraftServer.test.ts": {
+      "tests": 8,
+      "sourceLog": "/tmp/fhfh-provider-sync-final-regressions.log",
+      "status": "passed"
+    },
+    "__tests__/pages/api/v1/account/yahoo/connect.test.ts": {
+      "tests": 2,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-1.log",
+      "status": "passed"
+    },
+    "lib/integrations/fantrax/server.test.ts": {
+      "tests": 5,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-3.log",
+      "status": "passed"
+    },
+    "__tests__/pages/api/v1/account/fantrax/player-data.test.ts": {
+      "tests": 2,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-1.log",
+      "status": "passed"
+    },
+    "lib/integrations/yahoo/liveDraftAccess.test.ts": {
+      "tests": 7,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-1.log",
+      "status": "passed"
+    },
+    "__tests__/pages/api/v1/account/yahoo/callback.test.ts": {
+      "tests": 4,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-3.log",
+      "status": "passed"
+    },
+    "hooks/useDraftProAccess.test.tsx": {
+      "tests": 16,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-4.log",
+      "status": "passed"
+    },
+    "hooks/useFantraxDraftSync.test.tsx": {
+      "tests": 3,
+      "sourceLog": "/tmp/fhfh-provider-sync-final-regressions.log",
+      "status": "passed"
+    },
+    "lib/integrations/yahoo/teamRoster.test.ts": {
+      "tests": 16,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-1.log",
+      "status": "passed"
+    },
+    "__tests__/pages/api/v1/account/fantrax/routes.test.ts": {
+      "tests": 6,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-1.log",
+      "status": "passed"
+    },
+    "__tests__/pages/api/v1/account/yahoo/team-roster.test.ts": {
+      "tests": 5,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-1.log",
+      "status": "passed"
+    },
+    "components/account/FantraxImportPanel.test.tsx": {
+      "tests": 7,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-4.log",
+      "status": "passed"
+    },
+    "__tests__/pages/api/v1/account/yahoo/refresh.test.ts": {
+      "tests": 4,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-1.log",
+      "status": "passed"
+    },
+    "__tests__/pages/api/v1/account/yahoo/disconnect.test.ts": {
+      "tests": 2,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-1.log",
+      "status": "passed"
+    },
+    "__tests__/pages/api/v1/account/yahoo/draft-session-stop.test.ts": {
+      "tests": 3,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-1.log",
+      "status": "passed"
+    },
+    "lib/integrations/yahoo/refresh.test.ts": {
+      "tests": 4,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-1.log",
+      "status": "passed"
+    },
+    "hooks/useYahooDraftSync.test.tsx": {
+      "tests": 9,
+      "sourceLog": "/tmp/fhfh-provider-sync-final-regressions.log",
+      "status": "passed"
+    },
+    "__tests__/components/account/AccountSettingsPage.test.tsx": {
+      "tests": 23,
+      "sourceLog": "/tmp/fhfh-provider-sync-account-final.log",
+      "status": "passed"
+    },
+    "lib/integrations/yahoo/pickupApi.test.ts": {
+      "tests": 4,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-3.log",
+      "status": "passed"
+    },
+    "lib/integrations/providerSyncAccess.test.ts": {
+      "tests": 14,
+      "sourceLog": "/tmp/fhfh-provider-sync-final-regressions.log",
+      "status": "passed"
+    },
+    "lib/integrations/yahoo/liveDraftApi.test.ts": {
+      "tests": 8,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-4.log",
+      "status": "passed"
+    },
+    "lib/integrations/providerSyncPaywall.test.ts": {
+      "tests": 49,
+      "sourceLog": "/tmp/fhfh-provider-sync-status-verified.log",
+      "status": "passed"
+    },
+    "lib/integrations/yahoo/oauth.test.ts": {
+      "tests": 4,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-4.log",
+      "status": "passed"
+    },
+    "components/StarterBoardYahoo.test.tsx": {
+      "tests": 5,
+      "sourceLog": "/tmp/fhfh-provider-sync-copy-verified.log",
+      "status": "passed"
+    },
+    "lib/integrations/yahoo/liveDraftServer.test.ts": {
+      "tests": 15,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-4.log",
+      "status": "passed"
+    },
+    "__tests__/pages/draft-dashboard.test.tsx": {
+      "tests": 3,
+      "sourceLog": "/tmp/fhfh-provider-sync-copy-final.log",
+      "status": "passed"
+    },
+    "lib/integrations/yahoo/pollCoordinator.test.ts": {
+      "tests": 7,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-4.log",
+      "status": "passed"
+    },
+    "lib/integrations/yahoo/discovery.test.ts": {
+      "tests": 17,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-4.log",
+      "status": "passed"
+    },
+    "lib/in-season/workspaceRoutes.test.ts": {
+      "tests": 22,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-4.log",
+      "status": "passed"
+    },
+    "lib/integrations/fantrax/manualImport.test.ts": {
+      "tests": 5,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-4.log",
+      "status": "passed"
+    },
+    "__tests__/pages/start-chart.test.tsx": {
+      "tests": 73,
+      "sourceLog": "/tmp/fhfh-provider-sync-copy-verified.log",
+      "status": "passed"
+    },
+    "__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx": {
+      "tests": 209,
+      "sourceLog": "/tmp/fhfh-provider-sync-tests-4.log",
+      "status": "passed"
+    }
+  }
+}

@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 import { requireApiUser } from "lib/api/requireApiUser";
+import { DraftProRequestError } from "lib/draft-pro/requestError";
 import { getDraftProFeatureFlags } from "lib/draft-pro/features";
 import { loadDraftProAccess, requireDraftProServerCapability } from "lib/draft-pro/server";
 import { consumeRecommendationRequest } from "lib/draft-pro/recommendationsRateLimit";
@@ -24,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).send(formatDraftProExportCsv(input));
   } catch (error) {
     if (error instanceof z.ZodError) return res.status(400).json({ error: { code: "validation_error", message: error.issues[0]?.message ?? "Invalid export request." } });
-    const status = typeof error === "object" && error && "statusCode" in error && typeof error.statusCode === "number" ? error.statusCode : 500;
+    const status = error instanceof DraftProRequestError ? error.statusCode : 500;
     return res.status(status).json({ error: { code: status === 403 ? "draft_pro_required" : "export_unavailable", message: status === 403 ? "Draft Pro access is required for this export." : "Unable to create the CSV export." } });
   }
 }

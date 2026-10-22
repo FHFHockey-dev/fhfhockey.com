@@ -57,7 +57,7 @@ type CompleteRequest = {
   standings?: QueryResult;
   stats5v5?: QueryResult;
   specialTeams?: QueryResult;
-  allTeamsSummary?: QueryResult;
+  allTeamsSummary?: QueryResult | Promise<QueryResult>;
   allTeamsStandings?: QueryResult;
   allTeamsAdvanced?: QueryResult;
   allTeamsSpecialTeams?: QueryResult;
@@ -96,8 +96,9 @@ function installSummaryResults(...results: Promise<SummaryResult>[]) {
   let index = 0;
 
   fromMock.mockImplementation((table: string) => {
+    // The other primary reads start alongside the summary; answer them empty.
     if (table !== "team_summary_years") {
-      throw new Error(`Unexpected table: ${table}`);
+      return createThenableQuery({ data: [], error: null });
     }
 
     const query = queries[index];
@@ -109,6 +110,11 @@ function installSummaryResults(...results: Promise<SummaryResult>[]) {
   return queries;
 }
 
+function summaryCalls() {
+  return fromMock.mock.calls.filter(([table]) => table === "team_summary_years")
+    .length;
+}
+
 function createThenableQuery(result: QueryResult | Promise<QueryResult>) {
   const resultPromise = Promise.resolve(result);
   const query: any = {};
@@ -116,6 +122,9 @@ function createThenableQuery(result: QueryResult | Promise<QueryResult>) {
   query.eq = vi.fn(() => query);
   query.gte = vi.fn(() => query);
   query.lte = vi.fn(() => query);
+  query.gt = vi.fn(() => query);
+  query.or = vi.fn(() => query);
+  query.range = vi.fn(() => query);
   query.order = vi.fn(() => query);
   query.limit = vi.fn(() => query);
   query.single = vi.fn(() => resultPromise);
@@ -514,7 +523,7 @@ describe("TeamDashboard season and request ownership", () => {
     });
 
     expect(screen.getByText("Fresh request failed")).toBeTruthy();
-    expect(fromMock).toHaveBeenCalledTimes(2);
+    expect(summaryCalls()).toBe(2);
   });
 
   it("ignores a rejected request after unmount", async () => {
@@ -530,7 +539,7 @@ describe("TeamDashboard season and request ownership", () => {
     );
 
     await waitFor(() => {
-      expect(fromMock).toHaveBeenCalledOnce();
+      expect(summaryCalls()).toBe(1);
     });
     view.unmount();
 
@@ -650,6 +659,201 @@ describe("TeamDashboard season and request ownership", () => {
           url.includes("gameDate<='2026-04-16'"),
       ),
     ).toBe(true);
+  });
+
+  it("totals season special teams from every game row, not the latest game", async () => {
+    useCurrentSeasonQueryMock.mockReturnValue(
+      successfulSeasonQuery({
+        seasonId: 20252026,
+        regularSeasonStartDate: "2025-10-07T00:00:00Z",
+        regularSeasonEndDate: "2026-04-16T00:00:00Z",
+        seasonEndDate: "2026-06-22T00:00:00Z",
+      }),
+    );
+    const summary = teamSummaryFixture();
+    // Latest game: PP 2/2, PK 0 against on 3. Earlier game: PP 0/6, PK 2 on 5.
+    // Season PP is 2/8 = 25% (a mean of game shares would be 50%);
+    // season PK is 1 - 2/8 = 75%.
+    const gameRows = [
+      {
+        date: "2025-10-12",
+        games_played: 1,
+        power_play_goals_for: 2,
+        pp_opportunities: 2,
+        pp_goals_against: 0,
+        times_shorthanded: 3,
+        sh_goals_for: 1,
+        sh_goals_against: 0,
+      },
+      {
+        date: "2025-10-09",
+        games_played: 1,
+        power_play_goals_for: 0,
+        pp_opportunities: 6,
+        pp_goals_against: 2,
+        times_shorthanded: 5,
+        sh_goals_for: 0,
+        sh_goals_against: 0,
+      },
+    ];
+    const queries = installCompleteRequests({
+      summary: { data: summary, error: null },
+      standings: { data: [standingsFixture()], error: null },
+      specialTeams: { data: gameRows, error: null },
+      allTeamsSummary: { data: [summary], error: null },
+    });
+
+    render(<TeamDashboard teamId="22" teamAbbrev="EDM" seasonId="20252026" />);
+
+    const powerPlay = await screen.findByText("Power Play %");
+    expect(powerPlay.parentElement?.textContent).toContain("25.0%");
+    expect(
+      screen.getByText("Penalty Kill %").parentElement?.textContent,
+    ).toContain("75.0%");
+    expect(
+      screen.getByText("PP Opps/Game").parentElement?.textContent,
+    ).toContain("4.0");
+    expect(
+      screen.getByText("PPG Against").parentElement?.textContent,
+    ).toContain("2");
+
+    const wgo = queries.wgo_team_stats[0];
+    expect(wgo.limit).not.toHaveBeenCalled();
+    expect(wgo.gte).toHaveBeenCalledWith("date", "2025-10-07");
+    expect(wgo.lte).toHaveBeenCalledWith("date", "2026-04-16");
+    expect(wgo.or).toHaveBeenCalledWith("games_played.neq.0,games_played.is.null");
+  });
+
+  it("withholds rates from asymmetric counts and labels unknown game exposure", async () => {
+    useCurrentSeasonQueryMock.mockReturnValue(successfulSeasonQuery({ seasonId: 20252026 }));
+    const summary = teamSummaryFixture();
+    installCompleteRequests({
+      summary: { data: summary, error: null },
+      standings: { data: [standingsFixture()], error: null },
+      stats5v5: {
+        data: [advancedFixture({ cf: 10, ca: 20 }), advancedFixture({ gp: null, cf: 10, ca: 20 })],
+        error: null,
+      },
+      specialTeams: {
+        data: [
+          specialTeamsFixture({ games_played: 1, power_play_goals_for: null, pp_opportunities: 5 }),
+          specialTeamsFixture({ games_played: 1, power_play_goals_for: 1, pp_opportunities: 5 }),
+        ],
+        error: null,
+      },
+      allTeamsSummary: { data: [summary], error: null },
+    });
+    render(<TeamDashboard teamId="22" teamAbbrev="EDM" seasonId="20252026" />);
+    const powerPlay = await screen.findByText("Power Play %");
+    expect(powerPlay.parentElement?.textContent).toContain("N/A");
+    expect(screen.getByTitle(/unavailable: incomplete game sample/)).toBeTruthy();
+    expect(screen.getByText("Corsi For %").parentElement?.textContent).toContain("N/A");
+  });
+
+  it.each(["current", "peer", "none"])("keeps aggregate ranks unknown when %s data is incomplete", async (missing) => {
+    useCurrentSeasonQueryMock.mockReturnValue(successfulSeasonQuery({ seasonId: 20252026 }));
+    const summary = teamSummaryFixture();
+    const currentAdvanced = advancedFixture({ cf: 0, ca: missing === "current" ? null : 20 });
+    const peerAdvanced = advancedFixture({ team_abbreviation: "PHI", cf: 10, ca: missing === "peer" ? null : 20 });
+    const currentSpecial = specialTeamsFixture({ games_played: 1, power_play_goals_for: missing === "current" ? null : 0 });
+    const peerSpecial = specialTeamsFixture({ team_id: 4, games_played: 1, power_play_goals_for: missing === "peer" ? null : 2 });
+    installCompleteRequests({
+      summary: { data: summary, error: null },
+      standings: { data: [standingsFixture()], error: null },
+      stats5v5: { data: [currentAdvanced], error: null },
+      specialTeams: { data: [currentSpecial], error: null },
+      allTeamsSummary: { data: [summary], error: null },
+      allTeamsAdvanced: { data: [currentAdvanced, peerAdvanced], error: null },
+      allTeamsSpecialTeams: { data: [currentSpecial, peerSpecial], error: null },
+    });
+    render(<TeamDashboard teamId="22" teamAbbrev="EDM" seasonId="20252026" />);
+    const corsiRank = await screen.findByText("CF%");
+    const expectedRank = missing === "none" ? "#2" : "#—";
+    expect(corsiRank.parentElement?.textContent).toContain(expectedRank);
+    expect(screen.getByText("PP Goals For").parentElement?.textContent).toContain(expectedRank);
+    expect(screen.getByText("xG%").parentElement?.textContent).toContain("#1");
+  });
+
+  it("renders primary content before league rankings finish", async () => {
+    useCurrentSeasonQueryMock.mockReturnValue(
+      successfulSeasonQuery({
+        seasonId: 20252026,
+        regularSeasonStartDate: "2025-10-07T00:00:00Z",
+        regularSeasonEndDate: "2026-04-16T00:00:00Z",
+        seasonEndDate: "2026-06-22T00:00:00Z",
+      }),
+    );
+    const summary = teamSummaryFixture();
+    const leagueSummary = createDeferred<QueryResult>();
+    const queries = installCompleteRequests({
+      summary: { data: summary, error: null },
+      standings: { data: [standingsFixture()], error: null },
+      specialTeams: { data: [specialTeamsFixture()], error: null },
+      allTeamsSummary: leagueSummary.promise,
+    });
+
+    render(<TeamDashboard teamId="22" teamAbbrev="EDM" seasonId="20252026" />);
+
+    // The four primary reads start together, before any result returns.
+    expect(queries.team_summary_years[0].single).toHaveBeenCalled();
+    expect(queries.nhl_standings_details[0].limit).toHaveBeenCalled();
+    expect(queries.nst_team_5v5[0].order).toHaveBeenCalled();
+    expect(queries.wgo_team_stats[0].order).toHaveBeenCalled();
+
+    expect(await screen.findByText("Power Play %")).toBeTruthy();
+    expect(screen.getByText("Game timeline")).toBeTruthy();
+    expect(screen.getByText("Loading league rankings...")).toBeTruthy();
+    expect(screen.getAllByText("#…").length).toBeGreaterThan(0);
+
+    await act(async () => {
+      leagueSummary.resolve({ data: [summary], error: null });
+      await leagueSummary.promise;
+    });
+
+    await waitFor(() =>
+      expect(screen.queryByText("Loading league rankings...")).toBeNull(),
+    );
+    expect(screen.queryByText("#…")).toBeNull();
+  });
+
+  it("ranks 5v5 shares on season totals, not each team's latest game", async () => {
+    useCurrentSeasonQueryMock.mockReturnValue(
+      successfulSeasonQuery({
+        seasonId: 20252026,
+        regularSeasonStartDate: "2025-10-07T00:00:00Z",
+        regularSeasonEndDate: "2026-04-16T00:00:00Z",
+        seasonEndDate: "2026-06-22T00:00:00Z",
+      }),
+    );
+    const summary = teamSummaryFixture();
+    const game = (
+      team: string,
+      date: string,
+      cf: number,
+      ca: number,
+    ) => ({ team_abbreviation: team, date, gp: 1, cf, ca });
+    installCompleteRequests({
+      summary: { data: summary, error: null },
+      standings: { data: [standingsFixture()], error: null },
+      specialTeams: { data: [specialTeamsFixture()], error: null },
+      allTeamsSummary: { data: [summary], error: null },
+      // EDM won its latest game 90-10 but is 120 of 300 (40%) on the season;
+      // BOS lost its latest 10-90 but is 150 of 300 (50%).
+      allTeamsAdvanced: {
+        data: [
+          game("EDM", "2025-10-10", 30, 170),
+          game("EDM", "2025-10-12", 90, 10),
+          game("BOS", "2025-10-10", 140, 60),
+          game("BOS", "2025-10-12", 10, 90),
+        ],
+        error: null,
+      },
+    });
+
+    render(<TeamDashboard teamId="22" teamAbbrev="EDM" seasonId="20252026" />);
+
+    const corsiRank = await screen.findByText("CF%");
+    expect(corsiRank.parentElement?.textContent).toContain("#2");
   });
 
   it("does not issue reversed goalie requests before a selected season starts", async () => {

@@ -1,0 +1,107 @@
+[
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/REPORT.md",
+    "preserved_as": "REPORT.md",
+    "sha256": "bc213e1f0f60820e40e72dee91b5db95880b3a15344edcf7c7e33a2831a75965"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/COMMANDS.md",
+    "preserved_as": "COMMANDS.md",
+    "sha256": "9d789334cf1a2d48f7a8790aade80854a7b3ec12b5d0e540234cdc9ac6b90313"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/snapshot-start.json",
+    "preserved_as": "evidence/audit-snapshot-start.json",
+    "sha256": "e55816f6c72c5c857ecffcc78e0fdff8f7a57430ed541403cecd08d7cbf43547"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/snapshot-end.json",
+    "preserved_as": "evidence/audit-snapshot-end.json",
+    "sha256": "9db8f96c93375e157082fbf81da9c5f27f0f1e3c4fa67b08e22c1f86bd91da04"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/finding-file-fingerprints.json",
+    "preserved_as": "evidence/finding-file-fingerprints.json",
+    "sha256": "561fabea98a0019ce6644c09c17c260dd91e8fc6e631d7aa9086357034826166"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/supporting-doc-fingerprints.json",
+    "preserved_as": "evidence/supporting-doc-fingerprints.json",
+    "sha256": "aa1d6cee7514d98e9678799e60a5d6f4ba8593edebeaec7351062a7599969921"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/audit-files-sha256.json",
+    "preserved_as": "evidence/original-audit-files-sha256.json",
+    "sha256": "e7a39a833e29e832497178fee85d42445c7d2a607347e13e58bf7bf3f3540d1f"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/core-tests.log",
+    "preserved_as": "evidence/core-tests.log",
+    "sha256": "8706f79c85765ca4a3c5214298758cbbdee4037516d8225c3c002d0291092cc1"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/neighbor-tests.log",
+    "preserved_as": "evidence/neighbor-tests.log",
+    "sha256": "5528bb77c0bb06061c5be20c26b0c6822761d23a94752505b929b98a8bcbcefa"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/model-tests.log",
+    "preserved_as": "evidence/model-tests.log",
+    "sha256": "7ff54cefc956cc033b6cee8397f38787509597b74e0c28cadf63a0f0cec8511d"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/inventory-retest.log",
+    "preserved_as": "evidence/inventory-retest.log",
+    "sha256": "93ea86ed56cdf2dea73e9362887e0d3c02102d05ce9d23c8c0092f7115e39c05"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/edgecases.log",
+    "preserved_as": "evidence/edgecases.log",
+    "sha256": "1f37cf73ae929c029ec51bf008393fd609fe9fcfb0dc43a7e67eb942b4ffafab"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/coverage-universe.log",
+    "preserved_as": "evidence/coverage-universe.log",
+    "sha256": "4324af36d7b738c3aec38179aafb0ac29dd25a153e70c8de847f6271efdda999"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/stats-async.log",
+    "preserved_as": "evidence/stats-async.log",
+    "sha256": "a059bbc49b8a9eb1a3348ed8ebcdb09ce6622ee493172472e14a7f4306293fed"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/temporal-cutoff.log",
+    "preserved_as": "evidence/temporal-cutoff.log",
+    "sha256": "5e644f1dba279c1657ce4398bd77e66155688276d594a5a313f1ff51aeb8adef"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/offline.cjs",
+    "preserved_as": "repros/offline.cjs",
+    "sha256": "5fd1c8ce5bb65531ab0558bccf4fe9ef252e4c524c4bec4c944c37e4bd707c06"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/snapshot/web/audit.vitest.config.mts",
+    "preserved_as": "repros/audit.vitest.config.mts",
+    "sha256": "f31e9a30f009208654c48eef2fe86eab3f6c5782cde5baf1ea7c9293b9a50927"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/snapshot/web/audit.offline.setup.ts",
+    "preserved_as": "repros/audit.offline.setup.ts",
+    "sha256": "7dbb56c149b2b620b5cc073456a414d2819b06cfbb5ec7c7f0cf02ef7d176a6f"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/snapshot/web/lib/auditEdgecases.test.ts",
+    "preserved_as": "repros/auditEdgecases.test.ts",
+    "sha256": "a9a176a518e18ecd129c27d3b7f61980d6fdd665aacc1649cc158bf66b45c25e"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/snapshot/web/lib/auditStatsAsync.test.tsx",
+    "preserved_as": "repros/auditStatsAsync.test.tsx",
+    "sha256": "880f5979ae200e1d0a9f50b0488ec35878bcb45d40170a7cfb2f62cb1f86ae7e"
+  },
+  {
+    "original": "/tmp/fhfh-claude-audit-20261022/snapshot/web/lib/auditTemporalCutoff.test.ts",
+    "preserved_as": "repros/auditTemporalCutoff.test.ts",
+    "sha256": "f651a491652fb900b7323fd6253a3f9d4eb6278125101b33402c0e27d3fea08c"
+  }
+]

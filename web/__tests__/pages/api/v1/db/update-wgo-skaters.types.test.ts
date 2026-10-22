@@ -269,6 +269,21 @@ describe("WGO skater generated insert contracts", () => {
     );
   });
 
+  it.each(["1959-10-08", "1967-10-08", "2024-10-08", "2027-10-08"])(
+    "rejects an out-of-season requested date %s before any write even without a source gameDate",
+    async (date) => {
+      await expect(processAndUpsertGameTypeData(createSkaterData(), "wgo_skater_stats", date, 20252026))
+        .rejects.toThrow("outside season 20252026");
+      expect(upsertMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it("keeps delayed 2019-20 playoffs in September 2020 valid", async () => {
+    await expect(processAndUpsertGameTypeData(createSkaterData(2019030716), "wgo_skater_stats_playoffs", "2020-09-28", 20192020))
+      .resolves.toBe(1);
+    expect(upsertMock).toHaveBeenCalledWith([expect.objectContaining({ date: "2020-09-28", season_id: 20192020 })], expect.anything());
+  });
+
   it("normalizes time fields to text through the playoff table contract", async () => {
     await expect(
       processAndUpsertGameTypeData(

@@ -1,0 +1,97 @@
+--- web/lib/in-season/monthlyExecutor.ts (baseline)
++++ web/lib/in-season/monthlyExecutor.ts
+@@ -4,6 +4,7 @@
+ import { monthlyRetryIntents, reduceMonthlyEvent } from "./monthlyLifecycle";
+ import { verifyMonthlyInvoice, verifyMonthlySubscription } from "./monthlyStripe";
+ import type { MonthlyStore } from "./monthlyStore";
++import { reconcileMonthlySubscriptionEnd, reconcilePaidMonthlyInvoice } from "./monthlyWebhook";
+ 
+ const id = (value: string | { id?: string } | null | undefined) => typeof value === "string" ? value : value?.id;
+ const cutoff = Date.parse(IN_SEASON_COMMERCE.accessEndsAt);
+@@ -19,7 +20,7 @@
+   await verifyInSeasonSandboxAccount(stripe);
+   const jobs = await store.jobs(limit); const completed: string[] = [];
+   for (const candidate of jobs) {
+-    const now = fixedNow ?? new Date();
++    let now = fixedNow ?? new Date();
+     const claim = await store.claimJob(candidate.id); if (!claim) continue;
+     const { job, token } = claim;
+     const locked = await store.claim(job.subscription_id, `job:${job.id}`);
+@@ -31,31 +32,56 @@
+     const schedule = state.binding.scheduleId ? await stripe.subscriptionSchedules.retrieve(state.binding.scheduleId) : undefined;
+     verifyMonthlySubscription(state.binding, subscription, price, schedule);
+     if (job.kind === "retry") {
++      if (!job.invoice_id || !state.invoices[job.invoice_id]) throw new Error("Retry invoice binding missing.");
++      if (subscription.status === "canceled") state = reconcileMonthlySubscriptionEnd(state, subscription, `job:${job.id}:ended`, now);
+       const due = Date.parse(job.due_at);
+-      const eligible = job.invoice_id && !state.cancelledAt && !state.billingStoppedAt && subscription.status !== "canceled"
++      const eligible = !state.cancelledAt && !state.billingStoppedAt && subscription.status !== "canceled"
+         && now.getTime() >= due && now.getTime() <= due + 5 * 60_000 && now.getTime() < cutoff
+         && monthlyRetryIntents(state, new Date(due)).some((intent) => intent.idempotencyKey === job.id && intent.invoiceId === job.invoice_id && intent.attempt === job.attempt);
+-      if (eligible) {
++      // The collection window limits new charges, never read-only recovery of a
++      // prior unknown result. A paid invoice must reach the grant ledger first.
++      let invoice = await stripe.invoices.retrieve(job.invoice_id);
++      const line = invoice.lines.data.find((row) => row.amount !== 0);
++      const initialPrice = state.binding.scheduleId && line?.pricing?.price_details?.price && line.pricing.price_details.price !== catalog.monthlyPriceId ? await stripe.prices.retrieve(line.pricing.price_details.price) : undefined;
++      const period = verifyMonthlyInvoice(state.binding, invoice, initialPrice);
++      let declined = false;
++      if (eligible && invoice.status === "open" && now.getTime() < Date.parse(state.binding.periods[period].to)) {
+         if (retries?.accountId !== catalog.accountId || retries.automaticRetriesDisabled !== true || !retries.verificationReference.trim()) throw new Error("Automatic retry configuration has not been verified.");
+-        const invoice = await stripe.invoices.retrieve(job.invoice_id!);
+-        const line = invoice.lines.data.find((row) => row.amount !== 0);
+-        const initialPrice = state.binding.scheduleId && line?.pricing?.price_details?.price && line.pricing.price_details.price !== catalog.monthlyPriceId ? await stripe.prices.retrieve(line.pricing.price_details.price) : undefined;
+-        const period = verifyMonthlyInvoice(state.binding, invoice, initialPrice);
+-        if (invoice.status === "open" && now.getTime() < Date.parse(state.binding.periods[period].to)) {
+-          if (invoice.auto_advance !== false) throw new Error("Automatic invoice collection must be disabled before a controlled retry.");
+-          await store.snapshotJob(job.id, token, { operation: "retry", invoiceId: invoice.id, amount: invoice.amount_remaining, attempt: job.attempt, observedAt: now.toISOString() });
+-          const paymentTime = (fixedNow ?? new Date()).getTime();
+-          if (paymentTime >= cutoff || paymentTime >= Date.parse(state.binding.periods[period].to) || paymentTime > due + 5 * 60_000) throw new Error("Retry window closed before collection.");
+-          try { await stripe.invoices.pay(job.invoice_id!, { off_session: true }, { idempotencyKey: job.id }); }
+-          catch (error) {
+-            // Only a definitive provider decline counts as a failed attempt.
+-            // Transport errors and timeouts retain the unfinished job.
+-            if ((error as { statusCode?: number }).statusCode !== 402) throw error;
+-            const prior = state.invoices[job.invoice_id!];
+-            state = reduceMonthlyEvent(state, { kind: "failed", eventId: `declined:${job.id}`, userId: job.user_id, subscriptionId: job.subscription_id,
+-              invoiceId: job.invoice_id!, period, failedAttempts: job.attempt!, firstFailureAt: prior.firstFailureAt }, now);
+-          }
+-        } else if (!["paid", "void", "uncollectible"].includes(invoice.status ?? "")) throw new Error("Invoice is not retryable.");
++        if (invoice.auto_advance !== false) throw new Error("Automatic invoice collection must be disabled before a controlled retry.");
++        await store.snapshotJob(job.id, token, { operation: "retry", invoiceId: invoice.id, amount: invoice.amount_remaining, attempt: job.attempt, observedAt: now.toISOString() });
++        const paymentTime = (fixedNow ?? new Date()).getTime();
++        if (paymentTime >= cutoff || paymentTime >= Date.parse(state.binding.periods[period].to) || paymentTime > due + 5 * 60_000) throw new Error("Retry window closed before collection.");
++        try {
++          await stripe.invoices.pay(job.invoice_id, { off_session: true }, { idempotencyKey: job.id });
++          invoice = await stripe.invoices.retrieve(job.invoice_id);
++          if (invoice.status !== "paid") throw new Error("Retry payment outcome has not settled.");
++        }
++        catch (error) {
++          // Only a definitive provider decline counts as a failed attempt.
++          // Transport errors and timeouts retain the unfinished job.
++          if ((error as { statusCode?: number }).statusCode !== 402) throw error;
++          declined = true;
++          const prior = state.invoices[job.invoice_id!];
++          state = reduceMonthlyEvent(state, { kind: "failed", eventId: `declined:${job.id}`, userId: job.user_id, subscriptionId: job.subscription_id,
++            invoiceId: job.invoice_id!, period, failedAttempts: job.attempt!, firstFailureAt: prior.firstFailureAt }, now);
++        }
++      }
++      now = fixedNow ?? new Date();
++      if (invoice.status === "paid") {
++        state = await reconcilePaidMonthlyInvoice({ stripe, state, eventId: `job:${job.id}:outcome`, invoice, subscription, price, schedule, initialPrice, now });
++      } else if (!declined && invoice.status === "open") {
++        if (invoice.auto_advance !== false || invoice.amount_paid !== 0 || invoice.amount_remaining !== invoice.total) throw new Error("Unpaid retry outcome is not verified.");
++        const allocations = await stripe.invoicePayments.list({ invoice: invoice.id!, limit: 2 });
++        if (allocations.has_more || allocations.data.length > 1) throw new Error("Retry payment allocation ambiguous.");
++        for (const payment of allocations.data) {
++          const intentId = id(payment.payment.payment_intent);
++          if (payment.livemode !== false || id(payment.invoice) !== invoice.id || payment.currency !== "usd" || !["open", "canceled"].includes(payment.status) || payment.amount_paid || !intentId) throw new Error("Retry payment outcome is not verified.");
++          const intent = await stripe.paymentIntents.retrieve(intentId);
++          if (intent.livemode !== false || id(intent.customer) !== state.binding.customerId || intent.currency !== "usd" || intent.amount !== invoice.total || intent.amount_received !== 0
++            || !["requires_payment_method", "canceled"].includes(intent.status)) throw new Error("Retry payment outcome is still uncertain.");
++        }
++      } else if (!declined && !["void", "uncollectible"].includes(invoice.status ?? "")) {
++        throw new Error("Invoice is not retryable.");
+       }
+     } else {
+       const atCutoff = now.getTime() >= cutoff;

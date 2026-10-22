@@ -1,0 +1,177 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/auditTemporalCutoff.test.ts lib/auditEdgecases.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-ah_xhhr5/isolation/snapshot/web
+
+(node:48326) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/auditEdgecases.test.ts > independent audit reproductions > keeps a complete exact-game forecast when tomorrow's newer row has null learned heads
+BRIDGE_OBSERVED {"forecasts":[],"limitations":["Interim FORGE projections until native forecasts go live: each player's latest FORGE v2 daily line (runs 2026-10-21 to 2026-10-22) stands in for his remaining games; 0 of 1 teams covered.","Season rates could not be read, so penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs count as 0.","Team strength could not be read, so future games reuse each FORGE line without an opponent adjustment.","Goalie starts use each goalie's last-10 start share (season share when missing), or FORGE's own starter probability for an already projected game. Per-start lines come from his latest FORGE line, or his team's when he has none.","Goalie news could not be read; start chances use start shares only.","1 skaters have a FORGE line with blank even-strength goals, assists or shots; such lines give no forecast."]}
+
+stdout | lib/auditEdgecases.test.ts > independent audit reproductions > does not produce season percentages from unpaired missing count columns
+AGGREGATE_OBSERVED {"nst":0.6666666666666666,"wgo":0.1,"shots":15}
+
+stdout | lib/auditEdgecases.test.ts > independent audit reproductions > keeps a missing weighted actual stat unknown in the recorded Yahoo lineup
+PAST_POINTS_OBSERVED [{"date":"2026-10-20","source":"yahoo","entries":[{"playerId":"p1","name":"Synthetic player","position":"C","slotId":"C1","points":2}]}]
+
+stdout | lib/auditEdgecases.test.ts > independent audit reproductions > does not mark an absent player DNP just because one unrelated actual row arrived
+SETTLE_OBSERVED [{"dressed":false,"fp":0,"settled":"2026-10-22T11:00:00Z"}]
+
+stdout | lib/auditEdgecases.test.ts > independent audit reproductions > recognizes an expired in-flight lease after a late durable checkpoint
+LATE_LEASE_OBSERVED {"state":{"status":"running","cursorGameId":11,"lastError":null,"updatedAt":"2026-10-21T10:03:35.000Z","leaseExpiresAt":"2026-10-21T10:04:30.000Z"},"dead":false}
+
+stdout | lib/auditEdgecases.test.ts > coverage includes dressed roster players who lack every prediction and naive history
+COVERAGE_UNIVERSE_OBSERVED [{"source":"bridge_exact","player_class":"skater","n":1,"dressed":1,"covered":1,"coverage":1,"phantoms":0,"heads":{"goals":{"n":1,"mae":0,"bias":0},"assists":{"n":1,"mae":0,"bias":0},"pp_points":{"n":1,"mae":0,"bias":0},"shots":{"n":1,"mae":0,"bias":0},"hits":{"n":1,"mae":0,"bias":0},"blocks":{"n":1,"mae":0,"bias":0}},"fantasyPoints":{"n":1,"mae":0,"bias":0},"decile10":{"n":1,"expected":1,"actual":1,"ratio":1},"reliability":{},"b2b":{"heads":{"goals":{"n":0,"mae":null,"bias":null},"assists":{"n":0,"mae":null,"bias":null},"pp_points":{"n":0,"mae":null,"bias":null},"shots":{"n":0,"mae":null,"bias":null},"hits":{"n":0,"mae":null,"bias":null},"blocks":{"n":0,"mae":null,"bias":null}},"fantasyPoints":{"n":0,"mae":null,"bias":null}}}]
+
+ ❯ lib/auditEdgecases.test.ts (6 tests | 6 failed) 8ms
+   × independent audit reproductions > keeps a complete exact-game forecast when tomorrow's newer row has null learned heads 3ms
+     → expected undefined to be defined
+   × independent audit reproductions > does not produce season percentages from unpaired missing count columns 1ms
+     → expected 0.1 to be null
+   × independent audit reproductions > keeps a missing weighted actual stat unknown in the recorded Yahoo lineup 0ms
+     → expected 2 to be null
+   × independent audit reproductions > does not mark an absent player DNP just because one unrelated actual row arrived 1ms
+     → expected '2026-10-22T11:00:00Z' to be null
+   × independent audit reproductions > recognizes an expired in-flight lease after a late durable checkpoint 1ms
+     → expected false to be true // Object.is equality
+   × coverage includes dressed roster players who lack every prediction and naive history 2ms
+     → expected { source: 'bridge_exact', …(11) } to match object { dressed: 2, covered: 1, …(1) }
+(24 matching properties omitted from actual)
+(node:48326) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/auditTemporalCutoff.test.ts > reconstruction excludes the target game's observed per-game context
+TARGET_DATE_CONTEXT_OBSERVED {"shot":{"sourceDate":"2026-10-20","nstShotsPer60":99,"nstIxgPer60":9,"nstRushAttemptsPer60":null,"nstReboundsCreatedPer60":null},"onIce":{"sourceDate":"2026-10-20","nstOiXgfPer60":99,"nstOiXgaPer60":null,"nstOiCfPct":null,"possessionPctSafe":null}}
+
+ ❯ lib/auditTemporalCutoff.test.ts (1 test | 1 failed) 3ms
+   × reconstruction excludes the target game's observed per-game context 3ms
+     → expected '2026-10-20' to be '2026-10-19' // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/auditEdgecases.test.ts > independent audit reproductions > keeps a complete exact-game forecast when tomorrow's newer row has null learned heads
+AssertionError: expected undefined to be defined
+ ❯ lib/auditEdgecases.test.ts:17:53
+     15|  const output=buildForgeDailyBridgeForecasts(inputs,[player],[game("10…
+     16|  console.log("BRIDGE_OBSERVED",JSON.stringify(output));
+     17|  expect(output.forecasts.find(x=>x.gameId==="100")).toBeDefined();
+       |                                                     ^
+     18|  });
+     19|  it("does not produce season percentages from unpaired missing count c…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  lib/auditEdgecases.test.ts > independent audit reproductions > does not produce season percentages from unpaired missing count columns
+AssertionError: expected 0.1 to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+0.1
+
+ ❯ lib/auditEdgecases.test.ts:23:27
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  lib/auditEdgecases.test.ts > independent audit reproductions > keeps a missing weighted actual stat unknown in the recorded Yahoo lineup
+AssertionError: expected 2 to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+2
+
+ ❯ lib/auditEdgecases.test.ts:30:38
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  lib/auditEdgecases.test.ts > independent audit reproductions > does not mark an absent player DNP just because one unrelated actual row arrived
+AssertionError: expected '2026-10-22T11:00:00Z' to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+"2026-10-22T11:00:00Z"
+
+ ❯ lib/auditEdgecases.test.ts:36:32
+     34|  const settled=settleLedgerRows(rows,{skaters:[{game_id:100,player_id:…
+     35|  console.log("SETTLE_OBSERVED",JSON.stringify(settled.map(x=>({dressed…
+     36|  expect(settled[0].settled_at).toBeNull();
+       |                                ^
+     37|  });
+     38|  it("recognizes an expired in-flight lease after a late durable checkp…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  lib/auditEdgecases.test.ts > independent audit reproductions > recognizes an expired in-flight lease after a late durable checkpoint
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/auditEdgecases.test.ts:43:15
+     41|  const dead=isRollingForgeStageLeaseDead(state,t+301000);
+     42|  console.log("LATE_LEASE_OBSERVED",JSON.stringify({state,dead}));
+     43|  expect(dead).toBe(true);
+       |               ^
+     44|  });
+     45| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  lib/auditEdgecases.test.ts > coverage includes dressed roster players who lack every prediction and naive history
+AssertionError: expected { source: 'bridge_exact', …(11) } to match object { dressed: 2, covered: 1, …(1) }
+(24 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "coverage": 0.5,[39m
+[31m+   "coverage": 1,[39m
+[2m    "covered": 1,[22m
+[32m-   "dressed": 2,[39m
+[31m+   "dressed": 1,[39m
+[2m  }[22m
+
+ ❯ lib/auditEdgecases.test.ts:52:19
+     50|  const score=scoreLedger(settleLedgerRows(rows,{skaters:[actual(11),ac…
+     51|  console.log("COVERAGE_UNIVERSE_OBSERVED",JSON.stringify(score));
+     52|  expect(score[0]).toMatchObject({dressed:2,covered:1,coverage:0.5});
+       |                   ^
+     53| });
+     54| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  lib/auditTemporalCutoff.test.ts > reconstruction excludes the target game's observed per-game context
+AssertionError: expected '2026-10-20' to be '2026-10-19' // Object.is equality
+
+Expected: [32m"2026-10-[7m19[27m"[39m
+Received: [31m"2026-10-[7m20[27m"[39m
+
+ ❯ lib/auditTemporalCutoff.test.ts:10:49
+      8|  const output=await fetchLatestSkaterContextProfiles([11],"2026-10-20"…
+      9|  console.log("TARGET_DATE_CONTEXT_OBSERVED",JSON.stringify({shot:outpu…
+     10|  expect(output.shotQuality.get(11)?.sourceDate).toBe("2026-10-19");
+       |                                                 ^
+     11| });
+     12| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  7 failed (7)
+   Start at  08:01:29
+   Duration  849ms (transform 276ms, setup 12ms, collect 321ms, tests 11ms, environment 349ms, prepare 55ms)
+

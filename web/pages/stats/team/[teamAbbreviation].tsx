@@ -1,4 +1,5 @@
 import { GetServerSidePropsContext } from "next";
+import { useRouter } from "next/router";
 import supabase from "lib/supabase";
 import styles from "styles/TeamStatsPage.module.scss";
 import React, { useEffect, useState, useRef } from "react";
@@ -199,11 +200,14 @@ export default function TeamStatsPage({
     ? summaries
     : summaries.slice(0, 10);
 
-  // Use our custom hook to fetch shot data with filters
+  // Shot data is only read once the Shot Map tab is opened.
+  const router = useRouter();
+  const shotMapActive = router.query.tab === "visualization";
   const { shotData, opponentShotData, isLoading, error } = useShotData(
     teamId,
     pageSeasonId?.toString(),
-    filters
+    filters,
+    shotMapActive
   );
 
   // Handle filter changes from the visualization component

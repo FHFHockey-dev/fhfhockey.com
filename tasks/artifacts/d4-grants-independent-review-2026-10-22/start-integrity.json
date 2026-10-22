@@ -1,0 +1,703 @@
+{
+  "timestamp": "2026-10-22T12:44:46.792208+00:00",
+  "head": "d3f057c6c849d5d5474bc912a6f461f617c65b15",
+  "candidate": {
+    "tasks/artifacts/d4-grants-2026-10-20/harness.py": {
+      "expected": "7bd2f9803c5feb42c79cb93d671ee87bd6e2c76c3b138172618e508e03e96626",
+      "actual": "7bd2f9803c5feb42c79cb93d671ee87bd6e2c76c3b138172618e508e03e96626",
+      "matches": true
+    },
+    "tasks/artifacts/d4-grants-2026-10-20/test_harness.py": {
+      "expected": "e73b8c77bf6acdac9d5a0a23ccc5d45f1b266ffb72e8e4cf05041df416dddc0d",
+      "actual": "e73b8c77bf6acdac9d5a0a23ccc5d45f1b266ffb72e8e4cf05041df416dddc0d",
+      "matches": true
+    },
+    "supabase/tests/data_api_grants.sql": {
+      "expected": "d20ca21d8c4b5a0ce1b56d7cb102a1daf36e8c601f94a210c77dd6b93341424f",
+      "actual": "d20ca21d8c4b5a0ce1b56d7cb102a1daf36e8c601f94a210c77dd6b93341424f",
+      "matches": true
+    }
+  },
+  "migrationAuthoritySha256": "d0d2f40182cd9e45ab27a996aedf53d31be6dbd62bc45b01d33a7735f141f49f",
+  "migrations": [
+    {
+      "order": 1,
+      "path": "supabase/migrations/20260716112908_production_schema_baseline.sql",
+      "expected": "27067d2221516be147d5cf71492b1fee3f0fd377d0ccd14e49557931ad1b791d",
+      "actual": "27067d2221516be147d5cf71492b1fee3f0fd377d0ccd14e49557931ad1b791d",
+      "matches": true
+    },
+    {
+      "order": 2,
+      "path": "supabase/migrations/20260716112909_add_line_combinations_source_provenance.sql",
+      "expected": "1b94c3058c59846708a9bdf0a27d321cf96b612c158201e09ca29a55add44c83",
+      "actual": "1b94c3058c59846708a9bdf0a27d321cf96b612c158201e09ca29a55add44c83",
+      "matches": true
+    },
+    {
+      "order": 3,
+      "path": "supabase/migrations/20260716112910_harden_line_combination_trigger_auth.sql",
+      "expected": "fbf3c5602fa0fe03c5e9ade7eb65ac304c74e739b47ff66ecbebe5447dc589e2",
+      "actual": "fbf3c5602fa0fe03c5e9ade7eb65ac304c74e739b47ff66ecbebe5447dc589e2",
+      "matches": true
+    },
+    {
+      "order": 4,
+      "path": "supabase/migrations/20260720105524_add_projection_materialization_transactions.sql",
+      "expected": "04806d4ba5c2d2a832081c41ae599bd0e8617cf22167a4719e4be7878267ffe2",
+      "actual": "04806d4ba5c2d2a832081c41ae599bd0e8617cf22167a4719e4be7878267ffe2",
+      "matches": true
+    },
+    {
+      "order": 5,
+      "path": "supabase/migrations/20260721013821_enforce_shift_relationship_positions.sql",
+      "expected": "697724b13d6a1f9a34842019840b0247ba984d8f59de504813f9f431c99289c6",
+      "actual": "697724b13d6a1f9a34842019840b0247ba984d8f59de504813f9f431c99289c6",
+      "matches": true
+    },
+    {
+      "order": 6,
+      "path": "supabase/migrations/20260722010355_add_transactional_gamecenter_normalization.sql",
+      "expected": "9200297213357e9edadbd93e19575f3fb41047b4e2812d6ccb359717fe2aa403",
+      "actual": "9200297213357e9edadbd93e19575f3fb41047b4e2812d6ccb359717fe2aa403",
+      "matches": true
+    },
+    {
+      "order": 7,
+      "path": "supabase/migrations/20260723040553_restrict_legacy_yahoo_player_writers.sql",
+      "expected": "7ed9b0f7ad082170f152c5083ac892d6b10c37f52075ec2f5728bd6a03382c7e",
+      "actual": "7ed9b0f7ad082170f152c5083ac892d6b10c37f52075ec2f5728bd6a03382c7e",
+      "matches": true
+    },
+    {
+      "order": 8,
+      "path": "supabase/migrations/20260723113533_make_yahoo_player_writer_atomic.sql",
+      "expected": "0498db1f57e0c0edc6dee436f22d0fbe15e5110c11af63c027a40e34fb4febc9",
+      "actual": "0498db1f57e0c0edc6dee436f22d0fbe15e5110c11af63c027a40e34fb4febc9",
+      "matches": true
+    },
+    {
+      "order": 9,
+      "path": "supabase/migrations/20260723121407_replace_forge_projection_results_atomic.sql",
+      "expected": "e92d355e7223b9f3bbb688ab9cbb28b9966d82c9cefddae1dea9e1faeb6b6848",
+      "actual": "e92d355e7223b9f3bbb688ab9cbb28b9966d82c9cefddae1dea9e1faeb6b6848",
+      "matches": true
+    },
+    {
+      "order": 10,
+      "path": "supabase/migrations/20260725200808_fix_yahoo_player_writer_captured_at.sql",
+      "expected": "51b619a07d2f8462bf9a72f49fced67cbcdab85f702492240702368cf6b012b3",
+      "actual": "51b619a07d2f8462bf9a72f49fced67cbcdab85f702492240702368cf6b012b3",
+      "matches": true
+    },
+    {
+      "order": 11,
+      "path": "supabase/migrations/20260725220704_reconcile_yahoo_player_key_snapshots.sql",
+      "expected": "92ab89a1487c08c205d699f1118dbaede99803b1dbd89091a3e420cbb91d07fa",
+      "actual": "92ab89a1487c08c205d699f1118dbaede99803b1dbd89091a3e420cbb91d07fa",
+      "matches": true
+    },
+    {
+      "order": 12,
+      "path": "supabase/migrations/20260725223034_add_sustainability_version_provenance.sql",
+      "expected": "1d9e19360ad2e0434b1ad206a115d7354a53b3e4749a3397b9517c4b26697204",
+      "actual": "1d9e19360ad2e0434b1ad206a115d7354a53b3e4749a3397b9517c4b26697204",
+      "matches": true
+    },
+    {
+      "order": 13,
+      "path": "supabase/migrations/20260725235646_add_normalized_yahoo_ownership_reader.sql",
+      "expected": "9105a54f59084bce36bfcc3f0467a4f4d650f57ea0144d5006061bc55809c5ca",
+      "actual": "9105a54f59084bce36bfcc3f0467a4f4d650f57ea0144d5006061bc55809c5ca",
+      "matches": true
+    },
+    {
+      "order": 14,
+      "path": "supabase/migrations/20260726000603_harden_yahoo_read_surfaces.sql",
+      "expected": "71089db2bf20dc63115510ac4ed281efd6c1bd78300088fb6b5094ffb61860d3",
+      "actual": "71089db2bf20dc63115510ac4ed281efd6c1bd78300088fb6b5094ffb61860d3",
+      "matches": true
+    },
+    {
+      "order": 15,
+      "path": "supabase/migrations/20260728225806_add_sko_prediction_run_control.sql",
+      "expected": "2d5420311dcd448f3eaa72534b9fa99e33229a73ca28c367e1439082646a2635",
+      "actual": "2d5420311dcd448f3eaa72534b9fa99e33229a73ca28c367e1439082646a2635",
+      "matches": true
+    },
+    {
+      "order": 16,
+      "path": "supabase/migrations/20260728235000_make_game_prediction_promotion_atomic.sql",
+      "expected": "81ca86a180f4eb4acfc4ab173bedc7efae6a17ec437cafda9e72ca970208c95d",
+      "actual": "81ca86a180f4eb4acfc4ab173bedc7efae6a17ec437cafda9e72ca970208c95d",
+      "matches": true
+    },
+    {
+      "order": 17,
+      "path": "supabase/migrations/20260729205048_preserve_sko_model_history.sql",
+      "expected": "740be6d9ae4a324f20677c8e70e19b0e8a7f6dd1ffa5b12abba27367760735d6",
+      "actual": "740be6d9ae4a324f20677c8e70e19b0e8a7f6dd1ffa5b12abba27367760735d6",
+      "matches": true
+    },
+    {
+      "order": 18,
+      "path": "supabase/migrations/20260730091500_consolidate_scheduler_ownership.sql",
+      "expected": "b8ecf8e3f62bd4d93e7d59cd0dc8844947d5fb2c2e1f830fe8a6300142ba08e0",
+      "actual": "b8ecf8e3f62bd4d93e7d59cd0dc8844947d5fb2c2e1f830fe8a6300142ba08e0",
+      "matches": true
+    },
+    {
+      "order": 19,
+      "path": "supabase/migrations/20260730190000_tombstone_legacy_public_rpcs.sql",
+      "expected": "77abca9d5a9e847299da93bd59bed979b6c9c654116dd476b85fe300fc832391",
+      "actual": "77abca9d5a9e847299da93bd59bed979b6c9c654116dd476b85fe300fc832391",
+      "matches": true
+    },
+    {
+      "order": 20,
+      "path": "supabase/migrations/20260730193000_repair_compile_invalid_legacy_routines.sql",
+      "expected": "14c518f3b1a40bc3032541f185e0e0f2ce1e8074c3073158fe2ef6d91e941d70",
+      "actual": "14c518f3b1a40bc3032541f185e0e0f2ce1e8074c3073158fe2ef6d91e941d70",
+      "matches": true
+    },
+    {
+      "order": 21,
+      "path": "supabase/migrations/20260730195000_replace_yahoo_game_weeks_snapshot.sql",
+      "expected": "9a2445100b49aed2ee24e775c5e76d728ada2938035a5beda6112857dbfbbf1e",
+      "actual": "9a2445100b49aed2ee24e775c5e76d728ada2938035a5beda6112857dbfbbf1e",
+      "matches": true
+    },
+    {
+      "order": 22,
+      "path": "supabase/migrations/20260730200000_repair_utah_wgo_team_identity.sql",
+      "expected": "3f49bed58ec464028180335ccf8d02a2fdcbd09dd18be2493283ba5e3f806af2",
+      "actual": "3f49bed58ec464028180335ccf8d02a2fdcbd09dd18be2493283ba5e3f806af2",
+      "matches": true
+    },
+    {
+      "order": 23,
+      "path": "supabase/migrations/20260730233451_reconstruct_hosted_analytics_schema.sql",
+      "expected": "ef0da7a1c5f9e407a58e9515ab21e6c9fa80587b3dbb63d3c913c34f197a5c66",
+      "actual": "ef0da7a1c5f9e407a58e9515ab21e6c9fa80587b3dbb63d3c913c34f197a5c66",
+      "matches": true
+    },
+    {
+      "order": 24,
+      "path": "supabase/migrations/20260731015416_repair_wgo_player_season_identity.sql",
+      "expected": "d472a84231ae8a02771cb102b73c0d83d6ad21e2c077f05cc0ae4a034ac85738",
+      "actual": "d472a84231ae8a02771cb102b73c0d83d6ad21e2c077f05cc0ae4a034ac85738",
+      "matches": true
+    },
+    {
+      "order": 25,
+      "path": "supabase/migrations/20260731022805_revoke_legacy_yahoo_read_cache.sql",
+      "expected": "6dffefbc2a5be13d1ef083e99d4c9048268d0e95b3c0aa8ecb8d77264d74a734",
+      "actual": "6dffefbc2a5be13d1ef083e99d4c9048268d0e95b3c0aa8ecb8d77264d74a734",
+      "matches": true
+    },
+    {
+      "order": 26,
+      "path": "supabase/migrations/20260731035012_restrict_admin_metadata_views.sql",
+      "expected": "31c8743b8ef7aa3703d4dae8026294e25fa7cec460d068c2a8328dde3c1efb55",
+      "actual": "31c8743b8ef7aa3703d4dae8026294e25fa7cec460d068c2a8328dde3c1efb55",
+      "matches": true
+    },
+    {
+      "order": 27,
+      "path": "supabase/migrations/20260731040341_privatize_unified_materialized_views.sql",
+      "expected": "ce84f2e2e157fa3ee4399f0f2eb495224569e7f598d6a666eb23f4586a292bd9",
+      "actual": "ce84f2e2e157fa3ee4399f0f2eb495224569e7f598d6a666eb23f4586a292bd9",
+      "matches": true
+    },
+    {
+      "order": 28,
+      "path": "supabase/migrations/20260801195126_drop_legacy_public_rpcs_after_zero_use.sql",
+      "expected": "9c3c06f206ee6c444edd43db7a80ad9638a52c9a18585020384aebe147252c81",
+      "actual": "9c3c06f206ee6c444edd43db7a80ad9638a52c9a18585020384aebe147252c81",
+      "matches": true
+    },
+    {
+      "order": 29,
+      "path": "supabase/migrations/20260802163747_add_player_forecast_foundation.sql",
+      "expected": "d56beda964e2806cc5d547775ebf893dd54852676b74fd7721d78f036e97ec29",
+      "actual": "d56beda964e2806cc5d547775ebf893dd54852676b74fd7721d78f036e97ec29",
+      "matches": true
+    },
+    {
+      "order": 30,
+      "path": "supabase/migrations/20260804160500_reduce_player_forecast_queue_polling.sql",
+      "expected": "6fe6175c59a8f12e1509febd1ce738926bdbaea73012392f2d0c98ba2ab01399",
+      "actual": "6fe6175c59a8f12e1509febd1ce738926bdbaea73012392f2d0c98ba2ab01399",
+      "matches": true
+    },
+    {
+      "order": 31,
+      "path": "supabase/migrations/20260805001038_add_player_forecast_rest_of_season_outputs.sql",
+      "expected": "145e02664f78f3d18af8200582ca7d1de8d077c70716838220e8c7d4253b596a",
+      "actual": "145e02664f78f3d18af8200582ca7d1de8d077c70716838220e8c7d4253b596a",
+      "matches": true
+    },
+    {
+      "order": 32,
+      "path": "supabase/migrations/20260805002036_add_player_forecast_runtime_feature_rpc.sql",
+      "expected": "59bbbf48b9b39e5c5f0b0ce941cc98abf022a269f323661de045a268f35400da",
+      "actual": "59bbbf48b9b39e5c5f0b0ce941cc98abf022a269f323661de045a268f35400da",
+      "matches": true
+    },
+    {
+      "order": 33,
+      "path": "supabase/migrations/20260805003121_add_player_forecast_runtime_context_rates.sql",
+      "expected": "a50db67edaaa678042839c230c3e6154ec3c397b7bff363dc273690676523263",
+      "actual": "a50db67edaaa678042839c230c3e6154ec3c397b7bff363dc273690676523263",
+      "matches": true
+    },
+    {
+      "order": 34,
+      "path": "supabase/migrations/20260813001304_player_forecast_season_v3.sql",
+      "expected": "e229cd1eaa142ff9fbe983d774550c0f8df80e3d27a3ac29ffbc98c1aa12fdc5",
+      "actual": "e229cd1eaa142ff9fbe983d774550c0f8df80e3d27a3ac29ffbc98c1aa12fdc5",
+      "matches": true
+    },
+    {
+      "order": 35,
+      "path": "supabase/migrations/20260813015112_yahoo_live_draft_companion.sql",
+      "expected": "272781f5425d4da5e465ba4cc7a64c177a3e4374a7c9329cce445b4989d2df3d",
+      "actual": "272781f5425d4da5e465ba4cc7a64c177a3e4374a7c9329cce445b4989d2df3d",
+      "matches": true
+    },
+    {
+      "order": 36,
+      "path": "supabase/migrations/20260813144701_player_forecast_season_identity_resolution.sql",
+      "expected": "8b035e199ba937fa33e6b149e25d68cd133d2bc7a38ff4f745d6471b10d3f032",
+      "actual": "8b035e199ba937fa33e6b149e25d68cd133d2bc7a38ff4f745d6471b10d3f032",
+      "matches": true
+    },
+    {
+      "order": 37,
+      "path": "supabase/migrations/20260813235143_player_forecast_season_wgo_label_contract.sql",
+      "expected": "1242ff3a0627c074a07b5af52bad6976e13592f963fdfec8bde5bf35d9a5bbc3",
+      "actual": "1242ff3a0627c074a07b5af52bad6976e13592f963fdfec8bde5bf35d9a5bbc3",
+      "matches": true
+    },
+    {
+      "order": 38,
+      "path": "supabase/migrations/20260814004505_player_forecast_season_settled_label_reconciliation.sql",
+      "expected": "a83f9c7e0da0104c5849a088bbac0b1614946bea6eb59dfe0a5722413c18b359",
+      "actual": "a83f9c7e0da0104c5849a088bbac0b1614946bea6eb59dfe0a5722413c18b359",
+      "matches": true
+    },
+    {
+      "order": 39,
+      "path": "supabase/migrations/20260814020808_harden_wgo_game_identity.sql",
+      "expected": "74637e0086c0dbb41125618224eec2c9ee266f5d562843293e54965736a45ab0",
+      "actual": "74637e0086c0dbb41125618224eec2c9ee266f5d562843293e54965736a45ab0",
+      "matches": true
+    },
+    {
+      "order": 40,
+      "path": "supabase/migrations/20260814192101_fantrax_settings_first.sql",
+      "expected": "b23726bba85b1b8896b2f75a194749bec2da20f8f739343e7aea4496d18634d9",
+      "actual": "b23726bba85b1b8896b2f75a194749bec2da20f8f739343e7aea4496d18634d9",
+      "matches": true
+    },
+    {
+      "order": 41,
+      "path": "supabase/migrations/20260815023132_espn_fantasy_private_beta.sql",
+      "expected": "e28fdfc9d1a67c4b44435a88d067835cd2bf96342047b0ed93f260521aa7ac21",
+      "actual": "e28fdfc9d1a67c4b44435a88d067835cd2bf96342047b0ed93f260521aa7ac21",
+      "matches": true
+    },
+    {
+      "order": 42,
+      "path": "supabase/migrations/20260818150256_player_forecast_season_v4_integrity.sql",
+      "expected": "54630ea33f3ec28cd42b115bd6e6fd701788e477b27e5f65190e521d94546cea",
+      "actual": "54630ea33f3ec28cd42b115bd6e6fd701788e477b27e5f65190e521d94546cea",
+      "matches": true
+    },
+    {
+      "order": 43,
+      "path": "supabase/migrations/20260820013120_revoke_execute_sql_browser_roles.sql",
+      "expected": "fb2d6df0e1ea360bb49cc27db443f5924d18654698a25c0f712016703ac4415b",
+      "actual": "fb2d6df0e1ea360bb49cc27db443f5924d18654698a25c0f712016703ac4415b",
+      "matches": true
+    },
+    {
+      "order": 44,
+      "path": "supabase/migrations/20260820013124_revoke_truncate_rolling_metrics_browser_roles.sql",
+      "expected": "f037ac34a8a698d828ce4bb05210f7ca8964e4891c284f8cc5502a6fc4c3ce2c",
+      "actual": "f037ac34a8a698d828ce4bb05210f7ca8964e4891c284f8cc5502a6fc4c3ce2c",
+      "matches": true
+    },
+    {
+      "order": 45,
+      "path": "supabase/migrations/20260820014700_player_forecast_season_queue_compaction.sql",
+      "expected": "da5a166ea7fffe8d6305c2e5f431c7dfe7af81d099e38da1cab068c9459ea9cf",
+      "actual": "da5a166ea7fffe8d6305c2e5f431c7dfe7af81d099e38da1cab068c9459ea9cf",
+      "matches": true
+    },
+    {
+      "order": 46,
+      "path": "supabase/migrations/20260820031500_player_forecast_v4_contract_checksum.sql",
+      "expected": "8b9899d4225f1d2390db7e67d10bf98d5ddf771d4d9cd61518e0f6ebb904720e",
+      "actual": "8b9899d4225f1d2390db7e67d10bf98d5ddf771d4d9cd61518e0f6ebb904720e",
+      "matches": true
+    },
+    {
+      "order": 47,
+      "path": "supabase/migrations/20260820041500_player_forecast_v5_contract_checksum.sql",
+      "expected": "5545f0f6ee8f700b5feb03129dce3af4adf15753d99fc3fabe3b9098c689a3b7",
+      "actual": "5545f0f6ee8f700b5feb03129dce3af4adf15753d99fc3fabe3b9098c689a3b7",
+      "matches": true
+    },
+    {
+      "order": 48,
+      "path": "supabase/migrations/20260820050000_player_forecast_v5_team_metrics.sql",
+      "expected": "a9ee28e70e9151c6e76c0a7b331a3fec5dd3293b104d914389cc93a16421100c",
+      "actual": "a9ee28e70e9151c6e76c0a7b331a3fec5dd3293b104d914389cc93a16421100c",
+      "matches": true
+    },
+    {
+      "order": 49,
+      "path": "supabase/migrations/20260820052000_player_forecast_copy_on_write_runs.sql",
+      "expected": "622c3bc88e1e6c0d5364d0088175b433509b9e1db43b246c164492ff7945c05a",
+      "actual": "622c3bc88e1e6c0d5364d0088175b433509b9e1db43b246c164492ff7945c05a",
+      "matches": true
+    },
+    {
+      "order": 50,
+      "path": "supabase/migrations/20260820053000_player_forecast_v5_release_lineage.sql",
+      "expected": "0fdbb04cd44f7fdea4f9c9a3e7bf3f5c0d780b73b49503f38a987765515d9a27",
+      "actual": "0fdbb04cd44f7fdea4f9c9a3e7bf3f5c0d780b73b49503f38a987765515d9a27",
+      "matches": true
+    },
+    {
+      "order": 51,
+      "path": "supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql",
+      "expected": "851ba958aafded30e933e6ff2e3063b8b34e14261f351559b5c38cf89bbae621",
+      "actual": "851ba958aafded30e933e6ff2e3063b8b34e14261f351559b5c38cf89bbae621",
+      "matches": true
+    },
+    {
+      "order": 52,
+      "path": "supabase/migrations/20260826123000_schedule_player_forecast_season_roster_refresh.sql",
+      "expected": "38f1f001691006509bc55fd33cc99cbdfbfda89fd3cea62761e2319f913dbd14",
+      "actual": "38f1f001691006509bc55fd33cc99cbdfbfda89fd3cea62761e2319f913dbd14",
+      "matches": true
+    },
+    {
+      "order": 53,
+      "path": "supabase/migrations/20260826131500_require_editor_for_player_forecast_opening_release.sql",
+      "expected": "cfa0309ffe272ea3581d8ce5f615fa5da61e71f33f83a7a22bd4b4a5b524cc5f",
+      "actual": "cfa0309ffe272ea3581d8ce5f615fa5da61e71f33f83a7a22bd4b4a5b524cc5f",
+      "matches": true
+    },
+    {
+      "order": 54,
+      "path": "supabase/migrations/20260826133000_inherit_player_forecast_season_assumptions.sql",
+      "expected": "fb0f490ecfc2895b36fce25ae51e3f33b5218769668abd1f34129f494a1c9baf",
+      "actual": "fb0f490ecfc2895b36fce25ae51e3f33b5218769668abd1f34129f494a1c9baf",
+      "matches": true
+    },
+    {
+      "order": 55,
+      "path": "supabase/migrations/20260828130824_start_chart_yahoo_overlay_reader.sql",
+      "expected": "1bade7c44ca992b199b1bc32002a361606c97c9427405891db622b2284b7776e",
+      "actual": "1bade7c44ca992b199b1bc32002a361606c97c9427405891db622b2284b7776e",
+      "matches": true
+    },
+    {
+      "order": 56,
+      "path": "supabase/migrations/20260828142331_recent_team_form_nullable_components.sql",
+      "expected": "f8354ceafd0d230cba8ed2259aeffdfa24e6aa4bdab4526a5a7ef6584e3a5332",
+      "actual": "f8354ceafd0d230cba8ed2259aeffdfa24e6aa4bdab4526a5a7ef6584e3a5332",
+      "matches": true
+    },
+    {
+      "order": 57,
+      "path": "supabase/migrations/20260828162000_add_sustainability_repair_versions.sql",
+      "expected": "1a6f9cec3ff1f3b25d01465bbc72df85efa03eba3e1be9ae79957a2d639fc877",
+      "actual": "1a6f9cec3ff1f3b25d01465bbc72df85efa03eba3e1be9ae79957a2d639fc877",
+      "matches": true
+    },
+    {
+      "order": 58,
+      "path": "supabase/migrations/20260829161013_add_roster_optimizer_team_game_schedule.sql",
+      "expected": "cd051aae9f20f7479cc2f228f5225daabe93c2237b3d6899b184cf1d8ae06e97",
+      "actual": "cd051aae9f20f7479cc2f228f5225daabe93c2237b3d6899b184cf1d8ae06e97",
+      "matches": true
+    },
+    {
+      "order": 59,
+      "path": "supabase/migrations/20260907143356_draft_pro_foundation.sql",
+      "expected": "9145cb342b54f5cbcbf221cf5aa69905635ea6e28ff7a537c3f59442242a16e0",
+      "actual": "9145cb342b54f5cbcbf221cf5aa69905635ea6e28ff7a537c3f59442242a16e0",
+      "matches": true
+    },
+    {
+      "order": 60,
+      "path": "supabase/migrations/20260907145602_draft_pro_stripe_fulfillment.sql",
+      "expected": "00a26afddb431efec9b07238389b51f5fc6e18830f5686586418137c42573d2f",
+      "actual": "00a26afddb431efec9b07238389b51f5fc6e18830f5686586418137c42573d2f",
+      "matches": true
+    },
+    {
+      "order": 61,
+      "path": "supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql",
+      "expected": "46a07040a4873343bc30d549fa4ae8f39ea73a8778dc4162f27e4e6b06f3f9b5",
+      "actual": "46a07040a4873343bc30d549fa4ae8f39ea73a8778dc4162f27e4e6b06f3f9b5",
+      "matches": true
+    },
+    {
+      "order": 62,
+      "path": "supabase/migrations/20260909120000_draft_pro_complimentary_access_codes.sql",
+      "expected": "500df7a4c165888f9299acb5caabc52cd6c775a677ab19b92abc0b8da26e84fa",
+      "actual": "500df7a4c165888f9299acb5caabc52cd6c775a677ab19b92abc0b8da26e84fa",
+      "matches": true
+    },
+    {
+      "order": 63,
+      "path": "supabase/migrations/20260909161959_consolidate_duplicate_nst_and_remove_legacy_rolling.sql",
+      "expected": "cf4c033158b0a329ff8f45554124f26aac0d2b5900fb290e8005c95fa1cee046",
+      "actual": "cf4c033158b0a329ff8f45554124f26aac0d2b5900fb290e8005c95fa1cee046",
+      "matches": true
+    },
+    {
+      "order": 64,
+      "path": "supabase/migrations/20260916012353_starter_board_game_revisions.sql",
+      "expected": "b9010cce9b65ce587903e8a7ac489ffe706492f502b0d7b34bbd61ec18b18cde",
+      "actual": "b9010cce9b65ce587903e8a7ac489ffe706492f502b0d7b34bbd61ec18b18cde",
+      "matches": true
+    },
+    {
+      "order": 65,
+      "path": "supabase/migrations/20260916014510_starter_board_news_queue.sql",
+      "expected": "9f808d710c45fd7b82e7b452609f246332bcad762d6cd843236229c0b11c1203",
+      "actual": "9f808d710c45fd7b82e7b452609f246332bcad762d6cd843236229c0b11c1203",
+      "matches": true
+    },
+    {
+      "order": 66,
+      "path": "supabase/migrations/20260916023000_starter_board_release_control.sql",
+      "expected": "a5796fadca8673f9bb813adec52a51f5dda8ce36c48f3d5cb78200ef1a8be8ab",
+      "actual": "a5796fadca8673f9bb813adec52a51f5dda8ce36c48f3d5cb78200ef1a8be8ab",
+      "matches": true
+    },
+    {
+      "order": 67,
+      "path": "supabase/migrations/20260916044919_starter_board_atomic_lineup_capture.sql",
+      "expected": "5b29e8c4337d0e6f0b2d34c421e0f26bbe00327713d9800dcf7cecfb3f34c93a",
+      "actual": "5b29e8c4337d0e6f0b2d34c421e0f26bbe00327713d9800dcf7cecfb3f34c93a",
+      "matches": true
+    },
+    {
+      "order": 68,
+      "path": "supabase/migrations/20260916045842_starter_board_operational_reporting.sql",
+      "expected": "5342299a0e898b9013827169fccdcd2e9bae99af46e939827d04865f911d3058",
+      "actual": "5342299a0e898b9013827169fccdcd2e9bae99af46e939827d04865f911d3058",
+      "matches": true
+    },
+    {
+      "order": 69,
+      "path": "supabase/migrations/20260916052239_starter_board_validation_registry.sql",
+      "expected": "8918c3486c2d28314443cf6e4cb7d816f4a47f9fa9430a6ecb527875b33b92a7",
+      "actual": "8918c3486c2d28314443cf6e4cb7d816f4a47f9fa9430a6ecb527875b33b92a7",
+      "matches": true
+    },
+    {
+      "order": 70,
+      "path": "supabase/migrations/20260916060521_starter_board_atomic_goalie_capture.sql",
+      "expected": "2563061e3d283472dda3ad0106557e78c2e15202c23b5b530273e7db016ae1cb",
+      "actual": "2563061e3d283472dda3ad0106557e78c2e15202c23b5b530273e7db016ae1cb",
+      "matches": true
+    },
+    {
+      "order": 71,
+      "path": "supabase/migrations/20260917133519_mock_draft_adp.sql",
+      "expected": "4220ab13befcd5231d1030a699296525e4d63126c9b06141aeb2c04546df1f04",
+      "actual": "4220ab13befcd5231d1030a699296525e4d63126c9b06141aeb2c04546df1f04",
+      "matches": true
+    },
+    {
+      "order": 72,
+      "path": "supabase/migrations/20260919005608_tweet_pipeline_reports_and_review.sql",
+      "expected": "114e48167426f464f20116c51b017f07fb721797118a5ff28412ed7d4f6abd27",
+      "actual": "114e48167426f464f20116c51b017f07fb721797118a5ff28412ed7d4f6abd27",
+      "matches": true
+    },
+    {
+      "order": 73,
+      "path": "supabase/migrations/20260919005622_nhl_draft_identity_ingestion.sql",
+      "expected": "06545c5cb77cfc67c3936a60a0edf46fa1acaa621bc843c242ed4307f983003e",
+      "actual": "06545c5cb77cfc67c3936a60a0edf46fa1acaa621bc843c242ed4307f983003e",
+      "matches": true
+    },
+    {
+      "order": 74,
+      "path": "supabase/migrations/20260919005852_nhl_prospect_verification_actor.sql",
+      "expected": "e9fcea6cc6bb9bca54f7fe58ac330051d11aa8097ce2a0d11dba38946cfaa77f",
+      "actual": "e9fcea6cc6bb9bca54f7fe58ac330051d11aa8097ce2a0d11dba38946cfaa77f",
+      "matches": true
+    },
+    {
+      "order": 75,
+      "path": "supabase/migrations/20260923184653_fantrax_live_draft_sessions.sql",
+      "expected": "32f6db7ea409d0fd18084b54684d315d25288f27506dfb04aa92aa1d420dbad3",
+      "actual": "32f6db7ea409d0fd18084b54684d315d25288f27506dfb04aa92aa1d420dbad3",
+      "matches": true
+    },
+    {
+      "order": 76,
+      "path": "supabase/migrations/20260927104934_in_season_access_workspace.sql",
+      "expected": "c905c8fc37a3c5da2260acf6293efbce9dc670f1debe195d074ac49426f201fa",
+      "actual": "c905c8fc37a3c5da2260acf6293efbce9dc670f1debe195d074ac49426f201fa",
+      "matches": true
+    },
+    {
+      "order": 77,
+      "path": "supabase/migrations/20261002021651_forge_local_execution_fence.sql",
+      "expected": "ce793d99684a59d4ee06190dc1bb8327d3e99dc4180a33ba8995bb28769c5d56",
+      "actual": "ce793d99684a59d4ee06190dc1bb8327d3e99dc4180a33ba8995bb28769c5d56",
+      "matches": true
+    },
+    {
+      "order": 78,
+      "path": "supabase/migrations/20261002134400_game_line_snapshots.sql",
+      "expected": "041a78fd056c53f1624706f18a9f239f05b460456ba0da2fd3f7c4323fd0866a",
+      "actual": "041a78fd056c53f1624706f18a9f239f05b460456ba0da2fd3f7c4323fd0866a",
+      "matches": true
+    },
+    {
+      "order": 79,
+      "path": "supabase/migrations/20261002140500_resolve_goalie_unified_game_team.sql",
+      "expected": "a7beadc4c08f93dbcc4240f67be9c8d54f1cbcc5e37242230a5be6884fdbc872",
+      "actual": "a7beadc4c08f93dbcc4240f67be9c8d54f1cbcc5e37242230a5be6884fdbc872",
+      "matches": true
+    },
+    {
+      "order": 80,
+      "path": "supabase/migrations/20261004181455_forge_public_revision_reader.sql",
+      "expected": "dbf2f1cc43adbf79a497e81ae7bff0ef2d2b8d194dc63451b78aa28571edf46a",
+      "actual": "dbf2f1cc43adbf79a497e81ae7bff0ef2d2b8d194dc63451b78aa28571edf46a",
+      "matches": true
+    },
+    {
+      "order": 81,
+      "path": "supabase/migrations/20261011115124_preserve_projection_raw_shift_occurrences.sql",
+      "expected": "5a04e00d6141697a9408165f8451385543fcbba16f258df225cc9c9aa946ebad",
+      "actual": "5a04e00d6141697a9408165f8451385543fcbba16f258df225cc9c9aa946ebad",
+      "matches": true
+    },
+    {
+      "order": 82,
+      "path": "supabase/migrations/20261011160000_preserve_nst_pk_fractional_start_rates.sql",
+      "expected": "57b812b94b41b352a4c709c89622fe9b43480c6e0b9dd2699006d1f14f0140b2",
+      "actual": "57b812b94b41b352a4c709c89622fe9b43480c6e0b9dd2699006d1f14f0140b2",
+      "matches": true
+    },
+    {
+      "order": 83,
+      "path": "supabase/migrations/20261017183611_native_forecast_catalog_heads.sql",
+      "expected": "e0776d8c20fce6bbff1f6fc225b1707d4258fb30148feaf31724129b6592772e",
+      "actual": "e0776d8c20fce6bbff1f6fc225b1707d4258fb30148feaf31724129b6592772e",
+      "matches": true
+    },
+    {
+      "order": 84,
+      "path": "supabase/migrations/20261019052934_restrict_provider_linkage_browser_writes.sql",
+      "expected": "e3a90e1a3bfd45424c9714f2232fdc1880f6ec25e11196270beb0a1bb89148f7",
+      "actual": "e3a90e1a3bfd45424c9714f2232fdc1880f6ec25e11196270beb0a1bb89148f7",
+      "matches": true
+    },
+    {
+      "order": 85,
+      "path": "supabase/migrations/20261019053348_restore_private_token_vault.sql",
+      "expected": "30fce724d3eedbd887126116226a1fa6b227fce2bfd4f1c16fd141478d4ba422",
+      "actual": "30fce724d3eedbd887126116226a1fa6b227fce2bfd4f1c16fd141478d4ba422",
+      "matches": true
+    },
+    {
+      "order": 86,
+      "path": "supabase/migrations/20261019172842_accept_html_report_projection_shift_snapshots.sql",
+      "expected": "60039c29fd5c98e27d60414d9bbb5eb550c787744f67448deba371c2cba8ccbb",
+      "actual": "60039c29fd5c98e27d60414d9bbb5eb550c787744f67448deba371c2cba8ccbb",
+      "matches": true
+    },
+    {
+      "order": 87,
+      "path": "supabase/migrations/20261019211444_opponent_skater_allowed_by_position.sql",
+      "expected": "70c8fe8ca884da8a4686eac99c289bb82f253fc18d367b65349ee56697afbdfe",
+      "actual": "70c8fe8ca884da8a4686eac99c289bb82f253fc18d367b65349ee56697afbdfe",
+      "matches": true
+    },
+    {
+      "order": 88,
+      "path": "supabase/migrations/20261020211500_forge_league_skater_physical_totals.sql",
+      "expected": "b5f86c6bd990d28d5fe31c60782ca8888b0f9248735b2c370fc6e4935ff107a2",
+      "actual": "b5f86c6bd990d28d5fe31c60782ca8888b0f9248735b2c370fc6e4935ff107a2",
+      "matches": true
+    },
+    {
+      "order": 89,
+      "path": "supabase/migrations/20261020224500_data_api_explicit_default_privileges.sql",
+      "expected": "60e0ee8f6004d07182c6999fbe34534a2cceb9530cafbd1a0bb868b0fd5ff51c",
+      "actual": "60e0ee8f6004d07182c6999fbe34534a2cceb9530cafbd1a0bb868b0fd5ff51c",
+      "matches": true
+    },
+    {
+      "order": 90,
+      "path": "supabase/migrations/20261020224600_data_api_reviewed_object_grants.sql",
+      "expected": "d6639171292547f1884c8e5f4d23be3dc2998f6e05425c5d95bdb6ce33173c0c",
+      "actual": "d6639171292547f1884c8e5f4d23be3dc2998f6e05425c5d95bdb6ce33173c0c",
+      "matches": true
+    },
+    {
+      "order": 91,
+      "path": "supabase/migrations/20261021145154_drop_rolling_support_payload_gin.sql",
+      "expected": "31d817e79c4258ce406f686e47d9199e91f60eb0f17dfce8b58b2b801b0789aa",
+      "actual": "31d817e79c4258ce406f686e47d9199e91f60eb0f17dfce8b58b2b801b0789aa",
+      "matches": true
+    },
+    {
+      "order": 92,
+      "path": "supabase/migrations/20261021165413_forge_projection_results_source_run_fence.sql",
+      "expected": "6d48dad663ee976ff53ea4cf7273040b594c046fdcfe9d114490326b60928299",
+      "actual": "6d48dad663ee976ff53ea4cf7273040b594c046fdcfe9d114490326b60928299",
+      "matches": true
+    },
+    {
+      "order": 93,
+      "path": "supabase/migrations/20261021172444_rolling_tables_autovacuum_tuning.sql",
+      "expected": "6e0184424a266bbe48318605a001413090b5b41399a9b5720018d60dc0f04a70",
+      "actual": "6e0184424a266bbe48318605a001413090b5b41399a9b5720018d60dc0f04a70",
+      "matches": true
+    },
+    {
+      "order": 94,
+      "path": "supabase/migrations/20261021172445_drop_rpgm_player_date_duplicate_index.sql",
+      "expected": "b3582780f6265d028ad4e527bc194334e2a905c187f58206008b0903355f13ec",
+      "actual": "b3582780f6265d028ad4e527bc194334e2a905c187f58206008b0903355f13ec",
+      "matches": true
+    },
+    {
+      "order": 95,
+      "path": "supabase/migrations/20261021182129_forge_latest_rolling_rows.sql",
+      "expected": "7f1ef23da246a8f535e4e00a5a3aef33e70f7772f7d502d1baef5e233da70fce",
+      "actual": "7f1ef23da246a8f535e4e00a5a3aef33e70f7772f7d502d1baef5e233da70fce",
+      "matches": true
+    },
+    {
+      "order": 96,
+      "path": "supabase/migrations/20261021185034_drop_unread_rolling_columns.sql",
+      "expected": "4f392329a0f9e2113e2b5d598e0eafbdc90394f7ae6293ec62fedc2eed651ea4",
+      "actual": "4f392329a0f9e2113e2b5d598e0eafbdc90394f7ae6293ec62fedc2eed651ea4",
+      "matches": true
+    },
+    {
+      "order": 97,
+      "path": "supabase/migrations/20261021230025_forge_served_forecast_ledger.sql",
+      "expected": "825b9d5290c540e0505ba12bee13a39b578c21dfaf8a75e50b1fcbabbb9c6efe",
+      "actual": "825b9d5290c540e0505ba12bee13a39b578c21dfaf8a75e50b1fcbabbb9c6efe",
+      "matches": true
+    }
+  ]
+}

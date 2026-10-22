@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { requireApiUser } from "lib/api/requireApiUser";
-import { loadInSeasonAccess, requireInSeasonCapability } from "lib/in-season/server";
+import { requireProviderSyncAccess } from "lib/integrations/providerSyncAccessServer";
 import { loadYahooPlanningSnapshot } from "lib/integrations/yahoo/rosterPlanning";
 import { compactBridgeForecasts } from "lib/rosterScheduleData/bridgeForecastWire";
 import { YahooLiveDraftError } from "lib/integrations/yahoo/liveDraft";
@@ -12,8 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== "POST") { res.setHeader("Allow", "POST"); return res.status(405).end(); }
   const user = await requireApiUser(req, res); if (!user) return;
   try {
-    const access = await loadInSeasonAccess(user.id);
-    requireInSeasonCapability(access, "rso_sync");
+    await requireProviderSyncAccess(user.id);
     const body = req.body ?? {};
     if (body.provider === "fantrax") return res.status(409).json({ success: false, error: "Fantrax settings and identity imports remain available in account settings. This adapter has not verified authoritative in-season roster or availability feeds; use reviewed manual inputs.", capabilities: { roster: false, availability: false, rules: false, matchup: false, acquisitions: false, limitations: ["Draft results are not current rosters."] } });
     if (body.provider !== "yahoo" || typeof body.teamId !== "string" || typeof body.startDate !== "string" || typeof body.endDate !== "string") return res.status(400).json({ success: false, error: "Select a Yahoo team and planning dates." });

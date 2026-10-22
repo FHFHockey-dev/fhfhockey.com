@@ -1,0 +1,5 @@
+{
+  "command": "npx eslint lib/integrations/fantrax/server.ts lib/integrations/fantrax/server.test.ts lib/in-season/monthlyLifecycle.ts lib/in-season/monthlyLifecycle.test.ts lib/in-season/monthlyWebhook.ts lib/in-season/monthlyExecutor.ts lib/in-season/monthlyIntegration.test.ts",
+  "exitCode": 0,
+  "warnings": 0
+}

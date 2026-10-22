@@ -1,0 +1,12 @@
+{
+  "REVIEW.md": "b0b7063652531282fe0c4545106335bf2e58e7ee38f7c3a6834efeabf3dd0df0",
+  "hash-verification-end.json": "6b69b0cf9d70be7d65f5dcf5d970bae6801f30c4318b83992a4ae376712b2f2a",
+  "hash-verification-start.json": "949e03c1514d16a69a689d8bb7bcddf08b26c75a1e2a180bfe145a1132ad0432",
+  "independent-tests.log": "e08c5166d7d456f95bcdbbceeb2741b2804155ef41cef6ad796f5ddc1866c4ef",
+  "lint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "owner-tests.log": "98622e9b722c97abb630c2eb7e5b28cdc97ded694d964e91d20190b02021c13b",
+  "rating-formula-verification.json": "e43f6dbf0e566e24e8591bac448af846ab0fee79e14c00628f43bc0dcaacd1bb",
+  "reviewCalendarStandings.test.tsx": "f9cb9a6d65e97fd68acc50f2351a4cc8aa33a100ef0742dba75b3e2dbaac91a6",
+  "tsconfig.p01.json": "ffec29e5b4ae97a6433f9e09e77c11e2e505793179361d797aa9a9ef985025d6",
+  "typecheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

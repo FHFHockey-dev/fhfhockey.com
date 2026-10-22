@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { resolveInSeasonAccess, type InSeasonGrant } from "./access";
-import { IN_SEASON_COMMERCE, canStartInSeasonPurchase, capInSeasonPurchasedCoverage, seasonPassCoverage, monthlyFailureWindow, isMonthlyFailureGraceActive, purchasedCoverageAfterCancellation, previewInitialMonthlyCharge } from "./commerce";
+import { IN_SEASON_COMMERCE, canStartInSeasonPurchase, capInSeasonPurchasedCoverage, seasonPassCoverage, monthlyFailureWindow, isMonthlyFailureGraceActive, purchasedCoverageAfterCancellation, previewInitialMonthlyCharge, calendarDayProrationCents, monthlySignupQuote } from "./commerce";
 
 const cutoff = new Date("2027-07-01T04:00:00.000Z");
 const before = new Date(cutoff.getTime() - 1);
@@ -34,10 +34,9 @@ describe("in-season commerce contract", () => {
     expect(canStartInSeasonPurchase(instant)).toBe(allowed);
   });
 
-  it("leaves every unresolved monthly policy without a default", () => {
-    expect(IN_SEASON_COMMERCE.monthlyBilling.unresolvedPolicies).toEqual({
-      prorationArithmetic: null, prorationRounding: null, refundTreatment: null, postCutoffCollection: null,
-    });
+  it("records the approved policies without inventing automatic refunds", () => {
+    expect(IN_SEASON_COMMERCE.monthlyBilling.refunds).toMatchObject({ review: "manual", cancellationCreatesRefund: false });
+    expect(IN_SEASON_COMMERCE.monthlyBilling.seasonEnd).toMatchObject({ collection: "stop", unpaidInvoices: "void", pendingCharges: "clear", accountingHistory: "retain", latePaymentAccess: "never_reopen" });
   });
 
   it("preserves supplied shorter coverage without selecting a monthly period", () => {
@@ -148,14 +147,34 @@ describe("settled monthly policy", () => {
   });
 });
 
-describe("initial monthly charge threshold and separate proposed arithmetic", () => {
+describe("approved initial monthly charge arithmetic", () => {
+  it.each([[28, 15, 250], [29, 15, 258], [30, 15, 266], [31, 15, 274], [29, 29, 17]])("rounds %s-day month day %s exactly once", (days, day, cents) => {
+    expect(calendarDayProrationCents(day, days)).toBe(cents);
+  });
+  it("handles leap-year February without changing the 2027 cutoff", () => {
+    expect(previewInitialMonthlyCharge(new Date("2024-02-15T00:00:00-05:00"))).toMatchObject({ confirmedAmountCents: 258, proration: { daysInMonth: 29 } });
+  });
+  it("uses the approved October 21 amount", () => {
+    expect(previewInitialMonthlyCharge(new Date("2026-10-21T22:00:00-04:00"))).toMatchObject({ confirmedAmountCents: 177, nextAnchorAt: "2026-11-01T04:00:00.000Z" });
+  });
+  it("requires verified account and settlement applicability, with no minimum default", () => {
+    const minimum = { accountId: "sandbox", chargeCurrency: "usd", settlementCurrency: "cad", minimumChargeCents: 60, verificationReference: "approved-fixture-conversion" };
+    const at = new Date("2026-10-28T04:00:00Z");
+    expect(monthlySignupQuote(at, "sandbox", null).reason).toBe("minimum_not_verified");
+    expect(monthlySignupQuote(at, "other", minimum).reason).toBe("minimum_not_verified");
+    expect(monthlySignupQuote(at, "sandbox", { ...minimum, settlementCurrency: "" }).reason).toBe("minimum_not_verified");
+    expect(monthlySignupQuote(at, "sandbox", { ...minimum, verificationReference: "" }).reason).toBe("minimum_not_verified");
+    expect(monthlySignupQuote(at, "sandbox", minimum)).toMatchObject({ available: true, charge: { confirmedAmountCents: 64 } });
+    expect(monthlySignupQuote(at, "sandbox", { ...minimum, minimumChargeCents: 65 })).toMatchObject({ available: false, reason: "below_verified_minimum", charge: { confirmedAmountCents: 64 } });
+    expect(monthlySignupQuote(new Date("2027-06-30T04:00:00Z"), "sandbox", minimum)).toMatchObject({ available: false, reason: "below_verified_minimum", charge: { confirmedAmountCents: 17 } });
+  });
   it("switches at Eastern midnight from the fourteenth to the fifteenth", () => {
     expect(previewInitialMonthlyCharge(new Date("2027-03-14T23:59:59.999-04:00"))).toMatchObject({
-      treatment: "full", confirmedAmountCents: 499, proposedProration: null,
+      treatment: "full", confirmedAmountCents: 499, proration: null,
     });
     expect(previewInitialMonthlyCharge(new Date("2027-03-15T00:00:00-04:00"))).toMatchObject({
-      treatment: "prorated", confirmedAmountCents: null,
-      proposedProration: { status: "proposed_only", remainingCalendarDays: 17, daysInMonth: 31, amountCents: 274 },
+      treatment: "prorated", confirmedAmountCents: 274,
+      proration: { status: "approved", remainingCalendarDays: 17, daysInMonth: 31, amountCents: 274 },
     });
   });
 
@@ -166,10 +185,10 @@ describe("initial monthly charge threshold and separate proposed arithmetic", ()
     ["2026-10-31T23:59:59-04:00", "2026-11-01T04:00:00.000Z", 31, 1, 16],
     ["2026-11-15T00:00:00-05:00", "2026-12-01T05:00:00.000Z", 30, 16, 266],
     ["2027-06-30T23:59:59.999-04:00", "2027-07-01T04:00:00.000Z", 30, 1, 17],
-  ])("previews calendar-day proration separately for %s", (signup, anchor, days, remaining, cents) => {
+  ])("calculates approved calendar-day proration for %s", (signup, anchor, days, remaining, cents) => {
     expect(previewInitialMonthlyCharge(new Date(signup))).toEqual({
-      treatment: "prorated", nextAnchorAt: anchor, confirmedAmountCents: null,
-      proposedProration: { status: "proposed_only", basis: "inclusive_signup_calendar_day",
+      treatment: "prorated", nextAnchorAt: anchor, confirmedAmountCents: cents,
+      proration: { status: "approved", basis: "inclusive_signup_calendar_day",
         remainingCalendarDays: remaining, daysInMonth: days, rounding: "nearest_cent_half_up", amountCents: cents },
     });
   });

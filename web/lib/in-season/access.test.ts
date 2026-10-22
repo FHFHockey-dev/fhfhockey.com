@@ -5,6 +5,7 @@ vi.mock("lib/supabase/server", () => ({ default: {} }));
 vi.mock("lib/integrations/patreon/sync", () => ({ refreshPatreonAccount: vi.fn() }));
 
 import { loadInSeasonAccess } from "./server";
+import { refreshPatreonAccount } from "lib/integrations/patreon/sync";
 
 const now = new Date("2026-09-26T12:00:00Z");
 const grant = (source: InSeasonGrant["source"], overrides: Partial<InSeasonGrant> = {}): InSeasonGrant => ({ source, reference: `${source}:one`, status: "active", effectiveFrom: "2026-09-01T00:00:00Z", effectiveTo: "2027-07-01T00:00:00Z", ...overrides });
@@ -83,6 +84,12 @@ describe("verified owner testing access", () => {
     const failure = new Error("Seasonal query unavailable");
     const client = clientWith(null, null, [], { in_season_grants: { [kind]: failure, data: [paid] }, user_entitlements: { data: [patron] } });
     expect(await loadInSeasonAccess("member", { now, client })).toMatchObject({ eligible: true, grantingSources: ["patreon"] });
+  });
+
+  it("reports a temporary verification failure after stale Patreon refresh fails", async () => {
+    vi.mocked(refreshPatreonAccount).mockRejectedValueOnce(new Error("Provider unavailable"));
+    const client = clientWith(null, null, [], { user_entitlements: { data: [{ ...patron, metadata: { ...patron.metadata, verified_at: "2026-09-25T00:00:00Z" } }] } });
+    expect(await loadInSeasonAccess("member", { now, client })).toMatchObject({ eligible: false, reason: "verification_unavailable" });
   });
 
   it("reports unverified access when an unavailable source has no independently valid grant", async () => {

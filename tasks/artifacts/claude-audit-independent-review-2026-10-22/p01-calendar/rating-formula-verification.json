@@ -1,0 +1,32 @@
+[
+  {
+    "name": "getGameResult",
+    "unchanged": true,
+    "sha256": "09a09f368d103b4ab4ef9b99cc6fa0c7b1b9156637f4839980f087adfd2b70af"
+  },
+  {
+    "name": "calculateGameRating",
+    "unchanged": true,
+    "sha256": "c0dc48de041ec360ca810f14b01be4c4c2f3e8bc1ff730465293b898524e661d"
+  },
+  {
+    "name": "gamesWithResults",
+    "unchanged": true,
+    "sha256": "057be5c8bad0d47255ceb6d3280a5d2553105ac9d559de25d8cbce00d7fc83f5"
+  },
+  {
+    "name": "getPercentageClass",
+    "unchanged": true,
+    "sha256": "7b32f15734ef8f85b23811d3c16ae1245c19cc1e8a1b1942f2a1155b1f1f6e71"
+  },
+  {
+    "name": "getPointsPercentageClass",
+    "unchanged": true,
+    "sha256": "1dd226c37c91ad8b6d5f73b89edc3366c916784dc3e60d093eaf042ac7f218fb"
+  },
+  {
+    "name": "getLeagueRankingClass",
+    "unchanged": true,
+    "sha256": "bbaf8112346f55e0343ca3df466bf6f7a9527d72487d4cc1e8fbccff40638001"
+  }
+]

@@ -1,3 +1,4 @@
+import { requireProviderSyncAccess } from "lib/integrations/providerSyncAccessServer";
 import YahooFantasy from "yahoo-fantasy";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -221,6 +222,7 @@ export async function loadYahooTeamRoster({
   cacheTtlMs = YAHOO_TEAM_ROSTER_CACHE_MS,
   fetchRoster = fetchYahooRoster,
 }: LoadYahooTeamRosterOptions): Promise<YahooTeamRosterResult> {
+  await requireProviderSyncAccess(userId);
   const resolvedClient =
     client ?? (await import("lib/supabase/server")).default;
   const { data: team, error: teamError } = await resolvedClient

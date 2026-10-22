@@ -1,0 +1,296 @@
+--- a/web/pages/api/v1/db/run-rolling-forge-pipeline.ts
++++ b/web/pages/api/v1/db/run-rolling-forge-pipeline.ts
+@@ -30,7 +30,9 @@
+   readRollingForgeRunState,
+   readRollingForgeStageFailedAttempts,
+   readRollingForgeStageKills,
+-  recordRollingForgeStageKill
++  recordRollingForgeStageKill,
++  NST_PERSISTENCE_UNCONFIRMED,
++  RollingForgeStageReviewRequiredError
+ } from "lib/rollingForgePipelineRunState";
+ 
+ import updateGamesHandler from "./update-games";
+@@ -160,7 +162,6 @@
+ type RouteHandler = (req: any, res: any) => Promise<void>;
+ 
+ type TerminalStopCode = "attempts_exhausted" | "stage_killed" | "nst_persistence_unconfirmed";
+-const NST_PERSISTENCE_UNCONFIRMED = "nst_persistence_unconfirmed";
+ 
+ function getParam(req: NextApiRequest, key: string): string | null {
+   const value = req.query[key];
+@@ -1288,7 +1289,9 @@
+     // died (the function was killed). Its progress is stored, so the stage is
+     // taken again, but every dead invocation is counted and the run stops
+     // once there have been too many.
+-    if (isRollingForgeStageLeaseDead(state)) {
++    // NST cannot replay an abandoned invocation without reviewing its writes.
++    // Its acquisition guard below handles the fresh state without mutating it.
++    if (stage.id !== "upstream_skater_sources" && isRollingForgeStageLeaseDead(state)) {
+       let kills: number;
+       try {
+         kills = await recordRollingForgeStageKill({
+@@ -1363,6 +1366,14 @@
+       });
+     } catch (error) {
+       const message = errorMessage(error);
++      if (error instanceof RollingForgeStageReviewRequiredError) {
++        stageResults.push(notRunStage(stage, "failed", message, true));
++        termination = { state: "stopped_on_blocking_failure", resumeRequired: false,
++          nextStartDate: null, runKey, nextStageId: stage.id,
++          reason: "manual_review_required", detail: message };
++        terminalStopCode = NST_PERSISTENCE_UNCONFIRMED;
++        continue;
++      }
+       termination = continuation(
+         /LEASE_HELD|REVISION_MISMATCH|CONCURRENT_CHANGE/.test(message)
+           ? "stage_in_progress_elsewhere"
+@@ -1462,6 +1473,13 @@
+       } else if (result.status === "failed") {
+         const attempt = failedAttempts + 1;
+         const reviewCode = result.steps.find(step => step.requiresReview)?.requiresReview;
++        // The known uncertainty remains terminal even if saving its hold fails.
++        // The already-acquired running row also blocks a later NST takeover.
++        if (reviewCode) {
++          termination = { state: "stopped_on_blocking_failure", resumeRequired: false,
++            nextStartDate: null, runKey, nextStageId: stage.id, reason: "manual_review_required" };
++          terminalStopCode = reviewCode;
++        }
+         await finishRollingForgeStage({
+           supabase,
+           lease: activeLease,
+--- a/web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts
++++ b/web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts
+@@ -994,7 +994,7 @@
+         expect(updateRollingPlayerAveragesMock).not.toHaveBeenCalled();
+       });
+ 
+-      it("does not advance when the cursor cannot be stored: the next invocation repeats from the last stored cursor", async () => {
++      it("does not advance when the cursor cannot be stored and holds the abandoned NST call for review", async () => {
+         const original = pipelineStateRpc.getMockImplementation()!;
+         let failedAdvance = false;
+         pipelineStateRpc.mockImplementation(async (name: string, a: any) => {
+@@ -1011,10 +1011,12 @@
+           expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+           expect(nstStageRow()).toMatchObject({ status: "running", cursor_game_id: null });
+ 
+-          // After the lease frees, NST repeats from the stored (empty) cursor.
+-          await invokeScheduled("2026-10-19T10:15:00.000Z");
+-          expect(updateNstGamelogMock.mock.calls[1]?.[0]?.query).toEqual(nstQuery("2026-10-19T10:15:00.000Z"));
+-          expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
++          // An acknowledged producer response does not prove why a later
++          // running row was abandoned. Recovery requires receipt review.
++          const held = await invokeScheduled("2026-10-19T10:15:00.000Z");
++          expect(held.body.termination).toMatchObject({ resumeRequired: false, reason: "manual_review_required" });
++          expect(updateNstGamelogMock).toHaveBeenCalledTimes(1);
++          expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+         } finally {
+           pipelineStateRpc.mockImplementation(original);
+         }
+@@ -1653,3 +1655,113 @@
+     expect(Number(query.deadlineAt)).toBeLessThanOrEqual(Date.now() + 190_000);
+   });
+ });
++
++// Appended to the unchanged owner's test harness prefix in an isolated test file.
++// Existing candidate source/tests stay byte-identical. All providers are mocked.
++import serverClient from "lib/supabase/server";
++
++describe("NST acquisition and uncertain-persistence regressions", () => {
++  const stageKey = (id: string) => `rolling_forge_pipeline|daily_incremental:2026-10-19|${id}`;
++  const stageRow = () => pipelineStateRows.get(stageKey("upstream_skater_sources"));
++  const originalRpc = pipelineStateRpc.getMockImplementation()!;
++  const originalFrom = vi.mocked(serverClient.from).getMockImplementation()!;
++  const success = async (_req: any, res: any) => res.status(200).json({ success: true });
++  const signal = () => {
++    let resolve!: () => void;
++    const promise = new Promise<void>(done => { resolve = done; });
++    return { promise, resolve };
++  };
++  const invoke = async (query: Record<string, string> = {}) => {
++    const res = createMockRes();
++    await handler({ method: "GET", headers: {}, query: { mode: "daily_incremental", includeAccuracy: "false", ...query } } as any, res);
++    return res;
++  };
++  const seed = (id: string, extras: Record<string, unknown> = {}) => pipelineStateRows.set(stageKey(id), {
++    pipeline_key: "rolling_forge_pipeline", scope_key: "daily_incremental:2026-10-19", operation_key: id,
++    revision: 1, status: "complete", cursor_game_id: null, cursor_date: "2026-10-19",
++    range_start_date: "2026-10-19", range_end_date: "2026-10-19", lease_owner: null,
++    lease_expires_at: null, last_error: null, updated_at: "2026-10-19T10:04:00.000Z", ...extras
++  });
++
++  beforeEach(() => {
++    vi.clearAllMocks();
++    vi.useFakeTimers({ toFake: ["Date"] });
++    vi.setSystemTime(new Date("2026-10-19T10:05:00.000Z"));
++    pipelineStateRows.clear();
++    pipelineStateRpc.mockImplementation(originalRpc);
++    vi.mocked(serverClient.from).mockImplementation(originalFrom);
++    process.env.CRON_SECRET = "test-secret";
++    for (const mock of [updateGamesMock, updateTeamsMock, updatePlayersMock, updateNstGamelogMock,
++      updateWgoSkatersMock, updateWgoTotalsMock, updateWgoAveragesMock, updateLineCombinationsMock,
++      updatePowerPlayCombinationsMock, updateRollingPlayerAveragesMock, ingestProjectionInputsMock,
++      shiftChartsMock, buildProjectionDerivedMock, updateGoalieProjectionsV2Mock, runProjectionV2Mock, runProjectionAccuracyMock]) {
++      mock.mockReset().mockImplementation(success);
++    }
++    seed("core_entity_freshness");
++    seed("upstream_skater_sources", { status: "failed", last_error: "stage_handoff", cursor_game_id: 7 });
++  });
++  afterEach(() => {
++    pipelineStateRpc.mockImplementation(originalRpc);
++    vi.mocked(serverClient.from).mockImplementation(originalFrom);
++    vi.useRealTimers();
++  });
++
++  it("must preserve a durable manual-review hold when another same-version invocation read state before the hold", async () => {
++    const enteredNst = signal(), releaseNst = signal(), readSnapshot = signal(), releaseSnapshot = signal();
++    updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => {
++      enteredNst.resolve();
++      await releaseNst.promise;
++      res.status(500).json({ success: false, error: "audit acknowledgement lost", auditPersistence: "not_confirmed" });
++    });
++    const firstPromise = invoke();
++    await enteredNst.promise;
++    let intercept = true;
++    vi.mocked(serverClient.from).mockImplementation(((table: string) => {
++      const query = originalFrom(table as any);
++      if (table === "projection_pipeline_state" && intercept) {
++        intercept = false;
++        const originalThen = (query as any).then;
++        (query as any).then = (resolve: any, reject: any) => originalThen(async (snapshot: any) => {
++          readSnapshot.resolve();
++          await releaseSnapshot.promise;
++          return resolve(snapshot);
++        }, reject);
++      }
++      return query;
++    }) as any);
++    const observerPromise = invoke();
++    await readSnapshot.promise;
++    releaseNst.resolve();
++    const first = await firstPromise;
++    expect(first.body.termination.reason).toBe("manual_review_required");
++    expect(stageRow().last_error).toBe("nst_persistence_unconfirmed");
++    releaseSnapshot.resolve();
++    const observer = await observerPromise;
++    console.log("REVIEW_RACE_OBSERVED", JSON.stringify({ nstCalls: updateNstGamelogMock.mock.calls.length,
++      observerTermination: observer.body.termination, finalStage: stageRow() }));
++    expect.soft(updateNstGamelogMock).toHaveBeenCalledTimes(1);
++    expect.soft(observer.body.termination.reason).toBe("manual_review_required");
++    expect.soft(stageRow().last_error).toBe("nst_persistence_unconfirmed");
++  });
++
++  it("must not advertise retry when a manual-review hold cannot be saved", async () => {
++    pipelineStateRpc.mockImplementation(async (name: string, args: any) => {
++      if (args.p_transition === "fail" && args.p_last_error === "nst_persistence_unconfirmed") {
++        return { data: null, error: { message: "synthetic hold persistence failure" } };
++      }
++      return originalRpc(name, args);
++    });
++    updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) =>
++      res.status(500).json({ success: false, error: "write acknowledgement lost", writePersistence: "not_confirmed" }));
++    const first = await invoke();
++    console.log("REVIEW_FAILED_HOLD_FIRST", JSON.stringify({ termination: first.body.termination, row: stageRow() }));
++    expect.soft(first.body.termination).toMatchObject({ resumeRequired: false, reason: "manual_review_required" });
++    vi.setSystemTime(new Date("2026-10-19T10:15:00.000Z"));
++    const next = await invoke();
++    console.log("REVIEW_FAILED_HOLD_NEXT", JSON.stringify({ nstCalls: updateNstGamelogMock.mock.calls.length,
++      termination: next.body.termination, row: stageRow() }));
++    expect.soft(updateNstGamelogMock).toHaveBeenCalledTimes(1);
++    expect.soft(updateWgoSkatersMock).not.toHaveBeenCalled();
++  });
++
++});
+--- a/web/lib/rollingForgePipelineRunState.ts
++++ b/web/lib/rollingForgePipelineRunState.ts
+@@ -37,6 +37,9 @@
+ // A partial stage releases its lease with an explicit resumable marker.
+ export const ROLLING_FORGE_HANDOFF_LEASE_MS = 30_000;
+ const HANDOFF_CODE = "stage_handoff";
++export const NST_PERSISTENCE_UNCONFIRMED = "nst_persistence_unconfirmed";
++export class RollingForgeStageReviewRequiredError extends Error {}
++
+ 
+ const FAILURE_ATTEMPT_PATTERN = /^stage_failed:attempt-(\d+)$/;
+ 
+@@ -180,7 +183,22 @@
+     rangeEndDate: args.runDate,
+     initialCursorDate: args.runDate,
+     leaseMs: Math.max(30_000, args.leaseExpiresAtMs - now.getTime()),
+-    now
++    now,
++    assertResumable: args.stageId === "upstream_skater_sources" ? (current) => {
++      if (current.status === "failed" && current.lastError === NST_PERSISTENCE_UNCONFIRMED) {
++        throw new RollingForgeStageReviewRequiredError("NST persistence is unconfirmed; the durable review hold cannot be reacquired.");
++      }
++      // A running row is durable pre-call intent. Without an acknowledged
++      // handoff, even an expired owner may have written data or lost its hold.
++      // Refuse all running takeovers, including expiry between this read and CAS.
++      if (current.status === "running") {
++        const expiresAt = Date.parse(current.leaseExpiresAt ?? "");
++        if (Number.isFinite(expiresAt) && expiresAt > now.getTime()) {
++          throw new Error("PROJECTION_PIPELINE_LEASE_HELD");
++        }
++        throw new RollingForgeStageReviewRequiredError("NST invocation ended without an acknowledged handoff; inspect persistence before retrying.");
++      }
++    } : undefined
+   });
+ }
+ 
+--- a/web/lib/projections/projectionPipelineState.ts
++++ b/web/lib/projections/projectionPipelineState.ts
+@@ -324,6 +324,8 @@
+   initialCursorDate: string;
+   leaseMs?: number;
+   now?: Date;
++  /** Guard the same revision used by the acquire CAS; a rejection must not mutate it. */
++  assertResumable?: (current: Readonly<ProjectionPipelineLease>) => void;
+ }): Promise<ProjectionPipelineLease> {
+   const client = args.supabase as unknown as StateClient;
+   const pipelineKey = requirePipelineOrOperationKey(
+@@ -370,6 +372,7 @@
+     }
+     return current;
+   }
++  if (current) args.assertResumable?.(current);
+   const shouldResume =
+     current?.status === "failed" || current?.status === "running";
+   const leaseOwner = randomUUID();
+--- a/web/lib/projections/projectionPipelineState.test.ts
++++ b/web/lib/projections/projectionPipelineState.test.ts
+@@ -107,6 +107,35 @@
+     expect(mocks.like).toHaveBeenCalledWith("operation_key", "canonical:%");
+     expect(mocks.lte).toHaveBeenCalledWith("range_end_date", "2026-07-20");
+     expect(mocks.limit).toHaveBeenCalledWith(1);
++  });
++
++  it("checks resumability against the same freshly read revision used by acquisition", async () => {
++    mocks.maybeSingle.mockResolvedValueOnce({ data: stateRow({
++      revision: 5, status: "failed", lease_owner: null, lease_expires_at: null,
++      last_error: "nst_persistence_unconfirmed",
++    }), error: null });
++    const assertResumable = vi.fn((current: Readonly<ProjectionPipelineLease>) => {
++      expect(current.revision).toBe(5);
++      if (current.lastError === "nst_persistence_unconfirmed") throw new Error("manual review");
++    });
++    await expect(acquireProjectionPipelineLease({ supabase,
++      operationKey: "canonical:2026-07-19:2026-07-19", rangeStartDate: "2026-07-19",
++      rangeEndDate: "2026-07-19", initialCursorDate: "2026-07-19", assertResumable,
++    })).rejects.toThrow("manual review");
++    expect(assertResumable).toHaveBeenCalledTimes(1);
++    expect(mocks.rpc).not.toHaveBeenCalled();
++  });
++
++  it("does not reacquire when the guarded revision changes before the RPC", async () => {
++    mocks.maybeSingle.mockResolvedValueOnce({ data: stateRow({ revision: 5, status: "failed", last_error: "stage_handoff" }), error: null });
++    mocks.rpc.mockResolvedValueOnce({ data: null, error: { message: "PROJECTION_PIPELINE_REVISION_MISMATCH" } });
++    const assertResumable = vi.fn();
++    await expect(acquireProjectionPipelineLease({ supabase,
++      operationKey: "canonical:2026-07-19:2026-07-19", rangeStartDate: "2026-07-19",
++      rangeEndDate: "2026-07-19", initialCursorDate: "2026-07-19", assertResumable,
++    })).rejects.toThrow("PROJECTION_PIPELINE_REVISION_MISMATCH");
++    expect(assertResumable).toHaveBeenCalledWith(expect.objectContaining({ revision: 5 }));
++    expect(mocks.rpc).toHaveBeenCalledWith("advance_projection_pipeline_state_v1", expect.objectContaining({ p_expected_revision: 5 }));
+   });
+ 
+   it("acquires an absent operation with revision zero and a bounded lease", async () => {

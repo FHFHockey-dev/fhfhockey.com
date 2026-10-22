@@ -1,0 +1,24 @@
+--- /Users/tim/Code/fhfhockey.com/tasks/artifacts/claude-audit-fix-queue-2026-10-22/repros/auditEdgecases.test.ts	2026-10-21 23:54:39
++++ /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-forge-ledger-lease-review-i86qaoq1/isolation/snapshot/web/lib/auditEdgecases.test.ts	2026-10-22 08:12:25
+@@ -3,7 +3,7 @@
+ import { buildForgeDailyBridgeForecasts } from "./rosterScheduleData/forgeDailyBridge";
+ import { forecastCalendarPolicy } from "./player-forecasts/contributions";
+ import { aggregateNstTeamCounts, aggregateWgoTeamGames } from "./stats/percentUnits";
+-import { buildLedgerRows, settleLedgerRows, scoreLedger } from "./player-forecasts/servedForecastLedger";
++import { buildLedgerRows, settleLedgerRows, scoreLedger, settleLedgerUniverse } from "./player-forecasts/servedForecastLedger";
+ import { yahooPastLineupPoints } from "./integrations/yahoo/rosterPlanning";
+ import { isRollingForgeStageLeaseDead } from "./rollingForgePipelineRunState";
+ const player:any = {id:"p1",nhlId:11,nhlTeamId:1,rosterRevision:"r",name:"Synthetic player",teamAbbreviation:"TOR",eligiblePositions:["C"],eligibilityVerified:true,playerClass:"skater",availability:"free_agent",ownership:null,canDrop:true,holdValue:null,reserveEligibility:[]};
+@@ -45,9 +45,10 @@
+ });
+ 
+ it("coverage includes dressed roster players who lack every prediction and naive history",()=>{
+- const rows=buildLedgerRows({date:"2026-10-21",seasonId:20262027,now:new Date("2026-10-21T12:00:00Z"),games:[{gameId:100,date:"2026-10-21",scheduledAt:"2026-10-21T23:00:00Z",status:"scheduled",homeTeamId:1,awayTeamId:2}],players:[{nhlId:11,planningId:"p1",playerClass:"skater",teamId:1},{nhlId:22,planningId:"rookie",playerClass:"skater",teamId:1}],bridgeForecasts:[{playerId:"p1",gameId:"100",stats:{GOALS:1,ASSISTS:1,PP_POINTS:0,SHOTS_ON_GOAL:2,HITS:1,BLOCKED_SHOTS:1},revisionId:"bridge:today",modelVersion:"v",issuedAt:"2026-10-21T10:00:00Z",limitations:[]} as any],runDates:new Map([["today","2026-10-21"]]),scheduleGames:[],wgoGameRows:[],goalieGameRows:[]}).rows;
++ const {rows,universe}=buildLedgerRows({date:"2026-10-21",seasonId:20262027,now:new Date("2026-10-21T12:00:00Z"),games:[{gameId:100,date:"2026-10-21",scheduledAt:"2026-10-21T23:00:00Z",status:"scheduled",homeTeamId:1,awayTeamId:2}],players:[{nhlId:11,planningId:"p1",playerClass:"skater",teamId:1},{nhlId:22,planningId:"rookie",playerClass:"skater",teamId:1}],bridgeForecasts:[{playerId:"p1",gameId:"100",stats:{GOALS:1,ASSISTS:1,PP_POINTS:0,SHOTS_ON_GOAL:2,HITS:1,BLOCKED_SHOTS:1},revisionId:"bridge:today",modelVersion:"v",issuedAt:"2026-10-21T10:00:00Z",limitations:[]} as any],runDates:new Map([["today","2026-10-21"]]),scheduleGames:[],wgoGameRows:[],goalieGameRows:[]});
+  const actual=(player_id:number)=>({player_id,game_id:100,goals:1,assists:1,pp_points:0,shots:2,hits:1,blocked_shots:1});
+- const score=scoreLedger(settleLedgerRows(rows,{skaters:[actual(11),actual(22)],goalies:[]},"2026-10-22T11:00:00Z"));
++ const actuals={skaters:[actual(11),actual(22)],goalies:[]};
++ const score=scoreLedger(settleLedgerRows(rows,actuals,"2026-10-22T11:00:00Z"),undefined,settleLedgerUniverse(universe,actuals));
+  console.log("COVERAGE_UNIVERSE_OBSERVED",JSON.stringify(score));
+  expect(score[0]).toMatchObject({dressed:2,covered:1,coverage:0.5});
+ });

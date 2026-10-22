@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "checks": 8,
+  "passed": [
+    "fresh task container and loopback Auth/REST/PostgreSQL verified",
+    "required billing SQL applied only to the fresh disposable Supabase database",
+    "exactly two synthetic users created and signed in through real local Auth",
+    "real API Auth rejects anonymous/invalid sessions and binds each token to its own account",
+    "real PostgREST service RPC returns separate owner-bound pending checkouts",
+    "anonymous and both real user tokens cannot bypass service-only billing RPC/ledger access",
+    "central access loader verifies both synthetic accounts are free with no provider calls",
+    "manual workspace retained; no payment grant created by sign-in or checkout preparation"
+  ],
+  "api": "http://127.0.0.1:56421",
+  "database": "127.0.0.1:56422",
+  "auth": "real local GoTrue password sessions and PostgREST RPC",
+  "stripeCasesExecuted": 0
+}

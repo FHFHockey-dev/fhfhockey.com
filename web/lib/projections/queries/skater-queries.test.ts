@@ -12,13 +12,19 @@ vi.mock("lib/supabase/server", () => ({ default: {
   from(table: string) {
     if (["rolling_player_game_metrics", "rolling_player_metric_support_payloads"].includes(table) && dbState.rollingFrom) return dbState.rollingFrom(table);
     dbState.calls.push(["from", [table]]);
+    let rows = dbState.rows;
     const query: Record<string, unknown> = { then(resolve: (value: unknown) => void) {
-      resolve({ data: dbState.rows, error: null });
+      resolve({ data: rows, error: null });
     } };
+    query.lt = (column: string, value: string) => {
+      dbState.calls.push(["lt", [column, value]]);
+      rows = rows.filter(row => typeof row[column] === "string" && String(row[column]) < value);
+      return query;
+    };
     for (const name of ["select", "in", "lte", "gte", "order", "limit"]) {
       query[name] = (...args: unknown[]) => { dbState.calls.push([name, args]); return query; };
     }
-    return query;
+    return table === "player_stats_unified" ? interceptProjectionQuery("from", [table], () => query) ?? query : query;
   },
 } }));
 
@@ -565,6 +571,7 @@ describe("combined skater context read", () => {
   it("uses one cutoff-bounded query and preserves both latest-player maps with missing fields", async () => {
     dbState.calls = [];
     dbState.rows = [
+      { player_id: 7, date: "2026-09-29", nst_shots_per_60: 999, nst_ixg_per_60: 99, nst_oi_xgf_per_60: 999 },
       { player_id: 7, date: "2026-09-28", nst_shots_per_60: 12, nst_ixg_per_60: 1.1,
         nst_oi_xgf_per_60: 3.2, nst_oi_cf_pct_rates: 0.55, possession_pct_safe: 0.54 },
       { player_id: 7, date: "2026-09-27", nst_shots_per_60: 99, nst_oi_xgf_per_60: 99 },
@@ -572,7 +579,7 @@ describe("combined skater context read", () => {
     ];
     const result = await fetchLatestSkaterContextProfiles([7, 8], "2026-09-29");
     expect(dbState.calls.filter(([name]) => name === "from")).toEqual([["from", ["player_stats_unified"]]]);
-    expect(dbState.calls).toContainEqual(["lte", ["date", "2026-09-29"]]);
+    expect(dbState.calls).toContainEqual(["lt", ["date", "2026-09-29"]]);
     expect(dbState.calls).toContainEqual(["gte", ["date", "2025-09-29"]]);
     expect(dbState.calls).toContainEqual(["limit", [5000]]);
     expect(result.shotQuality.get(7)).toEqual({ sourceDate: "2026-09-28", nstShotsPer60: 12,
@@ -581,6 +588,31 @@ describe("combined skater context read", () => {
       nstOiXgaPer60: null, nstOiCfPct: 0.55, possessionPctSafe: 0.54 });
     expect(result.shotQuality.get(8)?.nstShotsPer60).toBeNull();
     expect(result.onIceContext.get(8)?.nstOiCfPct).toBe(0.49);
+  });
+
+  it("keeps a target-only history unknown and preserves prior zero observations", async () => {
+    dbState.rows = [{ player_id: 7, date: "2026-09-29", nst_shots_per_60: 99 }];
+    const empty = await fetchLatestSkaterContextProfiles([7], "2026-09-29");
+    expect(empty.shotQuality.size).toBe(0);
+    expect(empty.onIceContext.size).toBe(0);
+    dbState.rows.push({ player_id: 7, date: "2026-09-28", nst_shots_per_60: 0 });
+    const prior = await fetchLatestSkaterContextProfiles([7], "2026-09-29");
+    expect(prior.shotQuality.get(7)).toMatchObject({ sourceDate: "2026-09-28", nstShotsPer60: 0, nstIxgPer60: null });
+  });
+
+  it("replays the strictly prior capture and refuses an inclusive historical capture", async () => {
+    dbState.rows = [{ player_id: 7, date: "2026-09-29", nst_shots_per_60: 99 },
+      { player_id: 7, date: "2026-09-28", nst_shots_per_60: 10 }];
+    const read = () => fetchLatestSkaterContextProfiles([7], "2026-09-29");
+    const capture = await captureProjectionInputs(read, { suppressWrites: true });
+    expect(capture.reads).toHaveLength(1);
+    expect(capture.writes).toEqual([]);
+    dbState.rows = [];
+    const replay = await replayProjectionInputs(capture.reads, read);
+    expect(replay.result).toEqual(capture.result);
+    expect(replay.writes).toEqual([]);
+    const legacy = capture.reads.map(input => ({ ...input, request: input.request.map(op => op.method === "lt" ? { ...op, method: "lte" } : op) }));
+    await expect(replayProjectionInputs(legacy, read)).rejects.toThrow("Unrecorded projection input");
   });
 });
 

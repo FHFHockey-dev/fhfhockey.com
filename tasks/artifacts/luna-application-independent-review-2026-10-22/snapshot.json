@@ -1,0 +1,90 @@
+{
+  "scratch": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-luna-contract-independent-hzqxptn7",
+  "files": [
+    {
+      "path": "web/lib/sources/playerIdentitySnapshotEvidence.ts",
+      "sourceSha256": "390ed603af2cf2ca742ac36ec81c4973d2543684dfb42efbc9c9afeed84c7d4b",
+      "snapshotSha256": "390ed603af2cf2ca742ac36ec81c4973d2543684dfb42efbc9c9afeed84c7d4b"
+    },
+    {
+      "path": "web/lib/sources/playerIdentitySnapshotEvidence.test.ts",
+      "sourceSha256": "77b834b8c011222d60360c5b8ab111bed4b1dfe8e44eb3cbd238f6c322bbaaaf",
+      "snapshotSha256": "77b834b8c011222d60360c5b8ab111bed4b1dfe8e44eb3cbd238f6c322bbaaaf"
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityReplacementReview.ts",
+      "sourceSha256": "23131921ff0d8caea93c4302f01bb3377bb823611c9410108973e0cab09b1124",
+      "snapshotSha256": "23131921ff0d8caea93c4302f01bb3377bb823611c9410108973e0cab09b1124"
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityReplacementReview.test.ts",
+      "sourceSha256": "620479333f55017fcc7749535cd09fa893e2772ac8ff4f2371716df8a3640ee2",
+      "snapshotSha256": "620479333f55017fcc7749535cd09fa893e2772ac8ff4f2371716df8a3640ee2"
+    },
+    {
+      "path": "web/lib/sources/fixtures/tweetIdentitySavedEvidence.json",
+      "sourceSha256": "a6ed14b24e05ffdadd0d0de9593c12e5c8aad92bd8a8168d0cf91532598f0a2d",
+      "snapshotSha256": "a6ed14b24e05ffdadd0d0de9593c12e5c8aad92bd8a8168d0cf91532598f0a2d"
+    },
+    {
+      "path": "web/lib/projections/evidenceTime.ts",
+      "sourceSha256": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00",
+      "snapshotSha256": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00"
+    },
+    {
+      "path": "web/lib/supabase/pagination.ts",
+      "sourceSha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+      "snapshotSha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660"
+    },
+    {
+      "path": "web/lib/sources/playerIdentity.ts",
+      "sourceSha256": "af843bd6df9ec932ff67bdfd08dba337224d133ac87b1fe94113e0f5ec75bcb4",
+      "snapshotSha256": "af843bd6df9ec932ff67bdfd08dba337224d133ac87b1fe94113e0f5ec75bcb4"
+    },
+    {
+      "path": "web/lib/sources/playerIdentitySnapshot.ts",
+      "sourceSha256": "bd1266de847aeffdc442205a307d2aadefda5da7cec79b76616c34db2a222901",
+      "snapshotSha256": "bd1266de847aeffdc442205a307d2aadefda5da7cec79b76616c34db2a222901"
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityCandidates.ts",
+      "sourceSha256": "f434ab86169e9cc090042aa009d3746cb0871508e457bb09b8cbca39cefbcfb0",
+      "snapshotSha256": "f434ab86169e9cc090042aa009d3746cb0871508e457bb09b8cbca39cefbcfb0"
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityProposal.ts",
+      "sourceSha256": "a73df0483313bc75e94b36bc3fcf9087e1adb7d96afd0895db7a9c8bad7c9a27",
+      "snapshotSha256": "a73df0483313bc75e94b36bc3fcf9087e1adb7d96afd0895db7a9c8bad7c9a27"
+    },
+    {
+      "path": "web/lib/sources/tweetNewsPhraseDictionary.ts",
+      "sourceSha256": "a39b54bcc5243909446353db31d1a54c6d88e467b3f7f838d0ea8d52da110ba1",
+      "snapshotSha256": "a39b54bcc5243909446353db31d1a54c6d88e467b3f7f838d0ea8d52da110ba1"
+    },
+    {
+      "path": "web/lib/sources/fixtures/tweetIdentityOfflineFixture.ts",
+      "sourceSha256": "2e09d8adb74d8eba76c68f47f094cadaf34da127bc68a068854e71d0be1881ae",
+      "snapshotSha256": "2e09d8adb74d8eba76c68f47f094cadaf34da127bc68a068854e71d0be1881ae"
+    },
+    {
+      "path": "web/lib/sources/fixtures/iftttComparisonObservations.json",
+      "sourceSha256": "a12f0646e8f640f6eb0ebe5026ee4be31c519257e3fb9731ab586b2214053add",
+      "snapshotSha256": "a12f0646e8f640f6eb0ebe5026ee4be31c519257e3fb9731ab586b2214053add"
+    },
+    {
+      "path": "web/package.json",
+      "sourceSha256": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "snapshotSha256": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba"
+    },
+    {
+      "path": "web/tsconfig.json",
+      "sourceSha256": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+      "snapshotSha256": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b"
+    },
+    {
+      "path": "web/eslint.config.mjs",
+      "sourceSha256": "47974c70d20250ef3a11d698318026e2bd172589074956e7b89885520b623af6",
+      "snapshotSha256": "47974c70d20250ef3a11d698318026e2bd172589074956e7b89885520b623af6"
+    }
+  ]
+}

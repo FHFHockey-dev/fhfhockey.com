@@ -1,0 +1,784 @@
+source	line	kind	object	review_status	declaration_first_line
+supabase/migrations/20260716112908_production_schema_baseline.sql	75	function	public.acquire_lock	UNREVIEWED	CREATE FUNCTION public.acquire_lock(job_name_param text, timeout_interval interval) RETURNS boolean
+supabase/migrations/20260716112908_production_schema_baseline.sql	113	function	public.acquire_xg_execution_lease	UNREVIEWED	CREATE FUNCTION public.acquire_xg_execution_lease(p_lease_key text, p_owner_token uuid, p_ttl_seconds integer, p_metadata jsonb DEFAULT '{}'::jsonb) RETURNS TABLE(acquired boolean, lease_key text, state text, lease_expires_at timestamp with time zone, current_owner_token uuid)
+supabase/migrations/20260716112908_production_schema_baseline.sql	184	function	public.advance_draft_ranker_placement	UNREVIEWED	CREATE FUNCTION public.advance_draft_ranker_placement(p_user_id uuid, p_session_id uuid, p_expected_question_count integer, p_expected_anchor_player_id bigint, p_operation_id uuid, p_operation_payload_hash text, p_state jsonb) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	316	function	public.apply_draft_ranker_player_action	UNREVIEWED	CREATE FUNCTION public.apply_draft_ranker_player_action(p_user_id uuid, p_ranking_id uuid, p_fhfh_player_id bigint, p_action text, p_operation_id uuid, p_priority smallint DEFAULT NULL::smallint, p_note text DEFAULT NULL::text, p_source text DEFAULT 'manual'::text) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	554	function	public.begin_draft_ranker_placement	UNREVIEWED	CREATE FUNCTION public.begin_draft_ranker_placement(p_user_id uuid, p_ranking_id uuid, p_fhfh_player_id bigint, p_expected_version bigint, p_operation_id uuid, p_operation_payload_hash text, p_state jsonb) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	704	function	public.calculate_goalie_start_projections	UNREVIEWED	CREATE FUNCTION public.calculate_goalie_start_projections(target_date date) RETURNS void
+supabase/migrations/20260716112908_production_schema_baseline.sql	730	function	public.cancel_draft_ranker_placement	UNREVIEWED	CREATE FUNCTION public.cancel_draft_ranker_placement(p_user_id uuid, p_session_id uuid, p_operation_id uuid, p_operation_payload_hash text) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	803	function	public.confirm_draft_ranker_placement	UNREVIEWED	CREATE FUNCTION public.confirm_draft_ranker_placement(p_user_id uuid, p_session_id uuid, p_operation_id uuid, p_operation_payload_hash text) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	927	function	public.delete_duplicate_players_in_rosters	UNREVIEWED	CREATE FUNCTION public.delete_duplicate_players_in_rosters(_seasonid bigint) RETURNS void
+supabase/migrations/20260716112908_production_schema_baseline.sql	949	function	public.enforce_draft_ranker_pairwise_rate_limit	UNREVIEWED	CREATE FUNCTION public.enforce_draft_ranker_pairwise_rate_limit(p_user_id uuid, p_action text, p_operation_id uuid, p_operation_payload_hash text, p_low_player_id bigint, p_high_player_id bigint, p_community_collection_enabled boolean, p_config jsonb) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	1161	function	public.execute_sql	UNREVIEWED	CREATE FUNCTION public.execute_sql(sql_statement text) RETURNS void
+supabase/migrations/20260716112908_production_schema_baseline.sql	1172	function	public.finalize_non_realized_game_stats_v1	UNREVIEWED	CREATE FUNCTION public.finalize_non_realized_game_stats_v1(p_game_id bigint) RETURNS TABLE(game_id bigint, outcome text, reason text, contract_version smallint, expected_team_rows integer, observed_team_rows integer, expected_skater_rows integer, observed_skater_rows integer, expected_goalie_rows integer, observed_goalie_rows integer, completed_at timestamp with time zone)
+supabase/migrations/20260716112908_production_schema_baseline.sql	1254	function	public.finish_xg_execution_lease	UNREVIEWED	CREATE FUNCTION public.finish_xg_execution_lease(p_lease_key text, p_owner_token uuid, p_succeeded boolean, p_error text DEFAULT NULL::text, p_metadata jsonb DEFAULT '{}'::jsonb) RETURNS boolean
+supabase/migrations/20260716112908_production_schema_baseline.sql	1279	function	public.get_aggregated_player_stats	UNREVIEWED	CREATE FUNCTION public.get_aggregated_player_stats(player_id_param integer, season_year integer) RETURNS TABLE(shooting_percentage double precision, assist_ratio double precision, total_peripherals double precision, pdo double precision, o_zone_start_pct double precision)
+supabase/migrations/20260716112908_production_schema_baseline.sql	1302	function	public.get_aggregated_player_stats	UNREVIEWED	CREATE FUNCTION public.get_aggregated_player_stats(player_id_param integer, season_start_date date, end_date date) RETURNS TABLE(shooting_percentage double precision, assist_ratio double precision, total_peripherals double precision, pdo double precision, o_zone_start_pct double precision)
+supabase/migrations/20260716112908_production_schema_baseline.sql	1326	function	public.get_connected_account_tokens_secure	REVIEWED_FAMILY_SOURCE_ONLY	CREATE FUNCTION public.get_connected_account_tokens_secure(p_connected_account_id uuid, p_user_id uuid) RETURNS TABLE(id uuid, connected_account_id uuid, user_id uuid, provider text, access_token text, refresh_token text, token_type text, scopes jsonb, provider_user_id text, expires_at timestamp with time zone, refresh_expires_at timestamp with time zone, last_refreshed_at timestamp with time zone, secret_metadata jsonb, created_at timestamp with time zone, updated_at timestamp with time zone)
+supabase/migrations/20260716112908_production_schema_baseline.sql	1342	function	public.get_skater_game_scores_for_season	UNREVIEWED	CREATE FUNCTION public.get_skater_game_scores_for_season(p_player_id integer, p_season_id integer) RETURNS TABLE(game_date date, game_score numeric)
+supabase/migrations/20260716112908_production_schema_baseline.sql	1386	function	public.get_skaters_avg_stats	UNREVIEWED	CREATE FUNCTION public.get_skaters_avg_stats(start_date date, end_date date) RETURNS TABLE(id bigint, avggoals numeric, avgassists numeric, avgplusminus numeric, avgpim numeric, avghits numeric, avgblockedshots numeric, avgpowerplaypoints numeric, avgshots numeric, numgames bigint)
+supabase/migrations/20260716112908_production_schema_baseline.sql	1416	function	public.get_skaters_info_by_game_id	UNREVIEWED	"CREATE FUNCTION public.get_skaters_info_by_game_id(p_game_id bigint) RETURNS TABLE(id bigint, ""teamId"" smallint, ""sweaterNumber"" smallint, ""position"" text, ""firstName"" text, ""lastName"" text)"
+supabase/migrations/20260716112908_production_schema_baseline.sql	1455	function	public.get_unprocessed_line_combinations	UNREVIEWED	CREATE FUNCTION public.get_unprocessed_line_combinations() RETURNS TABLE(id bigint)
+supabase/migrations/20260716112908_production_schema_baseline.sql	1472	function	public.get_unupdated_games	UNREVIEWED	CREATE FUNCTION public.get_unupdated_games() RETURNS TABLE(gameid bigint)
+supabase/migrations/20260716112908_production_schema_baseline.sql	1492	function	public.get_unupdated_games_for_season	UNREVIEWED	CREATE FUNCTION public.get_unupdated_games_for_season(p_season_id bigint) RETURNS TABLE(gameid bigint)
+supabase/migrations/20260716112908_production_schema_baseline.sql	1513	function	public.heartbeat_xg_execution_lease	UNREVIEWED	CREATE FUNCTION public.heartbeat_xg_execution_lease(p_lease_key text, p_owner_token uuid, p_ttl_seconds integer) RETURNS boolean
+supabase/migrations/20260716112908_production_schema_baseline.sql	1533	function	public.immutable_unaccent	UNREVIEWED	CREATE FUNCTION public.immutable_unaccent(text) RETURNS text
+supabase/migrations/20260716112908_production_schema_baseline.sql	1548	function	public.initialize_draft_ranking_from_yahoo	UNREVIEWED	CREATE FUNCTION public.initialize_draft_ranking_from_yahoo(p_user_id uuid, p_operation_id uuid, p_operation_payload_hash text, p_scoring_profile jsonb DEFAULT '{}'::jsonb, p_target_season_id bigint DEFAULT 20262027, p_source_yahoo_season integer DEFAULT 2025, p_seed_revision text DEFAULT 'yahoo-2025-v1'::text) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	2000	function	public.insert_into_statsupdatestatus	UNREVIEWED	CREATE FUNCTION public.insert_into_statsupdatestatus() RETURNS trigger
+supabase/migrations/20260716112908_production_schema_baseline.sql	2014	function	public.issue_draft_ranker_pair_prompt	UNREVIEWED	CREATE FUNCTION public.issue_draft_ranker_pair_prompt(p_user_id uuid, p_ranking_id uuid, p_player_a_id bigint, p_player_b_id bigint, p_queue_mode text, p_queue_reason text, p_algorithm_version text, p_expected_version bigint, p_operation_id uuid, p_operation_payload_hash text) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	2152	function	public.issue_draft_ranker_pair_prompt_guarded	UNREVIEWED	CREATE FUNCTION public.issue_draft_ranker_pair_prompt_guarded(p_user_id uuid, p_ranking_id uuid, p_player_a_id bigint, p_player_b_id bigint, p_queue_mode text, p_queue_reason text, p_algorithm_version text, p_expected_version bigint, p_operation_id uuid, p_operation_payload_hash text, p_rate_operation_payload_hash text, p_rate_config jsonb) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	2197	function	public.persist_complete_game_stats_v1	UNREVIEWED	CREATE FUNCTION public.persist_complete_game_stats_v1(p_game_id bigint, p_team_rows jsonb, p_skater_rows jsonb, p_goalie_rows jsonb, p_expected_team_rows integer, p_expected_skater_rows integer, p_expected_goalie_rows integer) RETURNS TABLE(game_id bigint, outcome text, contract_version smallint, expected_team_rows integer, observed_team_rows integer, expected_skater_rows integer, observed_skater_rows integer, expected_goalie_rows integer, observed_goalie_rows integer, pruned_team_rows integer, pruned_skater_rows integer, pruned_goalie_rows integer, completed_at timestamp with time zone)
+supabase/migrations/20260716112908_production_schema_baseline.sql	2664	function	public.prevent_nhl_api_game_payloads_raw_mutation	UNREVIEWED	CREATE FUNCTION public.prevent_nhl_api_game_payloads_raw_mutation() RETURNS trigger
+supabase/migrations/20260716112908_production_schema_baseline.sql	2677	function	public.process_team_goalie_projections	UNREVIEWED	CREATE FUNCTION public.process_team_goalie_projections(p_game_id integer, p_team_id integer, p_date date) RETURNS void
+supabase/migrations/20260716112908_production_schema_baseline.sql	2753	function	public.quarantine_game_stats_v1	UNREVIEWED	CREATE FUNCTION public.quarantine_game_stats_v1(p_game_ids bigint[], p_reason text) RETURNS TABLE(game_id bigint, outcome text, reason text, contract_version smallint, expected_team_rows integer, observed_team_rows integer, expected_skater_rows integer, observed_skater_rows integer, expected_goalie_rows integer, observed_goalie_rows integer, completed_at timestamp with time zone)
+supabase/migrations/20260716112908_production_schema_baseline.sql	2866	function	public.refresh_player_lineup_deployment_tallies	UNREVIEWED	CREATE FUNCTION public.refresh_player_lineup_deployment_tallies(p_season_id integer DEFAULT NULL::integer, p_player_id bigint DEFAULT NULL::bigint) RETURNS TABLE(deleted_rows integer, inserted_rows integer)
+supabase/migrations/20260716112908_production_schema_baseline.sql	3086	function	public.refresh_team_power_ratings	UNREVIEWED	CREATE FUNCTION public.refresh_team_power_ratings(date_from date DEFAULT NULL::date, date_to date DEFAULT NULL::date) RETURNS void
+supabase/migrations/20260716112908_production_schema_baseline.sql	3101	function	public.reorder_draft_ranking	UNREVIEWED	CREATE FUNCTION public.reorder_draft_ranking(p_user_id uuid, p_ranking_id uuid, p_player_id bigint, p_action text, p_target_rank integer, p_anchor_player_id bigint, p_expected_version bigint, p_operation_id uuid, p_operation_payload_hash text) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	3509	function	public.repair_draft_ranking_ordering	UNREVIEWED	CREATE FUNCTION public.repair_draft_ranking_ordering(p_ranking_id uuid, p_expected_version bigint, p_operation_id uuid, p_operation_payload_hash text, p_reason text, p_confirmation text) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	3704	function	public.replace_draft_ranker_community_snapshot	UNREVIEWED	CREATE FUNCTION public.replace_draft_ranker_community_snapshot(p_target_season_id bigint, p_snapshot_as_of timestamp with time zone, p_cadence text, p_model_version text, p_operation_id uuid, p_operation_payload_hash text, p_source_fingerprint text, p_requested_by uuid, p_source_summary jsonb, p_exclusion_summary jsonb, p_accepted_comparison_count integer, p_excluded_comparison_count integer, p_deduplicated_comparison_count integer, p_results jsonb) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	3924	function	public.replace_draft_ranker_discovery_snapshot	UNREVIEWED	CREATE FUNCTION public.replace_draft_ranker_discovery_snapshot(p_target_season_id bigint, p_operation_id uuid, p_operation_payload_hash text, p_source_fingerprint text, p_algorithm_version text, p_requested_by uuid, p_source_summary jsonb, p_group_counts jsonb, p_warning_codes jsonb, p_source_health jsonb, p_projection_consensus jsonb, p_signals jsonb) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	4176	function	public.request_fhfh_player_addition	UNREVIEWED	CREATE FUNCTION public.request_fhfh_player_addition(p_user_id uuid, p_raw_name text, p_submitted_context jsonb DEFAULT '{}'::jsonb, p_candidate_fhfh_player_ids bigint[] DEFAULT '{}'::bigint[]) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	4342	function	public.rpc_sko_player_series	UNREVIEWED	CREATE FUNCTION public.rpc_sko_player_series(p_player_id bigint, p_span integer DEFAULT 5, p_lambda_hot numeric DEFAULT 1.8, p_lambda_cold numeric DEFAULT 1.6, p_l_hot integer DEFAULT 2, p_l_cold integer DEFAULT 3) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	4360	function	public.safe_z	UNREVIEWED	CREATE FUNCTION public.safe_z(val double precision, mu double precision, sigma double precision) RETURNS double precision
+supabase/migrations/20260716112908_production_schema_baseline.sql	4373	function	public.search_fhfh_draft_players	UNREVIEWED	CREATE FUNCTION public.search_fhfh_draft_players(p_query text, p_include_archived boolean DEFAULT false, p_limit integer DEFAULT 20) RETURNS TABLE(player_id bigint, canonical_name text, birth_year smallint, canonical_position text, current_organization_name text, current_organization_type text, lifecycle_status text, headshot_url text, nhl_player_id bigint, yahoo_player_id text, external_providers text[], is_rankable boolean, match_kind text, similarity_score real)
+supabase/migrations/20260716112908_production_schema_baseline.sql	4557	function	public.set_contextual_snapshot_updated_at	UNREVIEWED	CREATE FUNCTION public.set_contextual_snapshot_updated_at() RETURNS trigger
+supabase/migrations/20260716112908_production_schema_baseline.sql	4571	function	public.set_draft_ranker_contribution_preference	UNREVIEWED	CREATE FUNCTION public.set_draft_ranker_contribution_preference(p_user_id uuid, p_contribution_enabled boolean, p_privacy_policy_version text, p_update_source text, p_operation_id uuid, p_operation_payload_hash text) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	4697	function	public.set_draft_ranker_updated_at	UNREVIEWED	CREATE FUNCTION public.set_draft_ranker_updated_at() RETURNS trigger
+supabase/migrations/20260716112908_production_schema_baseline.sql	4712	function	public.set_fhfh_player_identity_updated_at	UNREVIEWED	CREATE FUNCTION public.set_fhfh_player_identity_updated_at() RETURNS trigger
+supabase/migrations/20260716112908_production_schema_baseline.sql	4727	function	public.submit_draft_ranker_pair_comparison	UNREVIEWED	CREATE FUNCTION public.submit_draft_ranker_pair_comparison(p_user_id uuid, p_prompt_id uuid, p_outcome text, p_expected_version bigint, p_client_operation_id uuid, p_operation_payload_hash text) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	5038	function	public.submit_draft_ranker_pair_comparison_guarded	UNREVIEWED	CREATE FUNCTION public.submit_draft_ranker_pair_comparison_guarded(p_user_id uuid, p_prompt_id uuid, p_outcome text, p_expected_version bigint, p_client_operation_id uuid, p_operation_payload_hash text, p_rate_operation_payload_hash text, p_community_collection_enabled boolean, p_rate_config jsonb) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	5141	function	public.touch_updated_at	UNREVIEWED	CREATE FUNCTION public.touch_updated_at() RETURNS trigger
+supabase/migrations/20260716112908_production_schema_baseline.sql	5154	function	public.trg_touch_updated_at	UNREVIEWED	CREATE FUNCTION public.trg_touch_updated_at() RETURNS trigger
+supabase/migrations/20260716112908_production_schema_baseline.sql	5167	function	public.truncate_rolling_player_game_metrics	UNREVIEWED	CREATE FUNCTION public.truncate_rolling_player_game_metrics() RETURNS void
+supabase/migrations/20260716112908_production_schema_baseline.sql	5182	function	public.update_team_discipline_stats	UNREVIEWED	CREATE FUNCTION public.update_team_discipline_stats() RETURNS trigger
+supabase/migrations/20260716112908_production_schema_baseline.sql	5275	function	public.update_updated_at_column	UNREVIEWED	CREATE FUNCTION public.update_updated_at_column() RETURNS trigger
+supabase/migrations/20260716112908_production_schema_baseline.sql	5289	function	public.upsert_connected_account_tokens_secure	REVIEWED_FAMILY_SOURCE_ONLY	CREATE FUNCTION public.upsert_connected_account_tokens_secure(p_connected_account_id uuid, p_user_id uuid, p_provider text, p_access_token text DEFAULT NULL::text, p_refresh_token text DEFAULT NULL::text, p_token_type text DEFAULT NULL::text, p_scopes jsonb DEFAULT NULL::jsonb, p_provider_user_id text DEFAULT NULL::text, p_expires_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_refresh_expires_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_last_refreshed_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_secret_metadata jsonb DEFAULT NULL::jsonb) RETURNS uuid
+supabase/migrations/20260716112908_production_schema_baseline.sql	5314	function	public.upsert_current_roster_membership	UNREVIEWED	CREATE FUNCTION public.upsert_current_roster_membership(_playerid bigint, _seasonid bigint, _teamid smallint, _sweater_number smallint DEFAULT 0) RETURNS void
+supabase/migrations/20260716112908_production_schema_baseline.sql	5356	function	public.upsert_players_batch	UNREVIEWED	CREATE FUNCTION public.upsert_players_batch(players_data jsonb[]) RETURNS void
+supabase/migrations/20260716112908_production_schema_baseline.sql	5434	function	public.upsert_players_batch	UNREVIEWED	CREATE FUNCTION public.upsert_players_batch(players_data jsonb) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	5532	function	public.upsert_yahoo_players_v3	UNREVIEWED	CREATE FUNCTION public.upsert_yahoo_players_v3(players_data jsonb[]) RETURNS void
+supabase/migrations/20260716112908_production_schema_baseline.sql	5672	function	public.validate_draft_ranking_order	UNREVIEWED	CREATE FUNCTION public.validate_draft_ranking_order(p_user_id uuid, p_ranking_id uuid) RETURNS jsonb
+supabase/migrations/20260716112908_production_schema_baseline.sql	5724	table	public.nst_gamelog_as_counts	UNREVIEWED	CREATE TABLE public.nst_gamelog_as_counts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	5767	table	public.nst_gamelog_as_rates	UNREVIEWED	CREATE TABLE public.nst_gamelog_as_rates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	5811	table	public.wgo_skater_stats	UNREVIEWED	CREATE TABLE public.wgo_skater_stats (
+supabase/migrations/20260716112908_production_schema_baseline.sql	6063	table	public.team_power_ratings_daily	UNREVIEWED	CREATE TABLE public.team_power_ratings_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	6093	table	public.teams	UNREVIEWED	CREATE TABLE public.teams (
+supabase/migrations/20260716112908_production_schema_baseline.sql	6105	table	public.goalie_ratings_daily	UNREVIEWED	CREATE TABLE public.goalie_ratings_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	6141	table	public.skater_defensive_ratings_daily	UNREVIEWED	CREATE TABLE public.skater_defensive_ratings_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	6177	table	public.skater_offensive_ratings_daily	UNREVIEWED	CREATE TABLE public.skater_offensive_ratings_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	6213	table	public.entity_sustainability_scores_daily	UNREVIEWED	CREATE TABLE public.entity_sustainability_scores_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	6251	table	public.sustainability_scores	UNREVIEWED	CREATE TABLE public.sustainability_scores (
+supabase/migrations/20260716112908_production_schema_baseline.sql	6268	table	public.nhl_edge_goalie_metrics_daily	UNREVIEWED	CREATE TABLE public.nhl_edge_goalie_metrics_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	6328	table	public.nhl_edge_skater_metrics_daily	UNREVIEWED	CREATE TABLE public.nhl_edge_skater_metrics_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	6403	table	public.nhl_edge_skater_skating_distance_games_daily	UNREVIEWED	CREATE TABLE public.nhl_edge_skater_skating_distance_games_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	6449	table	public.nhl_edge_team_metrics_daily	UNREVIEWED	CREATE TABLE public.nhl_edge_team_metrics_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	6537	table	public.nhl_edge_team_skating_distance_games_daily	UNREVIEWED	CREATE TABLE public.nhl_edge_team_skating_distance_games_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	6581	table	public.player_status_history	UNREVIEWED	CREATE TABLE public.player_status_history (
+supabase/migrations/20260716112908_production_schema_baseline.sql	6613	table	public.PROJECTIONS_20252026_AG_SKATERS	UNREVIEWED	"CREATE TABLE public.""PROJECTIONS_20252026_AG_SKATERS"" ("
+supabase/migrations/20260716112908_production_schema_baseline.sql	6636	table	public.PROJECTIONS_20252026_CULLEN_GOALIES	UNREVIEWED	"CREATE TABLE public.""PROJECTIONS_20252026_CULLEN_GOALIES"" ("
+supabase/migrations/20260716112908_production_schema_baseline.sql	6653	table	public.PROJECTIONS_20252026_CULLEN_SKATERS	UNREVIEWED	"CREATE TABLE public.""PROJECTIONS_20252026_CULLEN_SKATERS"" ("
+supabase/migrations/20260716112908_production_schema_baseline.sql	6676	table	public.PROJECTIONS_20252026_DFO_GOALIES	UNREVIEWED	"CREATE TABLE public.""PROJECTIONS_20252026_DFO_GOALIES"" ("
+supabase/migrations/20260716112908_production_schema_baseline.sql	6699	table	public.PROJECTIONS_20252026_DFO_SKATERS	UNREVIEWED	"CREATE TABLE public.""PROJECTIONS_20252026_DFO_SKATERS"" ("
+supabase/migrations/20260716112908_production_schema_baseline.sql	6726	table	public.PROJECTIONS_20252026_DTZ_GOALIES	UNREVIEWED	"CREATE TABLE public.""PROJECTIONS_20252026_DTZ_GOALIES"" ("
+supabase/migrations/20260716112908_production_schema_baseline.sql	6757	table	public.PROJECTIONS_20252026_DTZ_Skaters	UNREVIEWED	"CREATE TABLE public.""PROJECTIONS_20252026_DTZ_Skaters"" ("
+supabase/migrations/20260716112908_production_schema_baseline.sql	6801	table	public.PROJECTIONS_20252026_FHFH_SKATERS	UNREVIEWED	"CREATE TABLE public.""PROJECTIONS_20252026_FHFH_SKATERS"" ("
+supabase/migrations/20260716112908_production_schema_baseline.sql	6830	table	public.PROJECTIONS_20252026_KUBOTA_SKATERS	UNREVIEWED	"CREATE TABLE public.""PROJECTIONS_20252026_KUBOTA_SKATERS"" ("
+supabase/migrations/20260716112908_production_schema_baseline.sql	6860	table	public.PROJECTIONS_20252026_LAIDLAW_SKATERS	UNREVIEWED	"CREATE TABLE public.""PROJECTIONS_20252026_LAIDLAW_SKATERS"" ("
+supabase/migrations/20260716112908_production_schema_baseline.sql	6879	table	public._nhl_totals_current	UNREVIEWED	CREATE TABLE public._nhl_totals_current (
+supabase/migrations/20260716112908_production_schema_baseline.sql	6910	table	public._yahoo_players_465_norm	UNREVIEWED	CREATE TABLE public._yahoo_players_465_norm (
+supabase/migrations/20260716112908_production_schema_baseline.sql	6944	table	public._yahoo_players_latest_norm	UNREVIEWED	CREATE TABLE public._yahoo_players_latest_norm (
+supabase/migrations/20260716112908_production_schema_baseline.sql	6978	view	public.admin__column_catalog	UNREVIEWED	CREATE VIEW public.admin__column_catalog AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	6997	table	public.admin__prd_requirements	UNREVIEWED	CREATE TABLE public.admin__prd_requirements (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7010	view	public.admin__table_profile	UNREVIEWED	CREATE VIEW public.admin__table_profile AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	7062	view	public.admin__table_summary	UNREVIEWED	CREATE VIEW public.admin__table_summary AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	7082	table	public.rolling_games	UNREVIEWED	CREATE TABLE public.rolling_games (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7205	view	public.combined_sos	UNREVIEWED	CREATE VIEW public.combined_sos AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	7228	table	public.connected_accounts	REVIEWED_FAMILY_SOURCE_ONLY	CREATE TABLE public.connected_accounts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7247	table	public.cron_job_audit	UNREVIEWED	CREATE TABLE public.cron_job_audit (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7260	view	public.cron_job_report	UNREVIEWED	CREATE VIEW public.cron_job_report AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	7277	table	public.dim_team_map	UNREVIEWED	CREATE TABLE public.dim_team_map (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7288	table	public.draft_ranker_community_moderation_exclusions	UNREVIEWED	CREATE TABLE public.draft_ranker_community_moderation_exclusions (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7322	table	public.draft_ranker_community_player_results	UNREVIEWED	CREATE TABLE public.draft_ranker_community_player_results (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7372	table	public.draft_ranker_community_refresh_runs	UNREVIEWED	CREATE TABLE public.draft_ranker_community_refresh_runs (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7401	table	public.draft_ranker_community_snapshots	UNREVIEWED	CREATE TABLE public.draft_ranker_community_snapshots (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7427	table	public.draft_ranker_contribution_events	UNREVIEWED	CREATE TABLE public.draft_ranker_contribution_events (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7457	table	public.draft_ranker_contribution_preferences	UNREVIEWED	CREATE TABLE public.draft_ranker_contribution_preferences (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7476	table	public.draft_ranker_discovery_projection_consensus	UNREVIEWED	CREATE TABLE public.draft_ranker_discovery_projection_consensus (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7504	table	public.draft_ranker_discovery_refresh_runs	UNREVIEWED	CREATE TABLE public.draft_ranker_discovery_refresh_runs (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7538	table	public.draft_ranker_discovery_signals	UNREVIEWED	CREATE TABLE public.draft_ranker_discovery_signals (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7575	table	public.draft_ranker_discovery_source_health	UNREVIEWED	CREATE TABLE public.draft_ranker_discovery_source_health (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7607	table	public.draft_ranker_pair_comparisons	UNREVIEWED	CREATE TABLE public.draft_ranker_pair_comparisons (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7645	table	public.draft_ranker_pair_preferences	UNREVIEWED	CREATE TABLE public.draft_ranker_pair_preferences (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7671	table	public.draft_ranker_pair_prompts	UNREVIEWED	CREATE TABLE public.draft_ranker_pair_prompts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7705	table	public.draft_ranker_pairwise_rate_events	UNREVIEWED	CREATE TABLE public.draft_ranker_pairwise_rate_events (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7739	table	public.draft_ranker_placement_sessions	UNREVIEWED	CREATE TABLE public.draft_ranker_placement_sessions (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7783	table	public.draft_ranker_player_preferences	UNREVIEWED	CREATE TABLE public.draft_ranker_player_preferences (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7802	table	public.draft_ranking_entries	UNREVIEWED	CREATE TABLE public.draft_ranking_entries (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7835	table	public.draft_ranking_events	UNREVIEWED	CREATE TABLE public.draft_ranking_events (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7871	table	public.draft_ranking_seed_runs	UNREVIEWED	CREATE TABLE public.draft_ranking_seed_runs (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7901	table	public.draft_ranking_watchlist	UNREVIEWED	CREATE TABLE public.draft_ranking_watchlist (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7920	table	public.draft_rankings	UNREVIEWED	CREATE TABLE public.draft_rankings (
+supabase/migrations/20260716112908_production_schema_baseline.sql	7955	table	public.entity_metric_rankings	UNREVIEWED	CREATE TABLE public.entity_metric_rankings (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8016	table	public.entity_sustainability_bands_daily	UNREVIEWED	CREATE TABLE public.entity_sustainability_bands_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8054	table	public.entity_trend_snapshots_daily	UNREVIEWED	CREATE TABLE public.entity_trend_snapshots_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8095	table	public.expected_goals	UNREVIEWED	CREATE TABLE public.expected_goals (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8117	table	public.external_leagues	REVIEWED_FAMILY_SOURCE_ONLY	CREATE TABLE public.external_leagues (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8138	table	public.external_teams	REVIEWED_FAMILY_SOURCE_ONLY	CREATE TABLE public.external_teams (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8158	table	public.fhfh_player_external_identities	UNREVIEWED	CREATE TABLE public.fhfh_player_external_identities (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8204	table	public.fhfh_player_identities	UNREVIEWED	CREATE TABLE public.fhfh_player_identities (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8258	table	public.fhfh_player_identity_aliases	UNREVIEWED	CREATE TABLE public.fhfh_player_identity_aliases (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8288	table	public.fhfh_player_identity_review_queue	UNREVIEWED	CREATE TABLE public.fhfh_player_identity_review_queue (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8332	table	public.fhfh_player_organization_history	UNREVIEWED	CREATE TABLE public.fhfh_player_organization_history (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8366	table	public.forge_goalie_game	UNREVIEWED	CREATE TABLE public.forge_goalie_game (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8385	table	public.forge_goalie_projections	UNREVIEWED	CREATE TABLE public.forge_goalie_projections (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8411	table	public.forge_player_game_strength	UNREVIEWED	CREATE TABLE public.forge_player_game_strength (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8442	table	public.forge_player_projections	UNREVIEWED	CREATE TABLE public.forge_player_projections (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8477	table	public.forge_projection_accuracy_daily	UNREVIEWED	CREATE TABLE public.forge_projection_accuracy_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8503	table	public.forge_projection_accuracy_player	UNREVIEWED	CREATE TABLE public.forge_projection_accuracy_player (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8520	table	public.forge_projection_accuracy_stat_daily	UNREVIEWED	CREATE TABLE public.forge_projection_accuracy_stat_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8537	table	public.forge_projection_calibration_daily	UNREVIEWED	CREATE TABLE public.forge_projection_calibration_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8551	table	public.forge_projection_results	UNREVIEWED	CREATE TABLE public.forge_projection_results (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8574	table	public.forge_roster_events	UNREVIEWED	CREATE TABLE public.forge_roster_events (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8596	table	public.forge_runs	UNREVIEWED	CREATE TABLE public.forge_runs (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8613	table	public.forge_team_game_strength	UNREVIEWED	CREATE TABLE public.forge_team_game_strength (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8636	table	public.forge_team_projections	UNREVIEWED	CREATE TABLE public.forge_team_projections (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8663	table	public.teamGameStats	UNREVIEWED	"CREATE TABLE public.""teamGameStats"" ("
+supabase/migrations/20260716112908_production_schema_baseline.sql	8685	view	public.gameOutcomes	UNREVIEWED	"CREATE VIEW public.""gameOutcomes"" AS"
+supabase/migrations/20260716112908_production_schema_baseline.sql	8701	table	public.game_prediction_accountability_daily	UNREVIEWED	CREATE TABLE public.game_prediction_accountability_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8729	table	public.game_prediction_accountability_games	UNREVIEWED	CREATE TABLE public.game_prediction_accountability_games (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8766	table	public.game_prediction_backtest_runs	UNREVIEWED	CREATE TABLE public.game_prediction_backtest_runs (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8796	table	public.game_prediction_feature_snapshots	UNREVIEWED	CREATE TABLE public.game_prediction_feature_snapshots (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8832	table	public.game_prediction_history	UNREVIEWED	CREATE TABLE public.game_prediction_history (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8880	table	public.game_prediction_market_odds_snapshots	UNREVIEWED	CREATE TABLE public.game_prediction_market_odds_snapshots (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8936	table	public.game_prediction_model_metrics	UNREVIEWED	CREATE TABLE public.game_prediction_model_metrics (
+supabase/migrations/20260716112908_production_schema_baseline.sql	8973	table	public.game_prediction_model_versions	UNREVIEWED	CREATE TABLE public.game_prediction_model_versions (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9012	table	public.game_prediction_outputs	UNREVIEWED	CREATE TABLE public.game_prediction_outputs (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9046	table	public.gamelog_game_map	UNREVIEWED	CREATE TABLE public.gamelog_game_map (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9059	table	public.games	UNREVIEWED	CREATE TABLE public.games (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9075	table	public.goalie_page_stats	UNREVIEWED	CREATE TABLE public.goalie_page_stats (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9100	sequence	public.goalie_page_stats_id_seq	UNREVIEWED	CREATE SEQUENCE public.goalie_page_stats_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	9120	table	public.goalie_page_weeks	UNREVIEWED	CREATE TABLE public.goalie_page_weeks (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9131	sequence	public.goalie_page_weeks_id_seq	UNREVIEWED	CREATE SEQUENCE public.goalie_page_weeks_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	9151	table	public.goalie_start_projections	UNREVIEWED	CREATE TABLE public.goalie_start_projections (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9172	table	public.nst_gamelog_goalie_5v5_counts	UNREVIEWED	CREATE TABLE public.nst_gamelog_goalie_5v5_counts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9213	table	public.nst_gamelog_goalie_5v5_rates	UNREVIEWED	CREATE TABLE public.nst_gamelog_goalie_5v5_rates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9254	table	public.nst_gamelog_goalie_all_counts	UNREVIEWED	CREATE TABLE public.nst_gamelog_goalie_all_counts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9295	table	public.nst_gamelog_goalie_all_rates	UNREVIEWED	CREATE TABLE public.nst_gamelog_goalie_all_rates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9336	table	public.nst_gamelog_goalie_ev_counts	UNREVIEWED	CREATE TABLE public.nst_gamelog_goalie_ev_counts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9377	table	public.nst_gamelog_goalie_ev_rates	UNREVIEWED	CREATE TABLE public.nst_gamelog_goalie_ev_rates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9418	table	public.nst_gamelog_goalie_pk_counts	UNREVIEWED	CREATE TABLE public.nst_gamelog_goalie_pk_counts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9459	table	public.nst_gamelog_goalie_pk_rates	UNREVIEWED	CREATE TABLE public.nst_gamelog_goalie_pk_rates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9500	table	public.nst_gamelog_goalie_pp_counts	UNREVIEWED	CREATE TABLE public.nst_gamelog_goalie_pp_counts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9541	table	public.nst_gamelog_goalie_pp_rates	UNREVIEWED	CREATE TABLE public.nst_gamelog_goalie_pp_rates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9582	table	public.players	UNREVIEWED	CREATE TABLE public.players (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9617	table	public.wgo_goalie_stats	UNREVIEWED	CREATE TABLE public.wgo_goalie_stats (
+supabase/migrations/20260716112908_production_schema_baseline.sql	9664	view	public.vw_goalie_stats_unified_source	UNREVIEWED	CREATE VIEW public.vw_goalie_stats_unified_source AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	10015	view	public.vw_goalie_stats_unified	UNREVIEWED	CREATE VIEW public.vw_goalie_stats_unified AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	10419	view	public.goalie_stats_unified	UNREVIEWED	CREATE MATERIALIZED VIEW public.goalie_stats_unified AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	10734	view	public.goalie_stats_unified_snapshot	UNREVIEWED	CREATE MATERIALIZED VIEW public.goalie_stats_unified_snapshot AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	11043	view	public.goalie_totals_unified	UNREVIEWED	CREATE VIEW public.goalie_totals_unified AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	11425	view	public.goalie_totals_unified_snapshot	UNREVIEWED	CREATE MATERIALIZED VIEW public.goalie_totals_unified_snapshot AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	11504	table	public.goalie_underlying_summary_partitions	UNREVIEWED	CREATE TABLE public.goalie_underlying_summary_partitions (
+supabase/migrations/20260716112908_production_schema_baseline.sql	11525	view	public.wigo_goalies	UNREVIEWED	CREATE VIEW public.wigo_goalies AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	11617	table	public.yahoo_matchup_weeks	UNREVIEWED	CREATE TABLE public.yahoo_matchup_weeks (
+supabase/migrations/20260716112908_production_schema_baseline.sql	11637	view	public.goalie_weekly_aggregates	UNREVIEWED	CREATE VIEW public.goalie_weekly_aggregates AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	11682	table	public.goaliesGameStats	UNREVIEWED	"CREATE TABLE public.""goaliesGameStats"" ("
+supabase/migrations/20260716112908_production_schema_baseline.sql	11719	table	public.job_locks	UNREVIEWED	CREATE TABLE public.job_locks (
+supabase/migrations/20260716112908_production_schema_baseline.sql	11729	view	public.job_run_details	UNREVIEWED	CREATE VIEW public.job_run_details AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	11747	table	public.league_averages_goalies	UNREVIEWED	CREATE TABLE public.league_averages_goalies (
+supabase/migrations/20260716112908_production_schema_baseline.sql	11769	sequence	public.league_averages_id_seq	UNREVIEWED	CREATE SEQUENCE public.league_averages_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	11789	view	public.league_weekly_goalie_averages	UNREVIEWED	CREATE VIEW public.league_weekly_goalie_averages AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	11830	table	public.lineCombinations	UNREVIEWED	"CREATE TABLE public.""lineCombinations"" ("
+supabase/migrations/20260716112908_production_schema_baseline.sql	11843	table	public.line_combinations	UNREVIEWED	CREATE TABLE public.line_combinations (
+supabase/migrations/20260716112908_production_schema_baseline.sql	11895	table	public.line_source_ifttt_events	UNREVIEWED	CREATE TABLE public.line_source_ifttt_events (
+supabase/migrations/20260716112908_production_schema_baseline.sql	11944	table	public.line_source_snapshots	UNREVIEWED	CREATE TABLE public.line_source_snapshots (
+supabase/migrations/20260716112908_production_schema_baseline.sql	12028	table	public.lines_ccc	UNREVIEWED	CREATE TABLE public.lines_ccc (
+supabase/migrations/20260716112908_production_schema_baseline.sql	12120	table	public.lines_ccc_ifttt_events	UNREVIEWED	CREATE TABLE public.lines_ccc_ifttt_events (
+supabase/migrations/20260716112908_production_schema_baseline.sql	12150	table	public.lines_dfo	UNREVIEWED	CREATE TABLE public.lines_dfo (
+supabase/migrations/20260716112908_production_schema_baseline.sql	12202	table	public.lines_gdl	UNREVIEWED	CREATE TABLE public.lines_gdl (
+supabase/migrations/20260716112908_production_schema_baseline.sql	12262	table	public.lines_nhl	UNREVIEWED	CREATE TABLE public.lines_nhl (
+supabase/migrations/20260716112908_production_schema_baseline.sql	12314	table	public.lineup_player_name_aliases	UNREVIEWED	CREATE TABLE public.lineup_player_name_aliases (
+supabase/migrations/20260716112908_production_schema_baseline.sql	12332	table	public.lineup_unresolved_player_names	UNREVIEWED	CREATE TABLE public.lineup_unresolved_player_names (
+supabase/migrations/20260716112908_production_schema_baseline.sql	12357	table	public.market_prices_daily	UNREVIEWED	CREATE TABLE public.market_prices_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	12390	table	public.metric_definitions	UNREVIEWED	CREATE TABLE public.metric_definitions (
+supabase/migrations/20260716112908_production_schema_baseline.sql	12487	table	public.model_market_flags_daily	UNREVIEWED	CREATE TABLE public.model_market_flags_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	12520	table	public.model_player_game_barometers	UNREVIEWED	CREATE TABLE public.model_player_game_barometers (
+supabase/migrations/20260716112908_production_schema_baseline.sql	12547	sequence	public.model_player_game_barometers_id_seq	UNREVIEWED	CREATE SEQUENCE public.model_player_game_barometers_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	12566	table	public.model_sustainability_config	UNREVIEWED	CREATE TABLE public.model_sustainability_config (
+supabase/migrations/20260716112908_production_schema_baseline.sql	12585	sequence	public.model_sustainability_config_id_seq	UNREVIEWED	CREATE SEQUENCE public.model_sustainability_config_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	12604	table	public.nst_team_all	UNREVIEWED	CREATE TABLE public.nst_team_all (
+supabase/migrations/20260716112908_production_schema_baseline.sql	12654	table	public.wgo_team_stats	UNREVIEWED	CREATE TABLE public.wgo_team_stats (
+supabase/migrations/20260716112908_production_schema_baseline.sql	12820	view	public.vw_team_stats_nst_wgo	UNREVIEWED	CREATE VIEW public.vw_team_stats_nst_wgo AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	13244	view	public.mv_team_stats_nst_wgo	UNREVIEWED	CREATE MATERIALIZED VIEW public.mv_team_stats_nst_wgo AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	13457	table	public.news_feed_item_players	UNREVIEWED	CREATE TABLE public.news_feed_item_players (
+supabase/migrations/20260716112908_production_schema_baseline.sql	13482	table	public.news_feed_items	UNREVIEWED	CREATE TABLE public.news_feed_items (
+supabase/migrations/20260716112908_production_schema_baseline.sql	13519	table	public.news_feed_keyword_phrases	UNREVIEWED	CREATE TABLE public.news_feed_keyword_phrases (
+supabase/migrations/20260716112908_production_schema_baseline.sql	13548	table	public.nhl_api_game_payloads_raw	UNREVIEWED	CREATE TABLE public.nhl_api_game_payloads_raw (
+supabase/migrations/20260716112908_production_schema_baseline.sql	13569	sequence	public.nhl_api_game_payloads_raw_id_seq	UNREVIEWED	CREATE SEQUENCE public.nhl_api_game_payloads_raw_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	13588	table	public.nhl_api_game_roster_spots	UNREVIEWED	CREATE TABLE public.nhl_api_game_roster_spots (
+supabase/migrations/20260716112908_production_schema_baseline.sql	13613	table	public.nhl_api_pbp_events	UNREVIEWED	CREATE TABLE public.nhl_api_pbp_events (
+supabase/migrations/20260716112908_production_schema_baseline.sql	13689	view	public.nhl_api_pbp_shot_events_v1	UNREVIEWED	CREATE VIEW public.nhl_api_pbp_shot_events_v1 AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	13735	table	public.nhl_api_shift_rows	UNREVIEWED	CREATE TABLE public.nhl_api_shift_rows (
+supabase/migrations/20260716112908_production_schema_baseline.sql	13774	table	public.nhl_edge_skater_shot_location_leaders_daily	UNREVIEWED	CREATE TABLE public.nhl_edge_skater_shot_location_leaders_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	13808	table	public.nhl_edge_stats_daily	UNREVIEWED	CREATE TABLE public.nhl_edge_stats_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	13842	table	public.nhl_names	UNREVIEWED	CREATE TABLE public.nhl_names (
+supabase/migrations/20260716112908_production_schema_baseline.sql	13854	table	public.nhl_player_contracts	UNREVIEWED	CREATE TABLE public.nhl_player_contracts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	13914	table	public.nhl_ppt_replay_frames	UNREVIEWED	CREATE TABLE public.nhl_ppt_replay_frames (
+supabase/migrations/20260716112908_production_schema_baseline.sql	13947	table	public.nhl_ppt_replay_payloads_raw	UNREVIEWED	CREATE TABLE public.nhl_ppt_replay_payloads_raw (
+supabase/migrations/20260716112908_production_schema_baseline.sql	13984	table	public.nhl_standings_details	UNREVIEWED	CREATE TABLE public.nhl_standings_details (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14068	table	public.nst_team_stats	UNREVIEWED	CREATE TABLE public.nst_team_stats (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14118	view	public.nhl_team_data	UNREVIEWED	CREATE VIEW public.nhl_team_data AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	14245	table	public.nhl_xg_adjusted_impact_model_runs	UNREVIEWED	CREATE TABLE public.nhl_xg_adjusted_impact_model_runs (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14279	table	public.nhl_xg_adjusted_player_impacts	UNREVIEWED	CREATE TABLE public.nhl_xg_adjusted_player_impacts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14310	table	public.nhl_xg_goalie_game_aggregates	UNREVIEWED	CREATE TABLE public.nhl_xg_goalie_game_aggregates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14344	table	public.nhl_xg_goalie_rolling_aggregates	UNREVIEWED	CREATE TABLE public.nhl_xg_goalie_rolling_aggregates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14377	table	public.nhl_xg_model_registry	UNREVIEWED	CREATE TABLE public.nhl_xg_model_registry (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14434	table	public.nhl_xg_player_created_xg_game_aggregates	UNREVIEWED	CREATE TABLE public.nhl_xg_player_created_xg_game_aggregates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14466	table	public.nhl_xg_player_created_xg_rolling_aggregates	UNREVIEWED	CREATE TABLE public.nhl_xg_player_created_xg_rolling_aggregates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14500	table	public.nhl_xg_player_game_aggregates	UNREVIEWED	CREATE TABLE public.nhl_xg_player_game_aggregates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14531	table	public.nhl_xg_player_rolling_aggregates	UNREVIEWED	CREATE TABLE public.nhl_xg_player_rolling_aggregates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14562	table	public.nhl_xg_rebound_control_goalie_game_aggregates	UNREVIEWED	CREATE TABLE public.nhl_xg_rebound_control_goalie_game_aggregates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14602	table	public.nhl_xg_rebound_control_player_game_aggregates	UNREVIEWED	CREATE TABLE public.nhl_xg_rebound_control_player_game_aggregates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14637	table	public.nhl_xg_rebound_control_team_game_aggregates	UNREVIEWED	CREATE TABLE public.nhl_xg_rebound_control_team_game_aggregates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14682	table	public.nhl_xg_shot_assist_candidates	UNREVIEWED	CREATE TABLE public.nhl_xg_shot_assist_candidates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14719	table	public.nhl_xg_shot_features	UNREVIEWED	CREATE TABLE public.nhl_xg_shot_features (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14821	table	public.nhl_xg_shot_predictions	UNREVIEWED	CREATE TABLE public.nhl_xg_shot_predictions (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14861	table	public.nhl_xg_team_game_aggregates	UNREVIEWED	CREATE TABLE public.nhl_xg_team_game_aggregates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14911	table	public.nhl_xg_team_rolling_aggregates	UNREVIEWED	CREATE TABLE public.nhl_xg_team_rolling_aggregates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14945	table	public.nhl_xg_transition_events	UNREVIEWED	CREATE TABLE public.nhl_xg_transition_events (
+supabase/migrations/20260716112908_production_schema_baseline.sql	14982	table	public.nhl_xg_transition_game_aggregates	UNREVIEWED	CREATE TABLE public.nhl_xg_transition_game_aggregates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	15014	sequence	public.nst_10gp_gamelog_as_counts_id_seq	UNREVIEWED	CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_as_counts_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	15026	sequence	public.nst_10gp_gamelog_as_counts_oi_id_seq	UNREVIEWED	CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_as_counts_oi_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	15038	sequence	public.nst_10gp_gamelog_as_rates_id_seq	UNREVIEWED	CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_as_rates_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	15050	sequence	public.nst_10gp_gamelog_as_rates_oi_id_seq	UNREVIEWED	CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_as_rates_oi_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	15062	sequence	public.nst_10gp_gamelog_es_counts_id_seq	UNREVIEWED	CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_es_counts_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	15074	sequence	public.nst_10gp_gamelog_es_counts_oi_id_seq	UNREVIEWED	CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_es_counts_oi_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	15086	sequence	public.nst_10gp_gamelog_es_rates_id_seq	UNREVIEWED	CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_es_rates_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	15098	sequence	public.nst_10gp_gamelog_es_rates_oi_id_seq	UNREVIEWED	CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_es_rates_oi_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	15110	sequence	public.nst_10gp_gamelog_pk_counts_id_seq	UNREVIEWED	CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_pk_counts_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	15122	sequence	public.nst_10gp_gamelog_pk_counts_oi_id_seq	UNREVIEWED	CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_pk_counts_oi_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	15134	sequence	public.nst_10gp_gamelog_pk_rates_id_seq	UNREVIEWED	CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_pk_rates_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	15146	sequence	public.nst_10gp_gamelog_pk_rates_oi_id_seq	UNREVIEWED	CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_pk_rates_oi_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	15158	sequence	public.nst_10gp_gamelog_pp_counts_id_seq	UNREVIEWED	CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_pp_counts_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	15170	sequence	public.nst_10gp_gamelog_pp_counts_oi_id_seq	UNREVIEWED	CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_pp_counts_oi_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	15182	sequence	public.nst_10gp_gamelog_pp_rates_id_seq	UNREVIEWED	CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_pp_rates_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	15194	sequence	public.nst_10gp_gamelog_pp_rates_oi_id_seq	UNREVIEWED	CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_pp_rates_oi_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	15206	view	public.nst_avg_all	UNREVIEWED	CREATE VIEW public.nst_avg_all AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	15253	view	public.nst_all_team_per_game	UNREVIEWED	CREATE VIEW public.nst_all_team_per_game AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	15299	table	public.nst_team_5v5	UNREVIEWED	CREATE TABLE public.nst_team_5v5 (
+supabase/migrations/20260716112908_production_schema_baseline.sql	15349	view	public.nst_avg_5v5	UNREVIEWED	CREATE VIEW public.nst_avg_5v5 AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	15396	table	public.nst_team_pk	UNREVIEWED	CREATE TABLE public.nst_team_pk (
+supabase/migrations/20260716112908_production_schema_baseline.sql	15446	view	public.nst_avg_pk	UNREVIEWED	CREATE VIEW public.nst_avg_pk AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	15493	table	public.nst_team_pp	UNREVIEWED	CREATE TABLE public.nst_team_pp (
+supabase/migrations/20260716112908_production_schema_baseline.sql	15543	view	public.nst_avg_pp	UNREVIEWED	CREATE VIEW public.nst_avg_pp AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	15590	view	public.nst_league_averages	UNREVIEWED	CREATE VIEW public.nst_league_averages AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	15908	view	public.nst_5v5_team_differentials	UNREVIEWED	CREATE VIEW public.nst_5v5_team_differentials AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	15993	view	public.nst_5v5_team_per_game	UNREVIEWED	CREATE VIEW public.nst_5v5_team_per_game AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	16039	view	public.nst_all_team_differentials	UNREVIEWED	CREATE VIEW public.nst_all_team_differentials AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	16124	view	public.nst_pk_team_per_game	UNREVIEWED	CREATE VIEW public.nst_pk_team_per_game AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	16170	view	public.nst_pp_team_per_game	UNREVIEWED	CREATE VIEW public.nst_pp_team_per_game AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	16216	view	public.nst_att_def_scores	UNREVIEWED	CREATE VIEW public.nst_att_def_scores AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	16350	table	public.nst_gamelog_5v5_counts	UNREVIEWED	CREATE TABLE public.nst_gamelog_5v5_counts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	16408	table	public.nst_gamelog_5v5_counts_oi	UNREVIEWED	CREATE TABLE public.nst_gamelog_5v5_counts_oi (
+supabase/migrations/20260716112908_production_schema_baseline.sql	16485	table	public.nst_gamelog_5v5_rates	UNREVIEWED	CREATE TABLE public.nst_gamelog_5v5_rates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	16544	table	public.nst_gamelog_5v5_rates_oi	UNREVIEWED	CREATE TABLE public.nst_gamelog_5v5_rates_oi (
+supabase/migrations/20260716112908_production_schema_baseline.sql	16622	sequence	public.nst_gamelog_as_counts_id_seq	UNREVIEWED	CREATE SEQUENCE public.nst_gamelog_as_counts_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	16641	table	public.nst_gamelog_as_counts_oi	UNREVIEWED	CREATE TABLE public.nst_gamelog_as_counts_oi (
+supabase/migrations/20260716112908_production_schema_baseline.sql	16704	sequence	public.nst_gamelog_as_counts_oi_id_seq	UNREVIEWED	CREATE SEQUENCE public.nst_gamelog_as_counts_oi_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	16723	sequence	public.nst_gamelog_as_rates_id_seq	UNREVIEWED	CREATE SEQUENCE public.nst_gamelog_as_rates_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	16742	table	public.nst_gamelog_as_rates_oi	UNREVIEWED	CREATE TABLE public.nst_gamelog_as_rates_oi (
+supabase/migrations/20260716112908_production_schema_baseline.sql	16805	sequence	public.nst_gamelog_as_rates_oi_id_seq	UNREVIEWED	CREATE SEQUENCE public.nst_gamelog_as_rates_oi_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	16824	table	public.nst_gamelog_es_counts	UNREVIEWED	CREATE TABLE public.nst_gamelog_es_counts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	16975	sequence	public.nst_gamelog_es_counts_id_seq	UNREVIEWED	CREATE SEQUENCE public.nst_gamelog_es_counts_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	16995	table	public.nst_gamelog_es_counts_oi	UNREVIEWED	CREATE TABLE public.nst_gamelog_es_counts_oi (
+supabase/migrations/20260716112908_production_schema_baseline.sql	17144	sequence	public.nst_gamelog_es_counts_oi_id_seq	UNREVIEWED	CREATE SEQUENCE public.nst_gamelog_es_counts_oi_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	17164	table	public.nst_gamelog_es_rates	UNREVIEWED	CREATE TABLE public.nst_gamelog_es_rates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	17209	sequence	public.nst_gamelog_es_rates_id_seq	UNREVIEWED	CREATE SEQUENCE public.nst_gamelog_es_rates_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	17229	table	public.nst_gamelog_es_rates_oi	UNREVIEWED	CREATE TABLE public.nst_gamelog_es_rates_oi (
+supabase/migrations/20260716112908_production_schema_baseline.sql	17381	sequence	public.nst_gamelog_es_rates_oi_id_seq	UNREVIEWED	CREATE SEQUENCE public.nst_gamelog_es_rates_oi_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	17401	table	public.nst_gamelog_pk_counts	UNREVIEWED	CREATE TABLE public.nst_gamelog_pk_counts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	17553	sequence	public.nst_gamelog_pk_counts_id_seq	UNREVIEWED	CREATE SEQUENCE public.nst_gamelog_pk_counts_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	17573	table	public.nst_gamelog_pk_counts_oi	UNREVIEWED	CREATE TABLE public.nst_gamelog_pk_counts_oi (
+supabase/migrations/20260716112908_production_schema_baseline.sql	17725	sequence	public.nst_gamelog_pk_counts_oi_id_seq	UNREVIEWED	CREATE SEQUENCE public.nst_gamelog_pk_counts_oi_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	17745	table	public.nst_gamelog_pk_rates	UNREVIEWED	CREATE TABLE public.nst_gamelog_pk_rates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	17790	sequence	public.nst_gamelog_pk_rates_id_seq	UNREVIEWED	CREATE SEQUENCE public.nst_gamelog_pk_rates_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	17810	table	public.nst_gamelog_pk_rates_oi	UNREVIEWED	CREATE TABLE public.nst_gamelog_pk_rates_oi (
+supabase/migrations/20260716112908_production_schema_baseline.sql	17962	sequence	public.nst_gamelog_pk_rates_oi_id_seq	UNREVIEWED	CREATE SEQUENCE public.nst_gamelog_pk_rates_oi_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	17982	table	public.nst_gamelog_pp_counts	UNREVIEWED	CREATE TABLE public.nst_gamelog_pp_counts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	18132	sequence	public.nst_gamelog_pp_counts_id_seq	UNREVIEWED	CREATE SEQUENCE public.nst_gamelog_pp_counts_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	18151	table	public.nst_gamelog_pp_counts_oi	UNREVIEWED	CREATE TABLE public.nst_gamelog_pp_counts_oi (
+supabase/migrations/20260716112908_production_schema_baseline.sql	18303	sequence	public.nst_gamelog_pp_counts_oi_id_seq	UNREVIEWED	CREATE SEQUENCE public.nst_gamelog_pp_counts_oi_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	18322	table	public.nst_gamelog_pp_rates	UNREVIEWED	CREATE TABLE public.nst_gamelog_pp_rates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	18366	sequence	public.nst_gamelog_pp_rates_id_seq	UNREVIEWED	CREATE SEQUENCE public.nst_gamelog_pp_rates_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	18385	table	public.nst_gamelog_pp_rates_oi	UNREVIEWED	CREATE TABLE public.nst_gamelog_pp_rates_oi (
+supabase/migrations/20260716112908_production_schema_baseline.sql	18537	sequence	public.nst_gamelog_pp_rates_oi_id_seq	UNREVIEWED	CREATE SEQUENCE public.nst_gamelog_pp_rates_oi_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	18556	table	public.nst_percentile_as_defense	UNREVIEWED	CREATE TABLE public.nst_percentile_as_defense (
+supabase/migrations/20260716112908_production_schema_baseline.sql	18588	table	public.nst_percentile_as_defense_filtered	UNREVIEWED	CREATE TABLE public.nst_percentile_as_defense_filtered (
+supabase/migrations/20260716112908_production_schema_baseline.sql	18629	table	public.nst_percentile_as_offense	UNREVIEWED	CREATE TABLE public.nst_percentile_as_offense (
+supabase/migrations/20260716112908_production_schema_baseline.sql	18678	view	public.nst_seasonlong_es_counts	UNREVIEWED	CREATE VIEW public.nst_seasonlong_es_counts AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	18719	view	public.nst_seasonlong_es_counts_oi	UNREVIEWED	CREATE VIEW public.nst_seasonlong_es_counts_oi AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	18762	view	public.nst_seasonlong_es_rates	UNREVIEWED	CREATE VIEW public.nst_seasonlong_es_rates AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	18804	view	public.nst_seasonlong_es_rates_oi	UNREVIEWED	CREATE VIEW public.nst_seasonlong_es_rates_oi AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	18857	view	public.nst_percentile_es_defense	UNREVIEWED	CREATE VIEW public.nst_percentile_es_defense AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	18890	view	public.nst_percentile_es_defense_filtered	UNREVIEWED	CREATE VIEW public.nst_percentile_es_defense_filtered AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	18959	view	public.nst_percentile_es_offense	UNREVIEWED	CREATE VIEW public.nst_percentile_es_offense AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	19009	view	public.nst_percentile_es_offense_filtered	UNREVIEWED	CREATE VIEW public.nst_percentile_es_offense_filtered AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	19108	view	public.nst_seasonlong_pk_counts	UNREVIEWED	CREATE VIEW public.nst_seasonlong_pk_counts AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	19149	view	public.nst_seasonlong_pk_counts_oi	UNREVIEWED	CREATE VIEW public.nst_seasonlong_pk_counts_oi AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	19192	view	public.nst_seasonlong_pk_rates	UNREVIEWED	CREATE VIEW public.nst_seasonlong_pk_rates AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	19234	view	public.nst_seasonlong_pk_rates_oi	UNREVIEWED	CREATE VIEW public.nst_seasonlong_pk_rates_oi AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	19287	view	public.nst_percentile_pk_defense	UNREVIEWED	CREATE VIEW public.nst_percentile_pk_defense AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	19320	view	public.nst_percentile_pk_defense_filtered	UNREVIEWED	CREATE VIEW public.nst_percentile_pk_defense_filtered AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	19397	view	public.nst_percentile_pk_offense	UNREVIEWED	CREATE VIEW public.nst_percentile_pk_offense AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	19447	view	public.nst_percentile_pk_offense_filtered	UNREVIEWED	CREATE VIEW public.nst_percentile_pk_offense_filtered AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	19531	view	public.nst_seasonlong_pp_counts	UNREVIEWED	CREATE VIEW public.nst_seasonlong_pp_counts AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	19572	view	public.nst_seasonlong_pp_counts_oi	UNREVIEWED	CREATE VIEW public.nst_seasonlong_pp_counts_oi AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	19616	view	public.nst_seasonlong_pp_rates	UNREVIEWED	CREATE VIEW public.nst_seasonlong_pp_rates AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	19658	view	public.nst_seasonlong_pp_rates_oi	UNREVIEWED	CREATE VIEW public.nst_seasonlong_pp_rates_oi AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	19711	view	public.nst_percentile_pp_defense	UNREVIEWED	CREATE VIEW public.nst_percentile_pp_defense AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	19744	view	public.nst_percentile_pp_defense_filtered	UNREVIEWED	CREATE VIEW public.nst_percentile_pp_defense_filtered AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	19821	view	public.nst_percentile_pp_offense	UNREVIEWED	CREATE VIEW public.nst_percentile_pp_offense AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	19871	view	public.nst_percentile_pp_offense_filtered	UNREVIEWED	CREATE VIEW public.nst_percentile_pp_offense_filtered AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	19955	view	public.nst_pk_team_differentials	UNREVIEWED	CREATE VIEW public.nst_pk_team_differentials AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	20040	view	public.nst_pp_team_differentials	UNREVIEWED	CREATE VIEW public.nst_pp_team_differentials AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	20125	table	public.nst_seasonal_individual_counts	UNREVIEWED	CREATE TABLE public.nst_seasonal_individual_counts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	20189	table	public.nst_seasonal_individual_rates	UNREVIEWED	CREATE TABLE public.nst_seasonal_individual_rates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	20247	table	public.nst_seasonal_on_ice_counts	UNREVIEWED	CREATE TABLE public.nst_seasonal_on_ice_counts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	20317	table	public.nst_seasonal_on_ice_rates	UNREVIEWED	CREATE TABLE public.nst_seasonal_on_ice_rates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	20388	view	public.nst_seasonlong_as_counts	UNREVIEWED	CREATE VIEW public.nst_seasonlong_as_counts AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	20429	view	public.nst_seasonlong_as_counts_oi	UNREVIEWED	CREATE VIEW public.nst_seasonlong_as_counts_oi AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	20472	view	public.nst_seasonlong_as_rates	UNREVIEWED	CREATE VIEW public.nst_seasonlong_as_rates AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	20514	view	public.nst_seasonlong_as_rates_oi	UNREVIEWED	CREATE VIEW public.nst_seasonlong_as_rates_oi AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	20567	view	public.nst_seasonlong_combined_es	UNREVIEWED	CREATE VIEW public.nst_seasonlong_combined_es AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	20692	view	public.nst_seasonlong_combined_pk	UNREVIEWED	CREATE VIEW public.nst_seasonlong_combined_pk AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	20817	view	public.nst_seasonlong_combined_pp	UNREVIEWED	CREATE VIEW public.nst_seasonlong_combined_pp AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	20943	table	public.nst_team_gamelogs_as_counts	UNREVIEWED	CREATE TABLE public.nst_team_gamelogs_as_counts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	21064	sequence	public.nst_team_gamelogs_as_counts_id_seq	UNREVIEWED	CREATE SEQUENCE public.nst_team_gamelogs_as_counts_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	21083	table	public.nst_team_gamelogs_as_rates	UNREVIEWED	CREATE TABLE public.nst_team_gamelogs_as_rates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	21204	table	public.nst_team_gamelogs_es_counts	UNREVIEWED	CREATE TABLE public.nst_team_gamelogs_es_counts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	21325	table	public.nst_team_gamelogs_es_rates	UNREVIEWED	CREATE TABLE public.nst_team_gamelogs_es_rates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	21446	table	public.nst_team_gamelogs_pk_counts	UNREVIEWED	CREATE TABLE public.nst_team_gamelogs_pk_counts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	21567	table	public.nst_team_gamelogs_pk_rates	UNREVIEWED	CREATE TABLE public.nst_team_gamelogs_pk_rates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	21688	table	public.nst_team_gamelogs_pp_counts	UNREVIEWED	CREATE TABLE public.nst_team_gamelogs_pp_counts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	21809	table	public.nst_team_gamelogs_pp_rates	UNREVIEWED	CREATE TABLE public.nst_team_gamelogs_pp_rates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	21930	view	public.nst_team_scores_all_strengths	UNREVIEWED	CREATE VIEW public.nst_team_scores_all_strengths AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	21956	table	public.nst_team_stats_ly	UNREVIEWED	CREATE TABLE public.nst_team_stats_ly (
+supabase/migrations/20260716112908_production_schema_baseline.sql	22006	table	public.pbp_games	UNREVIEWED	CREATE TABLE public.pbp_games (
+supabase/migrations/20260716112908_production_schema_baseline.sql	22030	sequence	public.pbp_games_id_seq	UNREVIEWED	CREATE SEQUENCE public.pbp_games_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	22050	table	public.pbp_plays	UNREVIEWED	CREATE TABLE public.pbp_plays (
+supabase/migrations/20260716112908_production_schema_baseline.sql	22099	table	public.player_baselines	UNREVIEWED	CREATE TABLE public.player_baselines (
+supabase/migrations/20260716112908_production_schema_baseline.sql	22126	view	public.player_gamelogs_unified	UNREVIEWED	CREATE MATERIALIZED VIEW public.player_gamelogs_unified AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	22637	table	public.player_lineup_deployment_tallies	UNREVIEWED	CREATE TABLE public.player_lineup_deployment_tallies (
+supabase/migrations/20260716112908_production_schema_baseline.sql	22684	table	public.player_name_aliases	UNREVIEWED	CREATE TABLE public.player_name_aliases (
+supabase/migrations/20260716112908_production_schema_baseline.sql	22698	sequence	public.player_name_aliases_id_seq	UNREVIEWED	CREATE SEQUENCE public.player_name_aliases_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	22718	table	public.player_prediction_outputs	UNREVIEWED	CREATE TABLE public.player_prediction_outputs (
+supabase/migrations/20260716112908_production_schema_baseline.sql	22753	table	public.player_priors_cache	UNREVIEWED	CREATE TABLE public.player_priors_cache (
+supabase/migrations/20260716112908_production_schema_baseline.sql	22771	table	public.player_projections	UNREVIEWED	CREATE TABLE public.player_projections (
+supabase/migrations/20260716112908_production_schema_baseline.sql	22793	view	public.player_stats_unified	UNREVIEWED	CREATE MATERIALIZED VIEW public.player_stats_unified AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	23084	view	public.player_totals_unified	UNREVIEWED	CREATE MATERIALIZED VIEW public.player_totals_unified AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	23497	table	public.player_trend_metrics	UNREVIEWED	CREATE TABLE public.player_trend_metrics (
+supabase/migrations/20260716112908_production_schema_baseline.sql	23536	table	public.powerPlayCombinations	UNREVIEWED	"CREATE TABLE public.""powerPlayCombinations"" ("
+supabase/migrations/20260716112908_production_schema_baseline.sql	23554	view	public.power_rankings	UNREVIEWED	CREATE VIEW public.power_rankings AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	23569	table	public.power_rankings_store	UNREVIEWED	CREATE TABLE public.power_rankings_store (
+supabase/migrations/20260716112908_production_schema_baseline.sql	23617	table	public.pp_timeframes	UNREVIEWED	CREATE TABLE public.pp_timeframes (
+supabase/migrations/20260716112908_production_schema_baseline.sql	23643	sequence	public.pp_timeframes_id_seq	UNREVIEWED	CREATE SEQUENCE public.pp_timeframes_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	23662	table	public.predictions_sko	UNREVIEWED	CREATE TABLE public.predictions_sko (
+supabase/migrations/20260716112908_production_schema_baseline.sql	23684	table	public.prop_market_prices_daily	UNREVIEWED	CREATE TABLE public.prop_market_prices_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	23718	table	public.provider_sync_runs	REVIEWED_FAMILY_SOURCE_ONLY	CREATE TABLE public.provider_sync_runs (
+supabase/migrations/20260716112908_production_schema_baseline.sql	23742	table	public.raw_standings_sos	UNREVIEWED	CREATE TABLE public.raw_standings_sos (
+supabase/migrations/20260716112908_production_schema_baseline.sql	23759	sequence	public.raw_standings_sos_id_seq	UNREVIEWED	CREATE SEQUENCE public.raw_standings_sos_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	23779	sequence	public.rolling_games_id_seq	UNREVIEWED	CREATE SEQUENCE public.rolling_games_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	23799	table	public.rolling_player_game_metrics	UNREVIEWED	CREATE TABLE public.rolling_player_game_metrics (
+supabase/migrations/20260716112908_production_schema_baseline.sql	24923	table	public.rolling_player_metric_support_payloads	UNREVIEWED	CREATE TABLE public.rolling_player_metric_support_payloads (
+supabase/migrations/20260716112908_production_schema_baseline.sql	24969	table	public.rosters	UNREVIEWED	CREATE TABLE public.rosters (
+supabase/migrations/20260716112908_production_schema_baseline.sql	24991	table	public.seasons	UNREVIEWED	CREATE TABLE public.seasons (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25019	table	public.shift_charts	UNREVIEWED	CREATE TABLE public.shift_charts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25064	sequence	public.shift_charts_id_seq	UNREVIEWED	CREATE SEQUENCE public.shift_charts_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	25084	table	public.shots_goals_by_coord	UNREVIEWED	CREATE TABLE public.shots_goals_by_coord (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25162	table	public.skater_composite_ratings	UNREVIEWED	CREATE TABLE public.skater_composite_ratings (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25243	table	public.skatersGameStats	UNREVIEWED	"CREATE TABLE public.""skatersGameStats"" ("
+supabase/migrations/20260716112908_production_schema_baseline.sql	25272	table	public.sko_pp_stats	UNREVIEWED	CREATE TABLE public.sko_pp_stats (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25290	table	public.sko_skater_stats	UNREVIEWED	CREATE TABLE public.sko_skater_stats (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25326	table	public.sko_skater_years	UNREVIEWED	CREATE TABLE public.sko_skater_years (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25355	table	public.sko_trends	UNREVIEWED	CREATE TABLE public.sko_trends (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25369	table	public.sos_games	UNREVIEWED	CREATE TABLE public.sos_games (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25397	table	public.sos_standings	UNREVIEWED	CREATE TABLE public.sos_standings (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25425	table	public.source_provenance_snapshots	UNREVIEWED	CREATE TABLE public.source_provenance_snapshots (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25457	table	public.standings	UNREVIEWED	CREATE TABLE public.standings (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25527	sequence	public.standings_id_seq	UNREVIEWED	CREATE SEQUENCE public.standings_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	25547	table	public.statsUpdateStatus	UNREVIEWED	"CREATE TABLE public.""statsUpdateStatus"" ("
+supabase/migrations/20260716112908_production_schema_baseline.sql	25582	table	public.sustainability_player_priors	UNREVIEWED	CREATE TABLE public.sustainability_player_priors (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25602	table	public.sustainability_priors	UNREVIEWED	CREATE TABLE public.sustainability_priors (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25618	table	public.sustainability_projections	UNREVIEWED	CREATE TABLE public.sustainability_projections (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25657	table	public.sustainability_trend_bands	UNREVIEWED	CREATE TABLE public.sustainability_trend_bands (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25682	view	public.sustainability_trends_v	UNREVIEWED	CREATE VIEW public.sustainability_trends_v AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	25702	table	public.sustainability_window_z	UNREVIEWED	CREATE TABLE public.sustainability_window_z (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25742	table	public.team_abbrev_xwalk	UNREVIEWED	CREATE TABLE public.team_abbrev_xwalk (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25753	table	public.team_ctpi_daily	UNREVIEWED	CREATE TABLE public.team_ctpi_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25773	table	public.team_discipline_stats	UNREVIEWED	CREATE TABLE public.team_discipline_stats (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25793	table	public.team_franchise_alias	UNREVIEWED	CREATE TABLE public.team_franchise_alias (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25806	view	public.team_games	UNREVIEWED	CREATE VIEW public.team_games AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	25826	table	public.team_power_ratings_daily__new	UNREVIEWED	CREATE TABLE public.team_power_ratings_daily__new (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25856	table	public.team_season	UNREVIEWED	CREATE TABLE public.team_season (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25881	table	public.team_summary_years	UNREVIEWED	CREATE TABLE public.team_summary_years (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25912	sequence	public.team_summary_years_id_seq	UNREVIEWED	CREATE SEQUENCE public.team_summary_years_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	25932	table	public.team_underlying_stats_summary	UNREVIEWED	CREATE TABLE public.team_underlying_stats_summary (
+supabase/migrations/20260716112908_production_schema_baseline.sql	25993	table	public.team_unit_toi	UNREVIEWED	CREATE TABLE public.team_unit_toi (
+supabase/migrations/20260716112908_production_schema_baseline.sql	26075	table	public.teamsinfo	UNREVIEWED	CREATE TABLE public.teamsinfo (
+supabase/migrations/20260716112908_production_schema_baseline.sql	26097	sequence	public.teamsinfo_id_seq	UNREVIEWED	CREATE SEQUENCE public.teamsinfo_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	26117	table	public.tweet_news_inference_state	UNREVIEWED	CREATE TABLE public.tweet_news_inference_state (
+supabase/migrations/20260716112908_production_schema_baseline.sql	26155	table	public.tweet_pattern_review_items	UNREVIEWED	CREATE TABLE public.tweet_pattern_review_items (
+supabase/migrations/20260716112908_production_schema_baseline.sql	26217	table	public.user_entitlements	UNREVIEWED	CREATE TABLE public.user_entitlements (
+supabase/migrations/20260716112908_production_schema_baseline.sql	26237	table	public.user_profiles	UNREVIEWED	CREATE TABLE public.user_profiles (
+supabase/migrations/20260716112908_production_schema_baseline.sql	26251	table	public.user_provider_preferences	UNREVIEWED	CREATE TABLE public.user_provider_preferences (
+supabase/migrations/20260716112908_production_schema_baseline.sql	26269	table	public.user_saved_teams	UNREVIEWED	CREATE TABLE public.user_saved_teams (
+supabase/migrations/20260716112908_production_schema_baseline.sql	26289	table	public.user_settings	UNREVIEWED	CREATE TABLE public.user_settings (
+supabase/migrations/20260716112908_production_schema_baseline.sql	26306	table	public.users	UNREVIEWED	CREATE TABLE public.users (
+supabase/migrations/20260716112908_production_schema_baseline.sql	26346	table	public.yahoo_names	UNREVIEWED	CREATE TABLE public.yahoo_names (
+supabase/migrations/20260716112908_production_schema_baseline.sql	26358	view	public.view_active_player_ids_max_season	UNREVIEWED	CREATE VIEW public.view_active_player_ids_max_season AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	26383	view	public.vw_current_season	UNREVIEWED	CREATE VIEW public.vw_current_season AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	26392	view	public.vw_active_teams	UNREVIEWED	CREATE VIEW public.vw_active_teams AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	26405	view	public.vw_pp_unit_share_recent	UNREVIEWED	CREATE VIEW public.vw_pp_unit_share_recent AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	26503	view	public.vw_season_game_dates	UNREVIEWED	CREATE VIEW public.vw_season_game_dates AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	26517	view	public.vw_slate_day	UNREVIEWED	CREATE VIEW public.vw_slate_day AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	26555	view	public.vw_team_abbrev_norm	UNREVIEWED	CREATE VIEW public.vw_team_abbrev_norm AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	26567	view	public.vw_team_strength_state_daily	UNREVIEWED	CREATE VIEW public.vw_team_strength_state_daily AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	26618	view	public.vw_team_strength_state_daily_norm	UNREVIEWED	CREATE VIEW public.vw_team_strength_state_daily_norm AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	26736	table	public.wgo_avg_career	UNREVIEWED	CREATE TABLE public.wgo_avg_career (
+supabase/migrations/20260716112908_production_schema_baseline.sql	26885	table	public.wgo_avg_three_year	UNREVIEWED	CREATE TABLE public.wgo_avg_three_year (
+supabase/migrations/20260716112908_production_schema_baseline.sql	27034	table	public.wgo_career_averages	UNREVIEWED	CREATE TABLE public.wgo_career_averages (
+supabase/migrations/20260716112908_production_schema_baseline.sql	27253	table	public.wgo_goalie_stats_totals	UNREVIEWED	CREATE TABLE public.wgo_goalie_stats_totals (
+supabase/migrations/20260716112908_production_schema_baseline.sql	27290	view	public.wgo_goalie_stats_per_game	UNREVIEWED	CREATE VIEW public.wgo_goalie_stats_per_game AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	27321	sequence	public.wgo_skater_stats_id_seq	UNREVIEWED	CREATE SEQUENCE public.wgo_skater_stats_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	27341	table	public.wgo_skater_stats_totals	UNREVIEWED	CREATE TABLE public.wgo_skater_stats_totals (
+supabase/migrations/20260716112908_production_schema_baseline.sql	27556	view	public.wgo_skater_stats_per_game	UNREVIEWED	CREATE VIEW public.wgo_skater_stats_per_game AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	27651	table	public.wgo_skater_stats_playoffs	UNREVIEWED	CREATE TABLE public.wgo_skater_stats_playoffs (
+supabase/migrations/20260716112908_production_schema_baseline.sql	27903	table	public.wgo_skater_stats_totals_ly	UNREVIEWED	CREATE TABLE public.wgo_skater_stats_totals_ly (
+supabase/migrations/20260716112908_production_schema_baseline.sql	28113	table	public.wgo_skater_stats_totals_playoffs	UNREVIEWED	CREATE TABLE public.wgo_skater_stats_totals_playoffs (
+supabase/migrations/20260716112908_production_schema_baseline.sql	28328	sequence	public.wgo_team_stats_id_seq	UNREVIEWED	CREATE SEQUENCE public.wgo_team_stats_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	28348	table	public.wgo_teams	UNREVIEWED	CREATE TABLE public.wgo_teams (
+supabase/migrations/20260716112908_production_schema_baseline.sql	28359	sequence	public.wgo_teams_id_seq	UNREVIEWED	CREATE SEQUENCE public.wgo_teams_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	28379	table	public.wgo_three_year_averages	UNREVIEWED	CREATE TABLE public.wgo_three_year_averages (
+supabase/migrations/20260716112908_production_schema_baseline.sql	28598	table	public.wigo_career	UNREVIEWED	CREATE TABLE public.wigo_career (
+supabase/migrations/20260716112908_production_schema_baseline.sql	28824	table	public.wigo_counts	UNREVIEWED	CREATE TABLE public.wigo_counts (
+supabase/migrations/20260716112908_production_schema_baseline.sql	29023	table	public.wigo_per_game	UNREVIEWED	CREATE TABLE public.wigo_per_game (
+supabase/migrations/20260716112908_production_schema_baseline.sql	29138	table	public.wigo_rates	UNREVIEWED	CREATE TABLE public.wigo_rates (
+supabase/migrations/20260716112908_production_schema_baseline.sql	29267	table	public.wigo_recent	UNREVIEWED	CREATE TABLE public.wigo_recent (
+supabase/migrations/20260716112908_production_schema_baseline.sql	29392	table	public.xfs_audit_log	UNREVIEWED	CREATE TABLE public.xfs_audit_log (
+supabase/migrations/20260716112908_production_schema_baseline.sql	29473	sequence	public.xfs_audit_log_id_seq	UNREVIEWED	CREATE SEQUENCE public.xfs_audit_log_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	29493	table	public.xfs_predictions_10_game	UNREVIEWED	CREATE TABLE public.xfs_predictions_10_game (
+supabase/migrations/20260716112908_production_schema_baseline.sql	29575	sequence	public.xfs_predictions_10_game_id_seq	UNREVIEWED	CREATE SEQUENCE public.xfs_predictions_10_game_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	29595	table	public.xfs_predictions_5_game	UNREVIEWED	CREATE TABLE public.xfs_predictions_5_game (
+supabase/migrations/20260716112908_production_schema_baseline.sql	29677	sequence	public.xfs_predictions_5_game_id_seq	UNREVIEWED	CREATE SEQUENCE public.xfs_predictions_5_game_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	29697	table	public.xg_execution_leases	UNREVIEWED	CREATE TABLE public.xg_execution_leases (
+supabase/migrations/20260716112908_production_schema_baseline.sql	29728	table	public.yahoo_api_credentials	UNREVIEWED	CREATE TABLE public.yahoo_api_credentials (
+supabase/migrations/20260716112908_production_schema_baseline.sql	29744	sequence	public.yahoo_api_credentials_id_seq	UNREVIEWED	CREATE SEQUENCE public.yahoo_api_credentials_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	29764	table	public.yahoo_game_keys	UNREVIEWED	CREATE TABLE public.yahoo_game_keys (
+supabase/migrations/20260716112908_production_schema_baseline.sql	29799	sequence	public.yahoo_matchup_weeks_id_seq	UNREVIEWED	CREATE SEQUENCE public.yahoo_matchup_weeks_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	29819	table	public.yahoo_nhl_player_map	UNREVIEWED	CREATE TABLE public.yahoo_nhl_player_map (
+supabase/migrations/20260716112908_production_schema_baseline.sql	29863	view	public.yahoo_nhl_player_map_mat	UNREVIEWED	CREATE MATERIALIZED VIEW public.yahoo_nhl_player_map_mat AS
+supabase/migrations/20260716112908_production_schema_baseline.sql	29916	table	public.yahoo_nhl_player_map_unmatched	UNREVIEWED	CREATE TABLE public.yahoo_nhl_player_map_unmatched (
+supabase/migrations/20260716112908_production_schema_baseline.sql	29932	sequence	public.yahoo_nhl_player_map_unmatched_id_seq	UNREVIEWED	CREATE SEQUENCE public.yahoo_nhl_player_map_unmatched_id_seq
+supabase/migrations/20260716112908_production_schema_baseline.sql	29951	table	public.yahoo_player_draft_analysis_history	UNREVIEWED	CREATE TABLE public.yahoo_player_draft_analysis_history (
+supabase/migrations/20260716112908_production_schema_baseline.sql	29967	table	public.yahoo_player_keys	UNREVIEWED	CREATE TABLE public.yahoo_player_keys (
+supabase/migrations/20260716112908_production_schema_baseline.sql	29979	table	public.yahoo_player_ownership_daily	UNREVIEWED	CREATE TABLE public.yahoo_player_ownership_daily (
+supabase/migrations/20260716112908_production_schema_baseline.sql	30000	table	public.yahoo_player_ownership_history	UNREVIEWED	CREATE TABLE public.yahoo_player_ownership_history (
+supabase/migrations/20260716112908_production_schema_baseline.sql	30019	table	public.yahoo_players	UNREVIEWED	CREATE TABLE public.yahoo_players (
+supabase/migrations/20260716112908_production_schema_baseline.sql	30052	table	public.yahoo_positions	UNREVIEWED	CREATE TABLE public.yahoo_positions (
+supabase/migrations/20260716112909_add_line_combinations_source_provenance.sql	19	function	public.upsert_line_combinations_from_source	UNREVIEWED	create or replace function public.upsert_line_combinations_from_source(
+supabase/migrations/20260716112910_harden_line_combination_trigger_auth.sql	5	function	fhfh_internal.require_cron_request_headers	UNREVIEWED	create or replace function fhfh_internal.require_cron_request_headers()
+supabase/migrations/20260716112910_harden_line_combination_trigger_auth.sql	34	function	public.on_new_line_combo	UNREVIEWED	create or replace function public.on_new_line_combo()
+supabase/migrations/20260716112910_harden_line_combination_trigger_auth.sql	60	function	public.on_new_player_underlying_stats	UNREVIEWED	create or replace function public.on_new_player_underlying_stats()
+supabase/migrations/20260716112910_harden_line_combination_trigger_auth.sql	93	function	public.update_power_play_combinations	UNREVIEWED	create or replace function public.update_power_play_combinations()
+supabase/migrations/20260720105524_add_projection_materialization_transactions.sql	23	table	public.nhl_api_game_payload_snapshot_heads	UNREVIEWED	create table public.nhl_api_game_payload_snapshot_heads (
+supabase/migrations/20260720105524_add_projection_materialization_transactions.sql	90	function	public.lock_nhl_api_game_payload_snapshot_insert	UNREVIEWED	create or replace function public.lock_nhl_api_game_payload_snapshot_insert()
+supabase/migrations/20260720105524_add_projection_materialization_transactions.sql	163	function	public.advance_nhl_api_game_payload_snapshot_head	UNREVIEWED	create or replace function public.advance_nhl_api_game_payload_snapshot_head()
+supabase/migrations/20260720105524_add_projection_materialization_transactions.sql	246	table	public.projection_game_materialization_status	UNREVIEWED	create table public.projection_game_materialization_status (
+supabase/migrations/20260720105524_add_projection_materialization_transactions.sql	437	table	public.projection_pipeline_state	UNREVIEWED	create table public.projection_pipeline_state (
+supabase/migrations/20260720105524_add_projection_materialization_transactions.sql	526	function	public.capture_projection_raw_source_snapshots_v1	UNREVIEWED	create or replace function public.capture_projection_raw_source_snapshots_v1(
+supabase/migrations/20260720105524_add_projection_materialization_transactions.sql	800	function	public.persist_projection_game_inputs_v1	UNREVIEWED	create or replace function public.persist_projection_game_inputs_v1(
+supabase/migrations/20260720105524_add_projection_materialization_transactions.sql	2090	function	public.persist_shift_chart_relationships_v1	UNREVIEWED	create or replace function public.persist_shift_chart_relationships_v1(
+supabase/migrations/20260720105524_add_projection_materialization_transactions.sql	2799	function	public.persist_projection_game_derived_v1	UNREVIEWED	create or replace function public.persist_projection_game_derived_v1(
+supabase/migrations/20260720105524_add_projection_materialization_transactions.sql	3825	function	public.advance_projection_pipeline_state_v1	UNREVIEWED	create or replace function public.advance_projection_pipeline_state_v1(
+supabase/migrations/20260721013821_enforce_shift_relationship_positions.sql	10	function	public.enforce_shift_relationship_position_complete_v1	UNREVIEWED	create or replace function public.enforce_shift_relationship_position_complete_v1()
+supabase/migrations/20260722010355_add_transactional_gamecenter_normalization.sql	10	table	public.nhl_api_game_normalization_status	UNREVIEWED	create table public.nhl_api_game_normalization_status (
+supabase/migrations/20260722010355_add_transactional_gamecenter_normalization.sql	105	function	public.serialize_nhl_api_game_normalization_writes	UNREVIEWED	create or replace function public.serialize_nhl_api_game_normalization_writes()
+supabase/migrations/20260722010355_add_transactional_gamecenter_normalization.sql	121	function	public.lock_nhl_api_game_normalization_scope_write	UNREVIEWED	create or replace function public.lock_nhl_api_game_normalization_scope_write()
+supabase/migrations/20260722010355_add_transactional_gamecenter_normalization.sql	179	function	public.invalidate_nhl_api_game_normalization_on_insert	UNREVIEWED	create or replace function public.invalidate_nhl_api_game_normalization_on_insert()
+supabase/migrations/20260722010355_add_transactional_gamecenter_normalization.sql	201	function	public.invalidate_nhl_api_game_normalization_on_delete	UNREVIEWED	create or replace function public.invalidate_nhl_api_game_normalization_on_delete()
+supabase/migrations/20260722010355_add_transactional_gamecenter_normalization.sql	223	function	public.invalidate_nhl_api_game_normalization_on_update	UNREVIEWED	create or replace function public.invalidate_nhl_api_game_normalization_on_update()
+supabase/migrations/20260722010355_add_transactional_gamecenter_normalization.sql	325	function	public.invalidate_nhl_api_game_normalization_status	UNREVIEWED	create or replace function public.invalidate_nhl_api_game_normalization_status()
+supabase/migrations/20260722010355_add_transactional_gamecenter_normalization.sql	378	function	public.persist_nhl_api_gamecenter_normalized_v1	UNREVIEWED	create or replace function public.persist_nhl_api_gamecenter_normalized_v1(
+supabase/migrations/20260723113533_make_yahoo_player_writer_atomic.sql	1	function	public.upsert_yahoo_players_atomic	UNREVIEWED	create or replace function public.upsert_yahoo_players_atomic(players_data jsonb[])
+supabase/migrations/20260723121407_replace_forge_projection_results_atomic.sql	1	function	public.replace_forge_projection_results_atomic	UNREVIEWED	create or replace function public.replace_forge_projection_results_atomic(
+supabase/migrations/20260725220704_reconcile_yahoo_player_key_snapshots.sql	16	table	public.yahoo_player_key_snapshots	UNREVIEWED	create table if not exists public.yahoo_player_key_snapshots (
+supabase/migrations/20260725220704_reconcile_yahoo_player_key_snapshots.sql	36	function	public.replace_yahoo_player_keys_snapshot	UNREVIEWED	create or replace function public.replace_yahoo_player_keys_snapshot(
+supabase/migrations/20260725223034_add_sustainability_version_provenance.sql	101	table	public.sustainability_distribution_snapshots	UNREVIEWED	create table if not exists public.sustainability_distribution_snapshots (
+supabase/migrations/20260725223034_add_sustainability_version_provenance.sql	171	table	public.sustainability_recompute_queue	UNREVIEWED	create table if not exists public.sustainability_recompute_queue (
+supabase/migrations/20260725223034_add_sustainability_version_provenance.sql	221	function	public.claim_sustainability_recompute_queue	UNREVIEWED	create or replace function public.claim_sustainability_recompute_queue()
+supabase/migrations/20260725223034_add_sustainability_version_provenance.sql	249	function	public.advance_sustainability_recompute_queue	UNREVIEWED	create or replace function public.advance_sustainability_recompute_queue(
+supabase/migrations/20260725223034_add_sustainability_version_provenance.sql	301	function	public.finalize_sustainability_score_snapshot	UNREVIEWED	create or replace function public.finalize_sustainability_score_snapshot(
+supabase/migrations/20260725223034_add_sustainability_version_provenance.sql	422	function	public.activate_sustainability_config	UNREVIEWED	create or replace function public.activate_sustainability_config(
+supabase/migrations/20260725235646_add_normalized_yahoo_ownership_reader.sql	1	view	public.yahoo_players_with_normalized_history	UNREVIEWED	create view public.yahoo_players_with_normalized_history
+supabase/migrations/20260726000603_harden_yahoo_read_surfaces.sql	91	view	public.yahoo_nhl_player_map_read	UNREVIEWED	create view public.yahoo_nhl_player_map_read
+supabase/migrations/20260728225806_add_sko_prediction_run_control.sql	1	table	public.sko_prediction_run_manifests	UNREVIEWED	create table public.sko_prediction_run_manifests (
+supabase/migrations/20260728225806_add_sko_prediction_run_control.sql	43	function	public.acquire_sko_prediction_run	UNREVIEWED	create function public.acquire_sko_prediction_run(
+supabase/migrations/20260728225806_add_sko_prediction_run_control.sql	123	function	public.heartbeat_sko_prediction_run	UNREVIEWED	create function public.heartbeat_sko_prediction_run(
+supabase/migrations/20260728225806_add_sko_prediction_run_control.sql	146	function	public.finish_sko_prediction_run	UNREVIEWED	create function public.finish_sko_prediction_run(
+supabase/migrations/20260728235000_make_game_prediction_promotion_atomic.sql	10	function	public.promote_game_prediction_model_version_atomic	UNREVIEWED	create or replace function public.promote_game_prediction_model_version_atomic(
+supabase/migrations/20260730190000_tombstone_legacy_public_rpcs.sql	25	function	public.update_all_wgo_skaters	UNREVIEWED	create or replace function public.update_all_wgo_skaters()
+supabase/migrations/20260730190000_tombstone_legacy_public_rpcs.sql	38	function	public.get_skater_game_score_by_limit	UNREVIEWED	create or replace function public.get_skater_game_score_by_limit(
+supabase/migrations/20260730193000_repair_compile_invalid_legacy_routines.sql	8	function	public.calculate_goalie_start_projections	UNREVIEWED	create or replace function public.calculate_goalie_start_projections(
+supabase/migrations/20260730193000_repair_compile_invalid_legacy_routines.sql	32	function	public.get_aggregated_player_stats	UNREVIEWED	create or replace function public.get_aggregated_player_stats(
+supabase/migrations/20260730193000_repair_compile_invalid_legacy_routines.sql	75	function	public.upsert_players_batch	UNREVIEWED	create or replace function public.upsert_players_batch(players_data jsonb)
+supabase/migrations/20260730195000_replace_yahoo_game_weeks_snapshot.sql	3	table	public.yahoo_game_week_snapshots	UNREVIEWED	create table if not exists public.yahoo_game_week_snapshots (
+supabase/migrations/20260730195000_replace_yahoo_game_weeks_snapshot.sql	27	function	public.replace_yahoo_game_weeks_snapshot	UNREVIEWED	create or replace function public.replace_yahoo_game_weeks_snapshot(
+supabase/migrations/20260730233451_reconstruct_hosted_analytics_schema.sql	9	sequence	analytics.sko_model_v1_id_seq	UNREVIEWED	create sequence analytics.sko_model_v1_id_seq
+supabase/migrations/20260730233451_reconstruct_hosted_analytics_schema.sql	18	table	analytics.sko_model_v1	UNREVIEWED	create table analytics.sko_model_v1 (
+supabase/migrations/20260730233451_reconstruct_hosted_analytics_schema.sql	33	view	analytics.vw_team_ratings_daily	UNREVIEWED	create view analytics.vw_team_ratings_daily as
+supabase/migrations/20260730233451_reconstruct_hosted_analytics_schema.sql	54	view	analytics.vw_entity_ratings_daily	UNREVIEWED	create view analytics.vw_entity_ratings_daily as
+supabase/migrations/20260730233451_reconstruct_hosted_analytics_schema.sql	131	view	analytics.vw_entity_sustainability_scores	UNREVIEWED	create view analytics.vw_entity_sustainability_scores as
+supabase/migrations/20260730233451_reconstruct_hosted_analytics_schema.sql	176	view	analytics.vw_nhl_edge_latest_goalie_metrics	UNREVIEWED	create view analytics.vw_nhl_edge_latest_goalie_metrics as
+supabase/migrations/20260730233451_reconstruct_hosted_analytics_schema.sql	225	view	analytics.vw_nhl_edge_latest_skater_metrics	UNREVIEWED	create view analytics.vw_nhl_edge_latest_skater_metrics as
+supabase/migrations/20260730233451_reconstruct_hosted_analytics_schema.sql	289	view	analytics.vw_nhl_edge_latest_skater_skating_distance_games	UNREVIEWED	create view analytics.vw_nhl_edge_latest_skater_skating_distance_games as
+supabase/migrations/20260730233451_reconstruct_hosted_analytics_schema.sql	324	view	analytics.vw_nhl_edge_latest_team_metrics	UNREVIEWED	create view analytics.vw_nhl_edge_latest_team_metrics as
+supabase/migrations/20260730233451_reconstruct_hosted_analytics_schema.sql	401	view	analytics.vw_nhl_edge_latest_team_skating_distance_games	UNREVIEWED	create view analytics.vw_nhl_edge_latest_team_skating_distance_games as
+supabase/migrations/20260730233451_reconstruct_hosted_analytics_schema.sql	434	view	analytics.vw_player_status_current	UNREVIEWED	create view analytics.vw_player_status_current as
+supabase/migrations/20260730233451_reconstruct_hosted_analytics_schema.sql	483	view	analytics.vw_sko_skater_base	UNREVIEWED	create view analytics.vw_sko_skater_base as
+supabase/migrations/20260730233451_reconstruct_hosted_analytics_schema.sql	502	view	analytics.mv_sko_skater_moments	UNREVIEWED	create materialized view analytics.mv_sko_skater_moments as
+supabase/migrations/20260730233451_reconstruct_hosted_analytics_schema.sql	638	view	analytics.vw_sko_skater_zscores	UNREVIEWED	create view analytics.vw_sko_skater_zscores as
+supabase/migrations/20260730233451_reconstruct_hosted_analytics_schema.sql	733	view	analytics.vw_sko_skater_scores	UNREVIEWED	create view analytics.vw_sko_skater_scores as
+supabase/migrations/20260730233451_reconstruct_hosted_analytics_schema.sql	751	function	analytics.rpc_sko_player_series	UNREVIEWED	CREATE OR REPLACE FUNCTION analytics.rpc_sko_player_series(p_player_id bigint, p_span integer DEFAULT 5, p_lambda_hot numeric DEFAULT 1.8, p_lambda_cold numeric DEFAULT 1.6, p_l_hot integer DEFAULT 2, p_l_cold integer DEFAULT 3)
+supabase/migrations/20260731015416_repair_wgo_player_season_identity.sql	6	table	public.wgo_player_season_repair_trend_staging	UNREVIEWED	create table if not exists public.wgo_player_season_repair_trend_staging (
+supabase/migrations/20260731015416_repair_wgo_player_season_identity.sql	44	function	public.stage_wgo_player_season_repair_trends	UNREVIEWED	create or replace function public.stage_wgo_player_season_repair_trends(
+supabase/migrations/20260731015416_repair_wgo_player_season_identity.sql	253	function	public.repair_wgo_player_season_identity	UNREVIEWED	create or replace function public.repair_wgo_player_season_identity(
+supabase/migrations/20260731040341_privatize_unified_materialized_views.sql	68	view	public.goalie_stats_unified	UNREVIEWED	create view public.goalie_stats_unified
+supabase/migrations/20260731040341_privatize_unified_materialized_views.sql	74	view	public.player_stats_unified	UNREVIEWED	create view public.player_stats_unified
+supabase/migrations/20260731040341_privatize_unified_materialized_views.sql	80	view	public.player_totals_unified	UNREVIEWED	create view public.player_totals_unified
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	9	table	public.player_forecast_schedule_revisions	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_schedule_revisions (
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	32	table	public.player_forecast_source_observations	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_source_observations (
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	55	table	public.player_forecast_goalie_start_observations	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_goalie_start_observations (
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	84	table	public.player_forecast_lineup_snapshots	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_lineup_snapshots (
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	109	table	public.player_forecast_lineup_assignments	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_lineup_assignments (
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	126	table	public.player_forecast_observation_conflicts	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_observation_conflicts (
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	143	table	public.player_forecast_conflict_members	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_conflict_members (
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	153	table	public.player_forecast_conflict_resolutions	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_conflict_resolutions (
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	172	table	public.player_forecast_feature_snapshots	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_feature_snapshots (
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	191	table	public.player_forecast_model_artifacts	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_model_artifacts (
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	213	table	public.player_forecast_inference_queue	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_inference_queue (
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	241	table	public.player_forecast_runs	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_runs (
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	267	table	public.player_forecast_outputs	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_outputs (
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	292	table	public.player_forecast_outcome_revisions	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_outcome_revisions (
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	311	table	public.player_forecast_evaluation_revisions	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_evaluation_revisions (
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	325	table	public.player_forecast_accountability_revisions	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_accountability_revisions (
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	344	table	public.player_forecast_champion_history	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_champion_history (
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	397	function	fhfh_internal.reject_player_forecast_mutation	UNREVIEWED	create or replace function fhfh_internal.reject_player_forecast_mutation()
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	442	function	public.enqueue_player_forecast_job	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.enqueue_player_forecast_job(
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	495	function	fhfh_internal.enqueue_player_forecast_observation	UNREVIEWED	create or replace function fhfh_internal.enqueue_player_forecast_observation()
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	593	function	public.claim_player_forecast_jobs	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.claim_player_forecast_jobs(
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	634	function	public.finish_player_forecast_job	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.finish_player_forecast_job(
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	677	function	public.promote_player_forecast_model_atomic	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.promote_player_forecast_model_atomic(
+supabase/migrations/20260802163747_add_player_forecast_foundation.sql	811	function	fhfh_internal.invoke_player_forecast_endpoint	UNREVIEWED	create or replace function fhfh_internal.invoke_player_forecast_endpoint(p_path text)
+supabase/migrations/20260805001038_add_player_forecast_rest_of_season_outputs.sql	1	table	public.player_forecast_rest_of_season_outputs	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_rest_of_season_outputs (
+supabase/migrations/20260805002036_add_player_forecast_runtime_feature_rpc.sql	1	function	public.build_player_forecast_runtime_features	REVIEWED_FAMILY_SOURCE_ONLY	create function public.build_player_forecast_runtime_features(
+supabase/migrations/20260805003121_add_player_forecast_runtime_context_rates.sql	3	function	public.build_player_forecast_runtime_features	REVIEWED_FAMILY_SOURCE_ONLY	create function public.build_player_forecast_runtime_features(
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	6	table	public.player_forecast_season_artifacts	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_artifacts (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	31	table	public.player_forecast_season_roster_snapshots	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_roster_snapshots (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	49	table	public.player_forecast_season_roster_members	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_roster_members (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	67	table	public.player_forecast_season_player_pool_review	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_player_pool_review (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	103	table	public.player_forecast_season_schedule_snapshots	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_schedule_snapshots (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	121	table	public.player_forecast_season_schedule_games	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_schedule_games (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	140	table	public.player_forecast_season_deployment_snapshots	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_deployment_snapshots (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	164	table	public.player_forecast_season_deployment_assignments	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_deployment_assignments (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	184	table	public.player_forecast_season_runs	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_runs (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	212	table	public.player_forecast_season_game_outputs	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_game_outputs (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	248	table	public.player_forecast_season_player_aggregates	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_player_aggregates (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	289	table	public.player_forecast_season_team_aggregates	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_team_aggregates (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	314	table	public.player_forecast_season_overrides	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_overrides (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	338	table	public.player_forecast_season_completeness_waivers	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_completeness_waivers (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	351	table	public.player_forecast_season_releases	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_releases (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	381	table	public.player_forecast_season_release_players	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_release_players (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	423	table	public.player_forecast_season_release_teams	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_release_teams (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	450	table	public.player_forecast_season_active_releases	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_active_releases (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	458	table	public.player_forecast_season_release_events	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_release_events (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	475	table	public.player_forecast_season_outcome_revisions	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_outcome_revisions (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	497	table	public.player_forecast_season_evaluation_revisions	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_evaluation_revisions (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	518	table	public.player_forecast_season_queue	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_queue (
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	619	function	public.enqueue_player_forecast_season_job	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.enqueue_player_forecast_season_job(
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	690	function	public.claim_player_forecast_season_jobs	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.claim_player_forecast_season_jobs(
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	732	function	public.finish_player_forecast_season_job	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.finish_player_forecast_season_job(
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	777	function	fhfh_internal.enqueue_player_forecast_season_change	UNREVIEWED	create or replace function fhfh_internal.enqueue_player_forecast_season_change()
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	935	function	public.clone_player_forecast_season_run	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.clone_player_forecast_season_run(
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	1007	function	public.publish_player_forecast_season_release_atomic	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.publish_player_forecast_season_release_atomic(
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	1260	function	public.rollback_player_forecast_season_release_atomic	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.rollback_player_forecast_season_release_atomic(
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	1304	function	fhfh_internal.invoke_player_forecast_season_endpoint_if_due	UNREVIEWED	create or replace function fhfh_internal.invoke_player_forecast_season_endpoint_if_due(p_path text)
+supabase/migrations/20260813001304_player_forecast_season_v3.sql	1329	function	fhfh_internal.register_player_forecast_season_cron	UNREVIEWED	create or replace function fhfh_internal.register_player_forecast_season_cron(p_dry_run boolean default true)
+supabase/migrations/20260813015112_yahoo_live_draft_companion.sql	7	table	public.yahoo_draft_sessions	UNREVIEWED	create table public.yahoo_draft_sessions (
+supabase/migrations/20260813015112_yahoo_live_draft_companion.sql	107	table	public.yahoo_draft_picks	UNREVIEWED	create table public.yahoo_draft_picks (
+supabase/migrations/20260813015112_yahoo_live_draft_companion.sql	204	function	public.set_yahoo_draft_updated_at	UNREVIEWED	create function public.set_yahoo_draft_updated_at()
+supabase/migrations/20260813015112_yahoo_live_draft_companion.sql	291	function	public.claim_yahoo_draft_poll	UNREVIEWED	create function public.claim_yahoo_draft_poll(
+supabase/migrations/20260813015112_yahoo_live_draft_companion.sql	367	function	public.apply_yahoo_draft_snapshot	UNREVIEWED	create function public.apply_yahoo_draft_snapshot(
+supabase/migrations/20260813015112_yahoo_live_draft_companion.sql	757	function	public.record_yahoo_draft_poll_failure	UNREVIEWED	create function public.record_yahoo_draft_poll_failure(
+supabase/migrations/20260813144701_player_forecast_season_identity_resolution.sql	5	function	public.resolve_player_forecast_season_identity	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.resolve_player_forecast_season_identity(
+supabase/migrations/20260814192101_fantrax_settings_first.sql	64	function	public.commit_fantrax_connection_secure	UNREVIEWED	create or replace function public.commit_fantrax_connection_secure(
+supabase/migrations/20260814192101_fantrax_settings_first.sql	584	function	public.apply_fantrax_settings_secure	UNREVIEWED	create or replace function public.apply_fantrax_settings_secure(
+supabase/migrations/20260814192101_fantrax_settings_first.sql	784	function	public.disconnect_fantrax_account_secure	UNREVIEWED	create or replace function public.disconnect_fantrax_account_secure(
+supabase/migrations/20260815023132_espn_fantasy_private_beta.sql	4	table	public.external_league_state_snapshots	UNREVIEWED	create table public.external_league_state_snapshots (
+supabase/migrations/20260815023132_espn_fantasy_private_beta.sql	51	table	public.espn_draft_sessions	UNREVIEWED	create table public.espn_draft_sessions (
+supabase/migrations/20260815023132_espn_fantasy_private_beta.sql	126	table	public.espn_draft_picks	UNREVIEWED	create table public.espn_draft_picks (
+supabase/migrations/20260815023132_espn_fantasy_private_beta.sql	190	function	public.set_espn_fantasy_updated_at	UNREVIEWED	create function public.set_espn_fantasy_updated_at()
+supabase/migrations/20260815023132_espn_fantasy_private_beta.sql	278	function	public.commit_espn_connection_secure	UNREVIEWED	create function public.commit_espn_connection_secure(
+supabase/migrations/20260815023132_espn_fantasy_private_beta.sql	552	function	public.apply_espn_settings_secure	UNREVIEWED	create function public.apply_espn_settings_secure(
+supabase/migrations/20260815023132_espn_fantasy_private_beta.sql	684	function	public.disconnect_espn_account_secure	UNREVIEWED	create function public.disconnect_espn_account_secure(
+supabase/migrations/20260815023132_espn_fantasy_private_beta.sql	725	function	public.delete_espn_league_secure	UNREVIEWED	create function public.delete_espn_league_secure(
+supabase/migrations/20260815023132_espn_fantasy_private_beta.sql	780	function	public.claim_espn_draft_poll	UNREVIEWED	create function public.claim_espn_draft_poll(
+supabase/migrations/20260815023132_espn_fantasy_private_beta.sql	828	function	public.claim_espn_sync_lease	UNREVIEWED	create function public.claim_espn_sync_lease(
+supabase/migrations/20260815023132_espn_fantasy_private_beta.sql	894	function	public.apply_espn_draft_snapshot	UNREVIEWED	create function public.apply_espn_draft_snapshot(
+supabase/migrations/20260815023132_espn_fantasy_private_beta.sql	1030	function	public.record_espn_draft_poll_failure	UNREVIEWED	create function public.record_espn_draft_poll_failure(
+supabase/migrations/20260818150256_player_forecast_season_v4_integrity.sql	6	table	public.player_forecast_season_roster_observations	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_roster_observations (
+supabase/migrations/20260818150256_player_forecast_season_v4_integrity.sql	76	table	public.player_forecast_season_roster_conflicts	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_roster_conflicts (
+supabase/migrations/20260818150256_player_forecast_season_v4_integrity.sql	102	table	public.player_forecast_season_roster_conflict_members	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_roster_conflict_members (
+supabase/migrations/20260818150256_player_forecast_season_v4_integrity.sql	109	table	public.player_forecast_season_roster_conflict_resolutions	REVIEWED_FAMILY_SOURCE_ONLY	create table public.player_forecast_season_roster_conflict_resolutions (
+supabase/migrations/20260818150256_player_forecast_season_v4_integrity.sql	235	function	public.apply_player_forecast_season_roster_snapshot	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.apply_player_forecast_season_roster_snapshot(
+supabase/migrations/20260818150256_player_forecast_season_v4_integrity.sql	408	function	public.latest_player_forecast_season_roster_observations	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.latest_player_forecast_season_roster_observations(
+supabase/migrations/20260818150256_player_forecast_season_v4_integrity.sql	469	function	public.clone_player_forecast_season_run	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.clone_player_forecast_season_run(
+supabase/migrations/20260818150256_player_forecast_season_v4_integrity.sql	544	function	public.create_player_forecast_season_event_run	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.create_player_forecast_season_event_run(
+supabase/migrations/20260818150256_player_forecast_season_v4_integrity.sql	672	function	public.publish_player_forecast_season_release_atomic	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.publish_player_forecast_season_release_atomic(
+supabase/migrations/20260820014700_player_forecast_season_queue_compaction.sql	5	function	public.compact_player_forecast_season_queue	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.compact_player_forecast_season_queue(
+supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql	18	table	public.yahoo_oauth_transactions	UNREVIEWED	create table public.yahoo_oauth_transactions (
+supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql	64	table	public.yahoo_token_refresh_leases	UNREVIEWED	create table public.yahoo_token_refresh_leases (
+supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql	92	table	public.yahoo_draft_poll_observations	UNREVIEWED	create table public.yahoo_draft_poll_observations (
+supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql	167	function	public.create_yahoo_oauth_transaction	UNREVIEWED	create function public.create_yahoo_oauth_transaction(
+supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql	200	function	public.consume_yahoo_oauth_transaction	UNREVIEWED	create function public.consume_yahoo_oauth_transaction(
+supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql	235	function	public.cleanup_yahoo_oauth_transactions	UNREVIEWED	create function public.cleanup_yahoo_oauth_transactions(
+supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql	254	function	public.claim_yahoo_token_refresh_lease	UNREVIEWED	create function public.claim_yahoo_token_refresh_lease(
+supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql	320	function	public.release_yahoo_token_refresh_lease	UNREVIEWED	create function public.release_yahoo_token_refresh_lease(
+supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql	339	function	public.claim_yahoo_draft_poll	UNREVIEWED	create or replace function public.claim_yahoo_draft_poll(
+supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql	418	function	public.nudge_yahoo_draft_poll	UNREVIEWED	create function public.nudge_yahoo_draft_poll(
+supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql	477	function	public.bump_yahoo_draft_pick_mapping_revision	UNREVIEWED	create function public.bump_yahoo_draft_pick_mapping_revision()
+supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql	496	function	public.reconcile_yahoo_draft_pick_identities	UNREVIEWED	create function public.reconcile_yahoo_draft_pick_identities(
+supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql	569	function	public.cleanup_yahoo_draft_poll_observations	UNREVIEWED	create function public.cleanup_yahoo_draft_poll_observations(
+supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql	587	function	public.verified_yahoo_player_identities_read	UNREVIEWED	create function public.verified_yahoo_player_identities_read()
+supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql	629	view	public.yahoo_nhl_player_map_read	UNREVIEWED	create or replace view public.yahoo_nhl_player_map_read
+supabase/migrations/20260826123000_schedule_player_forecast_season_roster_refresh.sql	1	function	fhfh_internal.register_player_forecast_season_cron	UNREVIEWED	create or replace function fhfh_internal.register_player_forecast_season_cron(
+supabase/migrations/20260826131500_require_editor_for_player_forecast_opening_release.sql	1	function	fhfh_internal.enforce_player_forecast_opening_release_editor	UNREVIEWED	create or replace function fhfh_internal.enforce_player_forecast_opening_release_editor()
+supabase/migrations/20260826133000_inherit_player_forecast_season_assumptions.sql	18	function	public.inherit_player_forecast_season_assumptions	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.inherit_player_forecast_season_assumptions(
+supabase/migrations/20260826133000_inherit_player_forecast_season_assumptions.sql	146	function	public.clone_player_forecast_season_run_with_assumptions	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.clone_player_forecast_season_run_with_assumptions(
+supabase/migrations/20260826133000_inherit_player_forecast_season_assumptions.sql	173	function	public.create_player_forecast_season_event_run_with_assumptions	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.create_player_forecast_season_event_run_with_assumptions(
+supabase/migrations/20260828130824_start_chart_yahoo_overlay_reader.sql	1	function	public.read_yahoo_player_overlay_as_of	UNREVIEWED	create or replace function public.read_yahoo_player_overlay_as_of(
+supabase/migrations/20260829161013_add_roster_optimizer_team_game_schedule.sql	1	table	public.roster_optimizer_team_games	REVIEWED_FAMILY_SOURCE_ONLY	create table public.roster_optimizer_team_games (
+supabase/migrations/20260907143356_draft_pro_foundation.sql	3	table	public.draft_pro_purchases	REVIEWED_FAMILY_SOURCE_ONLY	create table public.draft_pro_purchases (
+supabase/migrations/20260907143356_draft_pro_foundation.sql	21	table	public.draft_pro_provider_events	REVIEWED_FAMILY_SOURCE_ONLY	create table public.draft_pro_provider_events (
+supabase/migrations/20260907143356_draft_pro_foundation.sql	35	table	public.draft_pro_refund_requests	REVIEWED_FAMILY_SOURCE_ONLY	create table public.draft_pro_refund_requests (
+supabase/migrations/20260907143356_draft_pro_foundation.sql	57	table	public.draft_pro_drafts	REVIEWED_FAMILY_SOURCE_ONLY	create table public.draft_pro_drafts (
+supabase/migrations/20260907143356_draft_pro_foundation.sql	72	table	public.draft_pro_private_imports	REVIEWED_FAMILY_SOURCE_ONLY	create table public.draft_pro_private_imports (
+supabase/migrations/20260907143356_draft_pro_foundation.sql	88	table	public.draft_pro_scenarios	REVIEWED_FAMILY_SOURCE_ONLY	create table public.draft_pro_scenarios (
+supabase/migrations/20260907143356_draft_pro_foundation.sql	101	table	public.draft_pro_reports	REVIEWED_FAMILY_SOURCE_ONLY	create table public.draft_pro_reports (
+supabase/migrations/20260907145602_draft_pro_stripe_fulfillment.sql	24	function	public.begin_draft_pro_stripe_checkout_attempt	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.begin_draft_pro_stripe_checkout_attempt(p_user_id uuid)
+supabase/migrations/20260907145602_draft_pro_stripe_fulfillment.sql	75	function	public.attach_draft_pro_stripe_checkout_session	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.attach_draft_pro_stripe_checkout_session(
+supabase/migrations/20260907145602_draft_pro_stripe_fulfillment.sql	111	function	public.record_draft_pro_stripe_event	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.record_draft_pro_stripe_event(
+supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql	10	table	public.draft_pro_private_import_blobs	REVIEWED_FAMILY_SOURCE_ONLY	create table public.draft_pro_private_import_blobs (
+supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql	26	table	public.draft_pro_save_sessions	REVIEWED_FAMILY_SOURCE_ONLY	create table public.draft_pro_save_sessions (
+supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql	41	table	public.draft_pro_private_import_uploads	REVIEWED_FAMILY_SOURCE_ONLY	create table public.draft_pro_private_import_uploads (
+supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql	77	function	public.begin_draft_pro_save_session	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.begin_draft_pro_save_session(p_user_id uuid, p_draft_id uuid, p_expected_version integer, p_attempt_key text)
+supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql	110	function	public.begin_draft_pro_private_import_upload	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.begin_draft_pro_private_import_upload(
+supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql	148	function	public.stage_draft_pro_private_import_upload	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.stage_draft_pro_private_import_upload(
+supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql	176	function	public.read_draft_pro_private_import_upload	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.read_draft_pro_private_import_upload(p_user_id uuid,p_upload_id uuid)
+supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql	186	function	public.commit_draft_pro_save_session	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.commit_draft_pro_save_session(
+supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql	251	function	public.list_draft_pro_saved_drafts	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.list_draft_pro_saved_drafts(p_user_id uuid)
+supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql	256	function	public.read_draft_pro_snapshot	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.read_draft_pro_snapshot(p_user_id uuid,p_draft_id uuid)
+supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql	261	function	public.read_draft_pro_private_import_blob	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.read_draft_pro_private_import_blob(p_user_id uuid,p_draft_id uuid,p_import_id uuid)
+supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql	271	function	public.rename_draft_pro_saved_draft	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.rename_draft_pro_saved_draft(p_user_id uuid,p_draft_id uuid,p_expected_version integer,p_name text)
+supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql	284	function	public.delete_draft_pro_saved_draft	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.delete_draft_pro_saved_draft(p_user_id uuid,p_draft_id uuid,p_expected_version integer)
+supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql	301	function	public.duplicate_draft_pro_saved_draft	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.duplicate_draft_pro_saved_draft(p_user_id uuid,p_draft_id uuid,p_expected_version integer,p_name text)
+supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql	319	function	public.claim_draft_pro_private_import_cleanup	REVIEWED_FAMILY_SOURCE_ONLY	create function public.claim_draft_pro_private_import_cleanup(p_user_id uuid,p_limit integer default 20)
+supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql	337	function	public.confirm_draft_pro_private_import_cleanup	REVIEWED_FAMILY_SOURCE_ONLY	create function public.confirm_draft_pro_private_import_cleanup(p_user_id uuid,p_blob_ids uuid[],p_cleanup_lease_id uuid)
+supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql	349	function	public.claim_draft_pro_private_import_upload_cleanup	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.claim_draft_pro_private_import_upload_cleanup(p_user_id uuid,p_limit integer default 20)
+supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql	375	function	public.confirm_draft_pro_private_import_upload_cleanup	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.confirm_draft_pro_private_import_upload_cleanup(p_user_id uuid,p_upload_ids uuid[])
+supabase/migrations/20260909120000_draft_pro_complimentary_access_codes.sql	1	table	public.draft_pro_access_codes	REVIEWED_FAMILY_SOURCE_ONLY	create table public.draft_pro_access_codes (
+supabase/migrations/20260909120000_draft_pro_complimentary_access_codes.sql	15	table	public.draft_pro_access_code_attempts	REVIEWED_FAMILY_SOURCE_ONLY	create table public.draft_pro_access_code_attempts (
+supabase/migrations/20260909120000_draft_pro_complimentary_access_codes.sql	34	function	public.redeem_draft_pro_access_code	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.redeem_draft_pro_access_code(p_user_id uuid,p_code text)
+supabase/migrations/20260909120000_draft_pro_complimentary_access_codes.sql	58	function	public.issue_draft_pro_access_code	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.issue_draft_pro_access_code(p_issued_by_user_id uuid,p_target_user_id uuid,p_code_hash text,p_reason text,p_expires_at timestamptz)
+supabase/migrations/20260909120000_draft_pro_complimentary_access_codes.sql	68	function	public.revoke_draft_pro_access_code	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.revoke_draft_pro_access_code(p_issued_by_user_id uuid,p_code_id uuid,p_reason text)
+supabase/migrations/20260916012353_starter_board_game_revisions.sql	7	table	public.forge_game_revisions	REVIEWED_FAMILY_SOURCE_ONLY	create table public.forge_game_revisions (
+supabase/migrations/20260916012353_starter_board_game_revisions.sql	27	function	public.publish_forge_game_revisions	REVIEWED_FAMILY_SOURCE_ONLY	create function public.publish_forge_game_revisions(p_run_id uuid, p_snapshot_id uuid)
+supabase/migrations/20260916012353_starter_board_game_revisions.sql	80	function	public.read_forge_game_revisions	REVIEWED_FAMILY_SOURCE_ONLY	create function public.read_forge_game_revisions(p_slate_date date)
+supabase/migrations/20260916014510_starter_board_news_queue.sql	7	table	public.forge_game_update_queue	UNREVIEWED	create table public.forge_game_update_queue (
+supabase/migrations/20260916014510_starter_board_news_queue.sql	30	function	fhfh_internal.enqueue_starter_board_game	UNREVIEWED	create function fhfh_internal.enqueue_starter_board_game(p_game_id bigint,p_team_id bigint,p_published_at timestamptz,p_received_at timestamptz) returns void
+supabase/migrations/20260916014510_starter_board_news_queue.sql	50	function	fhfh_internal.enqueue_starter_board_observation	UNREVIEWED	create function fhfh_internal.enqueue_starter_board_observation() returns trigger
+supabase/migrations/20260916014510_starter_board_news_queue.sql	63	function	fhfh_internal.enqueue_starter_board_resolution	UNREVIEWED	create function fhfh_internal.enqueue_starter_board_resolution() returns trigger
+supabase/migrations/20260916014510_starter_board_news_queue.sql	74	function	public.claim_starter_board_jobs	UNREVIEWED	create function public.claim_starter_board_jobs(p_owner uuid, p_limit integer default 4, p_game_ids bigint[] default null)
+supabase/migrations/20260916014510_starter_board_news_queue.sql	103	function	public.finish_starter_board_job	UNREVIEWED	create function public.finish_starter_board_job(p_game_id bigint,p_owner uuid,p_run_id uuid,p_error text default null)
+supabase/migrations/20260916014510_starter_board_news_queue.sql	118	function	public.begin_forge_game_run	UNREVIEWED	create function public.begin_forge_game_run(p_date date,p_game_ids bigint[],p_code_version text,p_owner uuid default null,p_version bigint default null)
+supabase/migrations/20260916014510_starter_board_news_queue.sql	150	function	fhfh_internal.guard_starter_board_publication	UNREVIEWED	create function fhfh_internal.guard_starter_board_publication() returns trigger
+supabase/migrations/20260916023000_starter_board_release_control.sql	4	table	public.forge_game_selection_events	REVIEWED_FAMILY_SOURCE_ONLY	create table public.forge_game_selection_events (
+supabase/migrations/20260916023000_starter_board_release_control.sql	13	table	public.forge_final_pregame_revisions	REVIEWED_FAMILY_SOURCE_ONLY	create table public.forge_final_pregame_revisions (
+supabase/migrations/20260916023000_starter_board_release_control.sql	19	table	public.forge_board_visibility_observations	REVIEWED_FAMILY_SOURCE_ONLY	create table public.forge_board_visibility_observations (
+supabase/migrations/20260916023000_starter_board_release_control.sql	26	table	public.forge_board_news_events	REVIEWED_FAMILY_SOURCE_ONLY	create table public.forge_board_news_events (
+supabase/migrations/20260916023000_starter_board_release_control.sql	38	table	public.forge_board_dispatch_observations	REVIEWED_FAMILY_SOURCE_ONLY	create table public.forge_board_dispatch_observations (
+supabase/migrations/20260916023000_starter_board_release_control.sql	56	function	fhfh_internal.enqueue_starter_board_observation	UNREVIEWED	create or replace function fhfh_internal.enqueue_starter_board_observation() returns trigger
+supabase/migrations/20260916023000_starter_board_release_control.sql	72	function	fhfh_internal.enqueue_starter_board_resolution	UNREVIEWED	create or replace function fhfh_internal.enqueue_starter_board_resolution() returns trigger
+supabase/migrations/20260916023000_starter_board_release_control.sql	86	function	fhfh_internal.record_starter_board_dispatch	UNREVIEWED	create function fhfh_internal.record_starter_board_dispatch() returns trigger
+supabase/migrations/20260916023000_starter_board_release_control.sql	98	function	public.select_starter_board_revision	UNREVIEWED	create function public.select_starter_board_revision(p_game_id bigint,p_revision_id uuid,p_reason text,p_actor_id uuid default null)
+supabase/migrations/20260916023000_starter_board_release_control.sql	112	function	fhfh_internal.current_starter_board_revisions	UNREVIEWED	create function fhfh_internal.current_starter_board_revisions(p_date date)
+supabase/migrations/20260916023000_starter_board_release_control.sql	124	function	public.freeze_starter_board_pregame	UNREVIEWED	create function public.freeze_starter_board_pregame(p_date date)
+supabase/migrations/20260916023000_starter_board_release_control.sql	136	function	public.read_forge_game_revisions	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.read_forge_game_revisions(p_slate_date date)
+supabase/migrations/20260916023000_starter_board_release_control.sql	149	function	public.record_starter_board_visibility	UNREVIEWED	create function public.record_starter_board_visibility(p_probe_id uuid,p_revision_ids uuid[])
+supabase/migrations/20260916044919_starter_board_atomic_lineup_capture.sql	6	function	public.capture_starter_board_lineup	UNREVIEWED	create function public.capture_starter_board_lineup(p_snapshot jsonb, p_assignments jsonb)
+supabase/migrations/20260916045842_starter_board_operational_reporting.sql	9	function	fhfh_internal.capture_starter_board_revision_timing	UNREVIEWED	create function fhfh_internal.capture_starter_board_revision_timing() returns trigger
+supabase/migrations/20260916045842_starter_board_operational_reporting.sql	24	function	public.record_starter_board_visibility_timed	UNREVIEWED	create function public.record_starter_board_visibility_timed(p_probe_id uuid,p_revision_ids uuid[],p_rendered_at timestamptz)
+supabase/migrations/20260916045842_starter_board_operational_reporting.sql	41	function	public.read_starter_board_operational_events	UNREVIEWED	create function public.read_starter_board_operational_events(p_from timestamptz,p_until timestamptz,p_as_of timestamptz)
+supabase/migrations/20260916052239_starter_board_validation_registry.sql	4	table	public.forge_board_releases	UNREVIEWED	create table public.forge_board_releases (
+supabase/migrations/20260916052239_starter_board_validation_registry.sql	14	table	public.forge_board_release_activations	UNREVIEWED	create table public.forge_board_release_activations (
+supabase/migrations/20260916052239_starter_board_validation_registry.sql	21	table	public.forge_board_live_slates	UNREVIEWED	create table public.forge_board_live_slates (
+supabase/migrations/20260916052239_starter_board_validation_registry.sql	28	table	public.forge_board_validation_reviews	UNREVIEWED	create table public.forge_board_validation_reviews (
+supabase/migrations/20260916052239_starter_board_validation_registry.sql	46	function	public.activate_starter_board_release	UNREVIEWED	create function public.activate_starter_board_release(p_release_id uuid,p_reason text) returns uuid
+supabase/migrations/20260916052239_starter_board_validation_registry.sql	56	function	fhfh_internal.record_starter_board_live_slate	UNREVIEWED	create function fhfh_internal.record_starter_board_live_slate() returns trigger
+supabase/migrations/20260916052239_starter_board_validation_registry.sql	77	function	fhfh_internal.guard_starter_board_review	UNREVIEWED	create function fhfh_internal.guard_starter_board_review() returns trigger
+supabase/migrations/20260916052239_starter_board_validation_registry.sql	102	function	public.read_starter_board_validation	UNREVIEWED	create function public.read_starter_board_validation() returns jsonb
+supabase/migrations/20260916060521_starter_board_atomic_goalie_capture.sql	6	function	public.capture_starter_board_goalies	UNREVIEWED	create function public.capture_starter_board_goalies(p_observations jsonb)
+supabase/migrations/20260917133519_mock_draft_adp.sql	2	table	public.mock_draft_sessions	UNREVIEWED	create table public.mock_draft_sessions (
+supabase/migrations/20260917133519_mock_draft_adp.sql	18	table	public.mock_draft_events	UNREVIEWED	create table public.mock_draft_events (
+supabase/migrations/20260917133519_mock_draft_adp.sql	37	function	public.mock_draft_register	UNREVIEWED	create or replace function public.mock_draft_register(p_user uuid, p_input jsonb, p_cohort text, p_pro_allowed boolean default false)
+supabase/migrations/20260917133519_mock_draft_adp.sql	59	function	public.mock_draft_ingest	UNREVIEWED	create or replace function public.mock_draft_ingest(p_user uuid, p_session uuid, p_events jsonb, p_complete boolean)
+supabase/migrations/20260917133519_mock_draft_adp.sql	98	function	public.mock_draft_withdraw	UNREVIEWED	create or replace function public.mock_draft_withdraw(p_user uuid, p_session uuid)
+supabase/migrations/20260917133519_mock_draft_adp.sql	113	function	public.mock_draft_adp	UNREVIEWED	create or replace function public.mock_draft_adp(p_season text, p_cohort text, p_tier text, p_completed boolean, p_search text, p_position text, p_page integer)
+supabase/migrations/20260919005608_tweet_pipeline_reports_and_review.sql	7	table	public.tweet_projection_reports	UNREVIEWED	create table public.tweet_projection_reports (
+supabase/migrations/20260919005608_tweet_pipeline_reports_and_review.sql	23	table	public.tweet_player_events	UNREVIEWED	create table public.tweet_player_events (
+supabase/migrations/20260919005608_tweet_pipeline_reports_and_review.sql	33	table	public.tweet_pipeline_jobs	UNREVIEWED	create table public.tweet_pipeline_jobs (
+supabase/migrations/20260919005608_tweet_pipeline_reports_and_review.sql	47	table	public.tweet_player_memberships	UNREVIEWED	create table public.tweet_player_memberships (
+supabase/migrations/20260919005608_tweet_pipeline_reports_and_review.sql	66	function	public.claim_tweet_pipeline_job	UNREVIEWED	create function public.claim_tweet_pipeline_job(p_key text, p_owner uuid, p_reprocess boolean default false)
+supabase/migrations/20260919005622_nhl_draft_identity_ingestion.sql	2	table	public.nhl_draft_selections	UNREVIEWED	create table public.nhl_draft_selections (
+supabase/migrations/20260919005622_nhl_draft_identity_ingestion.sql	22	function	public.import_nhl_prospect_identity	UNREVIEWED	create function public.import_nhl_prospect_identity(payload jsonb, roster_season bigint)
+supabase/migrations/20260919005852_nhl_prospect_verification_actor.sql	2	function	public.import_nhl_prospect_identity	UNREVIEWED	create or replace function public.import_nhl_prospect_identity(payload jsonb, roster_season bigint)
+supabase/migrations/20260923184653_fantrax_live_draft_sessions.sql	1	table	public.fantrax_draft_sessions	UNREVIEWED	create table public.fantrax_draft_sessions (
+supabase/migrations/20260923184653_fantrax_live_draft_sessions.sql	29	function	public.claim_fantrax_draft_poll	UNREVIEWED	create or replace function public.claim_fantrax_draft_poll(
+supabase/migrations/20260927104934_in_season_access_workspace.sql	2	table	public.in_season_grants	REVIEWED_FAMILY_SOURCE_ONLY	create table public.in_season_grants (
+supabase/migrations/20260927104934_in_season_access_workspace.sql	17	table	public.in_season_workspaces	REVIEWED_FAMILY_SOURCE_ONLY	create table public.in_season_workspaces (
+supabase/migrations/20261002021651_forge_local_execution_fence.sql	17	function	forge_execution_internal.lock_forge_execution_scope	UNREVIEWED	create function forge_execution_internal.lock_forge_execution_scope(p_date date,p_game_ids bigint[])
+supabase/migrations/20261002021651_forge_local_execution_fence.sql	30	function	forge_execution_internal.active_forge_local_execution	UNREVIEWED	create function forge_execution_internal.active_forge_local_execution(p_game_ids bigint[],p_exclude_run uuid)
+supabase/migrations/20261002021651_forge_local_execution_fence.sql	42	function	forge_execution_internal.guard_forge_local_reservation	UNREVIEWED	create function forge_execution_internal.guard_forge_local_reservation() returns trigger
+supabase/migrations/20261002021651_forge_local_execution_fence.sql	60	function	public.inspect_forge_local_attempt	UNREVIEWED	create function public.inspect_forge_local_attempt(p_operation_id uuid)
+supabase/migrations/20261002021651_forge_local_execution_fence.sql	73	function	public.begin_forge_local_run	UNREVIEWED	create function public.begin_forge_local_run(p_operation_id uuid,p_date date,p_game_id bigint,
+supabase/migrations/20261002021651_forge_local_execution_fence.sql	131	function	forge_execution_internal.guard_forge_local_publication	UNREVIEWED	create function forge_execution_internal.guard_forge_local_publication() returns trigger
+supabase/migrations/20261002134400_game_line_snapshots.sql	4	table	public.line_source_captures	REVIEWED_FAMILY_SOURCE_ONLY	create table public.line_source_captures (
+supabase/migrations/20261002134400_game_line_snapshots.sql	11	table	public.line_claim_revisions	REVIEWED_FAMILY_SOURCE_ONLY	create table public.line_claim_revisions (
+supabase/migrations/20261002134400_game_line_snapshots.sql	21	table	public.line_claim_relations	REVIEWED_FAMILY_SOURCE_ONLY	create table public.line_claim_relations (
+supabase/migrations/20261002134400_game_line_snapshots.sql	28	table	public.line_game_state_observations	REVIEWED_FAMILY_SOURCE_ONLY	create table public.line_game_state_observations (
+supabase/migrations/20261002134400_game_line_snapshots.sql	36	table	public.line_entry_revisions	REVIEWED_FAMILY_SOURCE_ONLY	create table public.line_entry_revisions (
+supabase/migrations/20261002134400_game_line_snapshots.sql	46	table	public.line_pp_decisions	REVIEWED_FAMILY_SOURCE_ONLY	create table public.line_pp_decisions (
+supabase/migrations/20261002134400_game_line_snapshots.sql	59	function	public.reject_line_evidence_mutation	UNREVIEWED	create function public.reject_line_evidence_mutation() returns trigger language plpgsql security invoker set search_path='' as $$
+supabase/migrations/20261002134400_game_line_snapshots.sql	73	function	public.append_line_decisions	REVIEWED_FAMILY_SOURCE_ONLY	create function public.append_line_decisions(p_game_id bigint,p_team_id bigint,p_expected_entry_id text,p_entry jsonb,p_pp jsonb)
+supabase/migrations/20261002140500_resolve_goalie_unified_game_team.sql	4	function	internal_stats.resolve_goalie_game_team	UNREVIEWED	CREATE FUNCTION internal_stats.resolve_goalie_game_team(
+supabase/migrations/20261004181455_forge_public_revision_reader.sql	7	function	public.read_forge_game_revisions	REVIEWED_FAMILY_SOURCE_ONLY	create or replace function public.read_forge_game_revisions(p_slate_date date)
+supabase/migrations/20261011115124_preserve_projection_raw_shift_occurrences.sql	10	function	public.capture_projection_raw_source_snapshots_v1	UNREVIEWED	create or replace function public.capture_projection_raw_source_snapshots_v1(
+supabase/migrations/20261017183611_native_forecast_catalog_heads.sql	9	table	public.native_forecast_catalog_heads	REVIEWED_FAMILY_SOURCE_ONLY	CREATE TABLE public.native_forecast_catalog_heads (
+supabase/migrations/20261017183611_native_forecast_catalog_heads.sql	22	function	public.cas_native_forecast_catalog_head	REVIEWED_FAMILY_SOURCE_ONLY	CREATE FUNCTION public.cas_native_forecast_catalog_head(
+supabase/migrations/20261019053348_restore_private_token_vault.sql	28	table	private.connected_account_tokens	UNREVIEWED	create table if not exists private.connected_account_tokens (
+supabase/migrations/20261019053348_restore_private_token_vault.sql	88	function	private.upsert_connected_account_tokens	UNREVIEWED	create or replace function private.upsert_connected_account_tokens(
+supabase/migrations/20261019053348_restore_private_token_vault.sql	228	function	private.get_connected_account_tokens	UNREVIEWED	create or replace function private.get_connected_account_tokens(
+supabase/migrations/20261019053348_restore_private_token_vault.sql	278	function	private.cleanup_connected_account_token_secrets	UNREVIEWED	create or replace function private.cleanup_connected_account_token_secrets()
+supabase/migrations/20261019172842_accept_html_report_projection_shift_snapshots.sql	12	function	public.capture_projection_raw_source_snapshots_v1	UNREVIEWED	create or replace function public.capture_projection_raw_source_snapshots_v1(
+supabase/migrations/20261019211444_opponent_skater_allowed_by_position.sql	7	view	public.opponent_skater_allowed_by_position	UNREVIEWED	create materialized view if not exists public.opponent_skater_allowed_by_position as
+supabase/migrations/20261019211444_opponent_skater_allowed_by_position.sql	34	function	fhfh_internal.register_opponent_allowed_refresh_cron	UNREVIEWED	create or replace function fhfh_internal.register_opponent_allowed_refresh_cron()
+supabase/migrations/20261020211500_forge_league_skater_physical_totals.sql	10	function	public.forge_league_skater_physical_totals	UNREVIEWED	create or replace function public.forge_league_skater_physical_totals(p_season_id integer, p_cutoff date)

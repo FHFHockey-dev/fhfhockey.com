@@ -372,7 +372,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     };
     const stats = stale ? null : lineFor(latestRow);
     const projectedAgainst = stale ? null : context(player.teamAbbreviation, opponentAbbreviation(latestRow.opponent_team_id));
-    if (stale || stats) for (const game of upcoming(player.teamAbbreviation!)) {
+    for (const game of upcoming(player.teamAbbreviation!)) {
       const own = exactSkater.get(`${game.id}:${player.nhlId}`);
       if (own && (stale || own !== latestRow) && own.team_id === player.nhlTeamId) {
         // Projected for this game itself: use that line as issued, no re-aiming.

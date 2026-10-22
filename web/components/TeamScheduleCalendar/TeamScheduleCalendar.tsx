@@ -92,9 +92,6 @@ interface CalendarStats {
   wins: number;
   losses: number;
   otLosses: number;
-  points: number;
-  pointPercentage: number;
-  winPercentage: number;
   recentForm: {
     wins: number;
     losses: number;
@@ -167,6 +164,33 @@ export function TeamScheduleCalendar({
   // Get team abbreviation from ID if not provided
   const teamAbbr =
     teamAbbreviation || getTeamAbbreviationById(Number(teamId)) || `T${teamId}`;
+
+  // Season standings cannot be reconstructed from partial calendar/WGO coverage.
+  const seasonRecord =
+    standingsDetails?.season_id === Number(seasonId) &&
+    standingsDetails.team_abbrev === teamAbbr &&
+    [
+      standingsDetails.wins,
+      standingsDetails.losses,
+      standingsDetails.ot_losses,
+      standingsDetails.points,
+      standingsDetails.games_played
+    ].every((value) => Number.isSafeInteger(value) && value >= 0) &&
+    standingsDetails.games_played ===
+      standingsDetails.wins +
+        standingsDetails.losses +
+        standingsDetails.ot_losses &&
+    standingsDetails.points <= standingsDetails.games_played * 2
+      ? standingsDetails
+      : null;
+  const seasonPointPercentage =
+    seasonRecord && seasonRecord.games_played > 0
+      ? (seasonRecord.points / (seasonRecord.games_played * 2)) * 100
+      : null;
+  const seasonWinPercentage =
+    seasonRecord && seasonRecord.games_played > 0
+      ? (seasonRecord.wins / seasonRecord.games_played) * 100
+      : null;
 
   const teamInfo = teamsInfo[teamAbbreviation];
 
@@ -663,7 +687,6 @@ export function TeamScheduleCalendar({
     const future = gamesWithResults.filter(
       ({ result }) => result === "future"
     ).length;
-    const totalPlayed = completedGames.length;
 
     // Enhanced Home/Away splits using WGO stats with proper game table mapping
     const homeGames = completedGames.filter(({ homeAway, gameStats }) => {
@@ -849,10 +872,6 @@ export function TeamScheduleCalendar({
       wins,
       losses,
       otLosses,
-      points: totalPlayed > 0 ? (wins * 2 + otLosses) / 2 : 0,
-      pointPercentage:
-        totalPlayed > 0 ? ((wins * 2 + otLosses) / (totalPlayed * 2)) * 100 : 0,
-      winPercentage: totalPlayed > 0 ? (wins / totalPlayed) * 100 : 0,
       recentForm,
       homeRecord,
       awayRecord,
@@ -1419,26 +1438,38 @@ export function TeamScheduleCalendar({
         <div className={styles.teamSummary}>
           <div className={`${styles.summaryCard} ${styles.seasonRecord}`}>
             <h4>Season Record</h4>
-            <div className={styles.record}>
-              {calendarData.stats.wins}-{calendarData.stats.losses}-
-              {calendarData.stats.otLosses}
-            </div>
-            <div
-              className={`${styles.points} ${getLeagueRankingClass(
-                standingsDetails?.league_sequence || 16,
-                32
-              )}`}
-              data-rank={standingsDetails?.league_sequence || "?"}
-            >
-              {calendarData.stats.points} pts
-            </div>
-            <div
-              className={`${styles.percentage} ${getPointsPercentageClass(
-                calendarData.stats.pointPercentage / 100
-              )}`}
-            >
-              {calendarData.stats.pointPercentage.toFixed(1)}%
-            </div>
+            <div className={styles.recentForm}>Regular season standings</div>
+            {seasonRecord ? (
+              <>
+                <div className={styles.record}>
+                  {seasonRecord.wins}-{seasonRecord.losses}-
+                  {seasonRecord.ot_losses}
+                </div>
+                <div
+                  className={`${styles.points} ${getLeagueRankingClass(
+                    seasonRecord.league_sequence || 16,
+                    32
+                  )}`}
+                  data-rank={seasonRecord.league_sequence || "?"}
+                >
+                  {seasonRecord.points} pts
+                </div>
+                <div
+                  className={`${styles.percentage} ${
+                    seasonPointPercentage === null
+                      ? styles.neutral
+                      : getPointsPercentageClass(seasonPointPercentage / 100)
+                  }`}
+                >
+                  {seasonPointPercentage === null
+                    ? "—"
+                    : `${seasonPointPercentage.toFixed(1)}%`}
+                </div>
+                <div className={styles.recentForm}>As of {seasonRecord.date}</div>
+              </>
+            ) : (
+              <div className={styles.record}>Standings unavailable</div>
+            )}
           </div>
 
           <div className={`${styles.summaryCard} ${styles.currentStreak}`}>
@@ -1864,32 +1895,46 @@ export function TeamScheduleCalendar({
               <div className={styles.calendarStats}>
                 <div className={styles.statGroup}>
                   <h4>Season Overview</h4>
-                  <div className={styles.statItems}>
-                    <div className={styles.statItem}>
-                      <span className={styles.statLabel}>Games Played</span>
-                      <span className={styles.statValue}>
-                        {calendarData.stats.wins +
-                          calendarData.stats.losses +
-                          calendarData.stats.otLosses}
-                      </span>
+                  {seasonRecord ? (
+                    <div className={styles.statItems}>
+                      <div className={styles.statItem}>
+                        <span className={styles.statLabel}>Games Played</span>
+                        <span className={styles.statValue}>
+                          {seasonRecord.games_played}
+                        </span>
+                      </div>
+                      <div className={styles.statItem}>
+                        <span className={styles.statLabel}>Win %</span>
+                        <span
+                          className={`${styles.statValue} ${
+                            seasonWinPercentage === null
+                              ? styles.neutral
+                              : getPercentageClass(seasonWinPercentage)
+                          }`}
+                        >
+                          {seasonWinPercentage === null
+                            ? "—"
+                            : `${seasonWinPercentage.toFixed(1)}%`}
+                        </span>
+                      </div>
+                      <div className={styles.statItem}>
+                        <span className={styles.statLabel}>Point %</span>
+                        <span
+                          className={`${styles.statValue} ${
+                            seasonPointPercentage === null
+                              ? styles.neutral
+                              : getPercentageClass(seasonPointPercentage)
+                          }`}
+                        >
+                          {seasonPointPercentage === null
+                            ? "—"
+                            : `${seasonPointPercentage.toFixed(1)}%`}
+                        </span>
+                      </div>
                     </div>
-                    <div className={styles.statItem}>
-                      <span className={styles.statLabel}>Win %</span>
-                      <span
-                        className={`${styles.statValue} ${getPercentageClass(calendarData.stats.winPercentage)}`}
-                      >
-                        {calendarData.stats.winPercentage.toFixed(1)}%
-                      </span>
-                    </div>
-                    <div className={styles.statItem}>
-                      <span className={styles.statLabel}>Point %</span>
-                      <span
-                        className={`${styles.statValue} ${getPercentageClass(calendarData.stats.pointPercentage)}`}
-                      >
-                        {calendarData.stats.pointPercentage.toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
+                  ) : (
+                    <div className={styles.statValue}>Standings unavailable</div>
+                  )}
                 </div>
 
                 {/* Enhanced WGO Performance Analytics */}

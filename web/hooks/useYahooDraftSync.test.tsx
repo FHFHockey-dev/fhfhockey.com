@@ -107,7 +107,7 @@ describe("useYahooDraftSync", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const { result, unmount } = renderHook(() => useYahooDraftSync(true));
+    const { result, unmount } = renderHook(() => useYahooDraftSync(true, true));
     await waitFor(() => expect(result.current.enabled).toBe(true));
     calls.splice(0);
 
@@ -178,7 +178,7 @@ describe("useYahooDraftSync", () => {
         ),
       ),
     );
-    const { result } = renderHook(() => useYahooDraftSync(true));
+    const { result } = renderHook(() => useYahooDraftSync(true, true));
     await waitFor(() => expect(result.current.requestState).toBe("ready"));
     expect(result.current.enabled).toBe(false);
     expect(result.current.error).toBeNull();
@@ -193,7 +193,7 @@ describe("useYahooDraftSync", () => {
       ],
       ranking: null,
     })));
-    const { result } = renderHook(() => useYahooDraftSync(true));
+    const { result } = renderHook(() => useYahooDraftSync(true, true));
     await waitFor(() => expect(result.current.leagues).toHaveLength(2));
     expect(result.current.selectedLeagueId).toBe("");
     act(() => result.current.setSelectedLeagueId("league-2"));
@@ -213,7 +213,7 @@ describe("useYahooDraftSync", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const { result } = renderHook(() => useYahooDraftSync(true));
+    const { result } = renderHook(() => useYahooDraftSync(true, true));
     await waitFor(() => expect(result.current.enabled).toBe(true));
     act(() => result.current.resumeSession("session-1", "league-1"));
     await waitFor(() => expect(realtime.channel.subscribe).toHaveBeenCalled());
@@ -238,7 +238,7 @@ describe("useYahooDraftSync", () => {
       }),
     );
 
-    const { result } = renderHook(() => useYahooDraftSync(true));
+    const { result } = renderHook(() => useYahooDraftSync(true, true));
     await waitFor(() => expect(result.current.enabled).toBe(true));
     act(() => result.current.resumeSession("missing-session", "league-1"));
     await waitFor(() => expect(realtime.channel.subscribe).toHaveBeenCalled());
@@ -307,7 +307,7 @@ describe("useYahooDraftSync", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const { result } = renderHook(() => useYahooDraftSync(true));
+    const { result } = renderHook(() => useYahooDraftSync(true, true));
     await waitFor(() => expect(result.current.enabled).toBe(true));
     let started = false;
     await act(async () => {
@@ -342,7 +342,7 @@ describe("useYahooDraftSync", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const { result } = renderHook(() => useYahooDraftSync(true));
+    const { result } = renderHook(() => useYahooDraftSync(true, true));
     await waitFor(() => expect(result.current.leagues).toHaveLength(1));
     let started = true;
     await act(async () => {
@@ -356,4 +356,19 @@ describe("useYahooDraftSync", () => {
       fetchMock.mock.calls.filter(([, init]) => init?.method === "POST"),
     ).toHaveLength(0);
   });
+  it("blocks all sync mutations after access loss and retains the loaded session", async () => {
+    const fetchMock = vi.fn(async (url: RequestInfo | URL, _init?: RequestInit) => String(url).endsWith("/draft-sessions")
+      ? response({ enabled: true, leagues: [{ externalLeagueId: "league-1", leagueName: "League" }], ranking: null }) : response(draftState));
+    vi.stubGlobal("fetch", fetchMock);
+    const { result, rerender } = renderHook(({ canSync }) => useYahooDraftSync(true, canSync), { initialProps: { canSync: true } });
+    await waitFor(() => expect(result.current.enabled).toBe(true));
+    act(() => result.current.resumeSession("session-1", "league-1"));
+    act(() => realtime.getStatusHandler()?.("SUBSCRIBED"));
+    await waitFor(() => expect(result.current.draftState?.session.id).toBe("session-1"));
+    rerender({ canSync: false }); fetchMock.mockClear();
+    await act(async () => { await result.current.connect(); await result.current.refreshAccount(); await result.current.refreshDraft(); expect(await result.current.start()).toBe(false); });
+    expect(fetchMock.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(0);
+    expect(result.current.draftState?.session.id).toBe("session-1");
+  });
+
 });

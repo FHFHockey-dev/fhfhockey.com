@@ -1,0 +1,25 @@
+
+> web@0.1.0 test
+> vitest --run components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx hooks/useTeamSchedule.test.tsx hooks/useTeamStatsHeaderData.test.tsx components/TeamTabNavigation/TeamTabNavigation.test.tsx
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:73389) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:73386) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:73387) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:73388) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/TeamTabNavigation/TeamTabNavigation.test.tsx (3 tests) 34ms
+ ✓ hooks/useTeamStatsHeaderData.test.tsx (3 tests) 219ms
+ ✓ components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx (8 tests) 212ms
+ ✓ hooks/useTeamSchedule.test.tsx (51 tests) 1498ms
+
+ Test Files  4 passed (4)
+      Tests  65 passed (65)
+   Start at  09:17:23
+   Duration  2.20s (transform 443ms, setup 13ms, collect 1.09s, tests 1.96s, environment 800ms, prepare 149ms)
+

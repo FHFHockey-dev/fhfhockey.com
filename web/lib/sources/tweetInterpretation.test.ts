@@ -11,6 +11,7 @@ import { buildLinesCccSourceFromIftttEvent } from "./linesCccIngestion";
 import { reconcileAlias } from "./tweetAliasReconciliation";
 import { edmontonSectionRoster, edmontonSectionText, explicit11F7DText, seattleSectionRoster, seattleSectionText } from "../../__tests__/fixtures/lineupSectionFixtures";
 import claimContextCases from "./fixtures/claimContextCases.json";
+import iftttComparison from "./fixtures/iftttComparisonObservations.json";
 
 describe("reviewed critical corpus extraction gaps", () => {
   const fixture = (id: string) => claimContextCases.cases.find(item => item.id === id)!;
@@ -317,6 +318,20 @@ describe("structured tweet interpretation", () => {
     expect(interpretTweetUnits(seed("2105466270070264224"), players)).toMatchObject({ units: [], relationships: [{ kind: "swap", playerIds: [1, 2], certainty: "projected", reviewReason: "unresolved_reference" }] });
     const ppPlayers = [{ playerId: 3, fullName: "Vasily Podkolzin", lastName: "Podkolzin" }, { playerId: 4, fullName: "Ryan Nugent-Hopkins", lastName: "Nugent-Hopkins", aliases: ["RNH"] }];
     expect(interpretTweetUnits(seed("2104977788142850499"), ppPlayers)).toMatchObject({ units: [], relationships: [{ kind: "substitution", playerIds: [3, 4], number: 1, reviewReason: "incomplete_replacement" }] });
+  });
+  it("keeps the retained IFTTT replacement ordered as synthetic PP1 identities without a lineup update", () => {
+    const source = iftttComparison.records.find((record) => record.id === "S06")!;
+    const syntheticRoster = [
+      { playerId: 990001, fullName: "Fixture Podkolzin", lastName: "Podkolzin" },
+      { playerId: 990002, fullName: "Fixture Nugent-Hopkins", lastName: "Nugent-Hopkins", aliases: ["RNH"] },
+    ];
+    const result = interpretTweetUnits(source.text, syntheticRoster);
+    expect(result.units).toEqual([]);
+    expect(result.relationships).toMatchObject([{ kind: "substitution", playerIds: [990001, 990002], situation: "pp", number: 1, certainty: "reported", reviewReason: "incomplete_replacement" }]);
+    expect(result.relationships?.[0]?.evidence.text).toContain("Podkolzin will take RNH’s spot on the first unit powerplay");
+    expect(assignmentsFor({ metadata: { interpretation: result } } as any)).toEqual([]);
+    expect(source.gameId).toBeNull();
+    expect(source.effectiveAt).toBeNull();
   });
   it("recognizes DTD and first-goaltender-off without confirming absence or a start", () => {
     const dtd = seed("2104668922113052956"), firstOff = seed("2105000410809512101");

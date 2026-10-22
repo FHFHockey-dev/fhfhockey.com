@@ -52,6 +52,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       scope, days, startDate, endDate,
+      coverageStatus: "unavailable_independent_universe_not_persisted",
+      comparison: "unpaired_source_samples",
       data: daily,
       pooled: rows.length ? scoreLedger(rows) : [],
       ...(rows.length ? {} : { empty: true })

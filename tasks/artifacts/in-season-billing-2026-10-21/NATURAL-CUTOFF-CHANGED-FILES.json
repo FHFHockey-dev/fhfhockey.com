@@ -1,0 +1,50 @@
+{
+  "scope": "Natural season-end follow-up after the 335-test isolated sandbox checkpoint",
+  "application": [
+    "web/lib/in-season/monthlyStripe.ts",
+    "web/lib/in-season/monthlyWebhook.ts"
+  ],
+  "tests": [
+    "web/lib/in-season/monthlyStripe.test.ts",
+    "web/lib/in-season/monthlyIntegration.test.ts"
+  ],
+  "artifacts": [
+    "tasks/artifacts/in-season-billing-2026-10-21/CHANGED-FILES.json",
+    "tasks/artifacts/in-season-billing-2026-10-21/INTEGRATION-HANDOFF.md",
+    "tasks/artifacts/in-season-billing-2026-10-21/NATURAL-CUTOFF-CHANGED-FILES.json",
+    "tasks/artifacts/in-season-billing-2026-10-21/NATURAL-CUTOFF-CLEANUP.json",
+    "tasks/artifacts/in-season-billing-2026-10-21/NATURAL-CUTOFF-FINAL-TESTS.json",
+    "tasks/artifacts/in-season-billing-2026-10-21/NATURAL-CUTOFF-HANDOFF.md",
+    "tasks/artifacts/in-season-billing-2026-10-21/NATURAL-CUTOFF-READBACK.json",
+    "tasks/artifacts/in-season-billing-2026-10-21/NATURAL-CUTOFF-REGRESSION-TESTS.json",
+    "tasks/artifacts/in-season-billing-2026-10-21/REPORT.md",
+    "tasks/artifacts/in-season-billing-2026-10-21/SANDBOX-E2E-HANDOFF.md",
+    "tasks/artifacts/in-season-billing-2026-10-21/SANDBOX-HARNESS.cjs",
+    "tasks/artifacts/in-season-billing-2026-10-21/SANDBOX-NATURAL-CUTOFF-RESULTS.jsonl",
+    "tasks/artifacts/in-season-billing-2026-10-21/SANDBOX-NATURAL-CUTOFF.cjs",
+    "tasks/artifacts/in-season-billing-2026-10-21/SANDBOX-REFUND-APPROVAL.json",
+    "tasks/artifacts/in-season-billing-2026-10-21/SANDBOX-REFUND-STATUS-HISTORY.jsonl"
+  ],
+  "retained_working_diary": [
+    "tasks/diaries/2026-10-21-codex-in-season-billing.md"
+  ],
+  "verification": {
+    "vitest": {
+      "singleFinalRun": true,
+      "passed": 338,
+      "failed": 0,
+      "skipped": 0,
+      "files": 10,
+      "receipt": "tasks/artifacts/in-season-billing-2026-10-21/NATURAL-CUTOFF-FINAL-TESTS.json"
+    },
+    "typescript": "passed, exit 0",
+    "targeted_eslint": "passed, exit 0",
+    "natural_cutoff": "verified provider and stored-grant before/after readback",
+    "cleanup": "all temporary task services stopped"
+  },
+  "additionalDirectClockSubscriptions": 1,
+  "additionalCheckoutSessions": 0,
+  "hostedCheckoutCasesTotal": 3,
+  "cancellationOrWorkerCallsInNaturalScenario": 0,
+  "productionChanges": false
+}

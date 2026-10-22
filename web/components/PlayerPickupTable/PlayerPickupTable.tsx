@@ -4,7 +4,8 @@ import styles from "./PlayerPickupTable.module.scss";
 import Image from "next/image";
 import clsx from "clsx";
 import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
-import { useDraftProAccess } from "hooks/useDraftProAccess";
+import { useProviderSyncAccess } from "hooks/useProviderSyncAccess";
+import ProviderSyncNotice from "components/account/ProviderSyncNotice";
 import supabase from "lib/supabase/client";
 import { isYahooPickupPlayer, type YahooPickupContext } from "lib/integrations/yahoo/pickup";
 import { teamsInfo } from "lib/teamsInfo";
@@ -1679,7 +1680,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   const isSidebarLayout = layoutVariant === "sidebar";
   const seasonQuery = useCurrentSeasonQuery();
   const currentSeasonInfo = seasonQuery.data;
-  const pro = useDraftProAccess();
+  const pro = useProviderSyncAccess();
   const [yahooContext, setYahooContext] = useState<YahooPickupContext | null>(null);
   const [yahooStatus, setYahooStatus] = useState<"loading" | "ready" | "error">("ready");
   const [yahooError, setYahooError] = useState<string | null>(null);
@@ -2859,6 +2860,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         )}
 
         {!leagueContext && <p>General candidates · filtered by global ownership. Availability in your league and waiver status are unknown.</p>}
+        <ProviderSyncNotice {...pro} />
         {pro.access?.eligible && (
           <div className={styles.yahooContext}>
             <p role="status">

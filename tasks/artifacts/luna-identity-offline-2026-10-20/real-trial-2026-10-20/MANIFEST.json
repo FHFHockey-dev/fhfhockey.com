@@ -1,0 +1,23 @@
+{
+  "status": "blocked_before_wire_seal_and_budget_admission",
+  "providerRequests": 0,
+  "branch": "octoberBranch",
+  "head": "e24b43712785308e36e65c67e825d51b9edd1805",
+  "ledgerBaselineSha256": "52d4848b5a9eb1a91b3ddfd9928625951fe2da81814669d41bdbd08a261c9b5c",
+  "pins": {
+    "tasks/artifacts/luna-identity-offline-2026-10-20/real-trial-2026-10-20/APPROVED-EXPORT.json": "5d12304f908740f84a580ab5314ffd592174cbf0dbb900bacb65196b3a553918",
+    "tasks/artifacts/luna-identity-offline-2026-10-20/real-trial-2026-10-20/BUDGET-UNCHANGED.json": "bc389e8b3ec6397d4c48fa0eacac2b037ef32fbcd3cd6996db8da98100d08ef1",
+    "tasks/artifacts/luna-identity-offline-2026-10-20/real-trial-2026-10-20/DIRECTORY.json": "57424ff5ded22c6f4f299270920f676d1b74ebed41dedd470063f7ef32c1adf1",
+    "tasks/artifacts/luna-identity-offline-2026-10-20/real-trial-2026-10-20/INDEPENDENT-REVIEW.json": "c4c226daa5b160160e568c4260a7bd6b65c6acf3c5bad926c0d739781541c3c3",
+    "tasks/artifacts/luna-identity-offline-2026-10-20/real-trial-2026-10-20/OWNER-BINDINGS.json": "5f5f8b25d855f45ac3c6ecb8862681b00d6ab9d44891acd87078fb693346c2b9",
+    "tasks/artifacts/luna-identity-offline-2026-10-20/real-trial-2026-10-20/PREPARED-INPUT.json": "27da278dac1a2cfb93d82d6ce0bf2c6845b704af56ae462f88d0d6eb5db59dc1",
+    "tasks/artifacts/luna-identity-offline-2026-10-20/real-trial-2026-10-20/REPORT.md": "6b447a209d28069b80633180cea74469a6c35c3e10ce6bfe2f08857f103127d1",
+    "tasks/artifacts/luna-identity-offline-2026-10-20/real-trial-2026-10-20/RESULT.json": "59366b2b2bf15f948fc012caa2ad8e3e3604f27418f22509d6e6b93f6f5d25df",
+    "tasks/artifacts/luna-identity-offline-2026-10-20/real-trial-2026-10-20/evaluate-approved-export.ts": "3638faa139b3b7ee19b59ad1537012316159d5dffae13b574a50c596a3a8a2b9",
+    "web/lib/sources/decisionsReference/adapter.mjs": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+    "web/lib/sources/playerIdentitySnapshot.ts": "bd1266de847aeffdc442205a307d2aadefda5da7cec79b76616c34db2a222901",
+    "web/lib/sources/tweetIdentityCandidates.ts": "b67abdf30adf87c3f0f75eeef78dda1cd6986f96fcb84fd0c1faa6dee0b1cb31",
+    "web/lib/sources/tweetIdentityLocalReview.ts": "c79bdf39b0d68b0ee73e88e76abd86c5b38f37d045ccb5f009567e2ab8f7a075",
+    "web/lib/sources/tweetIdentityProposal.ts": "de2a45b7131a2fee84a0ced03692989b6a3bc1059ecb6c6e606774f6f1fa59ac"
+  }
+}

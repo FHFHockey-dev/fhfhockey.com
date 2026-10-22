@@ -1,0 +1,96 @@
+--- web/lib/in-season/monthlyWebhook.ts (baseline)
++++ web/lib/in-season/monthlyWebhook.ts
+@@ -7,14 +7,49 @@
+ 
+ const id = (value: string | { id?: string } | null | undefined) => typeof value === "string" ? value : value?.id;
+ 
++/** Shared by webhook delivery and uncertain-job recovery under the caller's
++ * fenced state lease. Every payment and adjustment is freshly retrieved. */
++export async function reconcilePaidMonthlyInvoice({ stripe, state: current, eventId, invoice, subscription, price, schedule, initialPrice, now }: {
++  stripe: Stripe; state: MonthlyState; eventId: string; invoice: Stripe.Invoice;
++  subscription: Stripe.Subscription; price: Stripe.Price; schedule?: Stripe.SubscriptionSchedule; initialPrice?: Stripe.Price; now: Date;
++}) {
++  const allocations = await stripe.invoicePayments.list({ invoice: invoice.id!, status: "paid", limit: 2 });
++  const payment = allocations.data[0]; const intentId = id(payment?.payment.payment_intent);
++  if (allocations.has_more || allocations.data.length !== 1 || !intentId) throw new Error("Paid invoice allocation ambiguous.");
++  const intent = await stripe.paymentIntents.retrieve(intentId, { expand: ["latest_charge"] });
++  const input = { eventId: `${eventId}:paid`, binding: current.binding, invoice, payment, intent, subscription, price, schedule, initialPrice };
++  const observedVersion = current.version + 1;
++  let state = reduceMonthlyEvent(current, verifiedMonthlyPayment(input), now);
++  const charge = intent.latest_charge as Stripe.Charge;
++  const refunds = await stripe.refunds.list({ charge: charge.id, limit: 100 });
++  const disputes = await stripe.disputes.list({ charge: charge.id, limit: 100 });
++  if (refunds.has_more || disputes.has_more || (charge.disputed && !disputes.data.length) || (charge.amount_refunded > 0 && !refunds.data.length)) throw new Error("Adjustment inventory incomplete.");
++  for (const refund of refunds.data) {
++    const fact = verifiedMonthlyAdjustment({ ...input, eventId: `${eventId}:refund:${refund.id}`, kind: "refund", adjustment: refund, observedAt: now });
++    if (fact.kind !== "refund") throw new Error("Invalid refund snapshot.");
++    state = reduceMonthlyEvent(state, { ...fact, observedVersion }, now);
++  }
++  for (const dispute of disputes.data) state = reduceMonthlyEvent(state, verifiedMonthlyAdjustment({ ...input, eventId: `${eventId}:dispute:${dispute.id}`, kind: "dispute", adjustment: dispute }), now);
++  return state;
++}
++
++export function reconcileMonthlySubscriptionEnd(state: MonthlyState, subscription: Stripe.Subscription, eventId: string, now: Date) {
++  const at = subscription.ended_at;
++  if (subscription.status !== "canceled" || !at) throw new Error("Cancellation time unavailable.");
++  const disputed = subscription.cancellation_details?.reason === "payment_disputed" || Object.values(state.invoices).some((invoice) => Object.keys(invoice.disputes).length > 0);
++  return reduceMonthlyEvent(state, disputed && !state.cancelledAt
++    ? { kind: "billing_stopped", eventId, userId: state.binding.userId, subscriptionId: subscription.id, stoppedAt: new Date(at * 1000).toISOString() }
++    : { kind: "cancelled", eventId, userId: state.binding.userId, subscriptionId: subscription.id, cancelledAt: new Date(at * 1000).toISOString() }, now);
++}
++
+ /** Called only after raw signature verification; fresh reads occur under a fenced lease. */
+-export async function fulfillMonthlyEvent({ stripe, store, event, now = new Date() }: { stripe: Stripe; store: MonthlyStore; event: Stripe.Event; now?: Date }) {
++export async function fulfillMonthlyEvent({ stripe, store, event, now: fixedNow }: { stripe: Stripe; store: MonthlyStore; event: Stripe.Event; now?: Date }) {
+   if (event.livemode !== false) throw new Error("Live events prohibited.");
+   const isInvoice = ["invoice.paid", "invoice.payment_succeeded", "invoice.payment_failed", "invoice.payment_action_required"].includes(event.type);
+   const isSubscription = ["customer.subscription.deleted", "customer.subscription.updated"].includes(event.type);
+   const isAdjustment = ["refund.created", "refund.updated", "refund.failed", "charge.refunded", "charge.dispute.created", "charge.dispute.updated", "charge.dispute.closed"].includes(event.type);
+   if (!isInvoice && !isSubscription && !isAdjustment) return { processed: false };
+-  if (!event.id || !Number.isSafeInteger(event.created) || event.created <= 0 || event.created > now.getTime() / 1000) throw new Error("Invalid event time.");
++  if (!event.id || !Number.isSafeInteger(event.created) || event.created <= 0 || event.created > (fixedNow ?? new Date()).getTime() / 1000) throw new Error("Invalid event time.");
+   await verifyInSeasonSandboxAccount(stripe);
+   let invoiceId: string | undefined; let subscriptionId: string | undefined;
+   if (isInvoice) invoiceId = (event.data.object as Stripe.Invoice).id;
+@@ -37,6 +72,7 @@
+   if (isSubscription && discovery.status !== "canceled") return { processed: false };
+   const claim = await store.claim(subscriptionId, event.id);
+   if ("duplicate" in claim) return { processed: true, duplicate: true };
++  const now = fixedNow ?? new Date();
+   let state = claim.state;
+   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+   const price = await stripe.prices.retrieve(catalog.monthlyPriceId);
+@@ -46,12 +82,7 @@
+   if (isSubscription) {
+     // canceled_at can be the earlier request that scheduled cancellation. Use
+     // the actual end so natural season expiry preserves already-paid coverage.
+-    const at = subscription.ended_at;
+-    if (!at) throw new Error("Cancellation time unavailable.");
+-    const disputed = subscription.cancellation_details?.reason === "payment_disputed" || Object.values(state.invoices).some((invoice) => Object.keys(invoice.disputes).length > 0);
+-    apply(disputed && !state.cancelledAt
+-      ? { kind: "billing_stopped", eventId: event.id, userId: state.binding.userId, subscriptionId, stoppedAt: new Date(at * 1000).toISOString() }
+-      : { kind: "cancelled", eventId: event.id, userId: state.binding.userId, subscriptionId, cancelledAt: new Date(at * 1000).toISOString() });
++    state = reconcileMonthlySubscriptionEnd(state, subscription, event.id, now);
+   } else {
+     if (!invoiceId) throw new Error("Invoice identity unavailable.");
+     const invoice = await stripe.invoices.retrieve(invoiceId);
+@@ -78,18 +109,7 @@
+       ? await stripe.prices.retrieve(paidLine.pricing.price_details.price) : undefined;
+     verifyMonthlyInvoice(state.binding, invoice, initialPrice);
+     if (invoice.status === "paid") {
+-      const allocations = await stripe.invoicePayments.list({ invoice: invoiceId, status: "paid", limit: 2 });
+-      const payment = allocations.data[0]; const intentId = id(payment?.payment.payment_intent);
+-      if (allocations.has_more || allocations.data.length !== 1 || !intentId) throw new Error("Paid invoice allocation ambiguous.");
+-      const intent = await stripe.paymentIntents.retrieve(intentId, { expand: ["latest_charge"] });
+-      const input = { eventId: `${event.id}:paid`, binding: state.binding, invoice, payment, intent, subscription, price, schedule, initialPrice };
+-      apply(verifiedMonthlyPayment(input));
+-      const charge = intent.latest_charge as Stripe.Charge;
+-      const refunds = await stripe.refunds.list({ charge: charge.id, limit: 100 });
+-      const disputes = await stripe.disputes.list({ charge: charge.id, limit: 100 });
+-      if (refunds.has_more || disputes.has_more || (charge.disputed && !disputes.data.length) || (charge.amount_refunded > 0 && !refunds.data.length)) throw new Error("Adjustment inventory incomplete.");
+-      for (const refund of refunds.data) apply(verifiedMonthlyAdjustment({ ...input, eventId: `${event.id}:refund:${refund.id}`, kind: "refund", adjustment: refund, observedAt: now }));
+-      for (const dispute of disputes.data) apply(verifiedMonthlyAdjustment({ ...input, eventId: `${event.id}:dispute:${dispute.id}`, kind: "dispute", adjustment: dispute }));
++      state = await reconcilePaidMonthlyInvoice({ stripe, state, eventId: event.id, invoice, subscription, price, schedule, initialPrice, now });
+     } else if (event.type === "invoice.payment_failed" || event.type === "invoice.payment_action_required") {
+       apply(verifiedMonthlyFailure(state.binding, event, initialPrice));
+     } else throw new Error("Invoice payment is not verified.");

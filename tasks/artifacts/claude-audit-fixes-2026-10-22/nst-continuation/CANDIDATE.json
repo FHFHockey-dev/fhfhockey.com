@@ -1,0 +1,56 @@
+{
+  "captured_at": "2026-10-22T12:42:03.571973+00:00",
+  "head": "a811b0762ffe29006c3df7eaa4c19bf18deecda3",
+  "status": "implemented_local_review_pending",
+  "changed_files": [
+    {
+      "path": "web/pages/api/v1/db/run-rolling-forge-pipeline.ts",
+      "accepted_base_sha256": "ae0862ad1aa85fb416786a91935dc2212eabaf5a71a1c84a2136197e691e5fc0",
+      "fixed_sha256": "fb3bab85f30f5f54eaeeef44308d4b2a21b5ba1b2ffaf8fbc15841edd6d763c3"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts",
+      "accepted_base_sha256": "f697240bf2263e7cd3f5be29414b35d7de0788c4dc3f4b7e5a038e0942c0d30b",
+      "fixed_sha256": "db28d9339a8268dba92d1eec8e38e8aeafda786e5f8dbe85e9d3f8748382f2dd"
+    },
+    {
+      "path": "web/lib/rollingForgePipelineRunState.ts",
+      "accepted_base_sha256": "eb61483c6fd31b98456b78a3bb9b04e82b149141b2097077706612eee3c30887",
+      "fixed_sha256": "16ffb690accaf32e5d81c66748e115e371b43203b90eef6f0ce14378089c7fe0"
+    }
+  ],
+  "dependency_fences": {
+    "web/pages/api/v1/db/update-nst-gamelog.ts": "9f6b8f628f2d4be77e3bf15a3d94ee8bceef6b420618034eab5c23162d8db1d4",
+    "web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts": "098de11dd4282c779c1fc3ee404b2931b5202af5309045d4409f596cf6e75e84",
+    "web/lib/projections/projectionPipelineState.ts": "9255d28cb6492795bd7e98f1df609b7a92a9f363d1d00ba85589732056f15b15",
+    "web/lib/nst/requestBudget.ts": "d19258f72183580919d26c16480287faa3f9b2fa30c9a9aa7d2982bba79b487e",
+    "web/lib/nst/client.ts": "712eefa3c63b3340770a4d45fb2c97428ffe7ede49a5581f36f75a9c9a3783e9",
+    "web/lib/nst/gamelogProgress.ts": "b0c657c0e28193384939c58fdab6321460347f149b698e8051c4211cacab9942",
+    "web/lib/cron/withCronJobAudit.ts": "02790f98626c71accd9bdb0b01a2e9da95799a254c14b98ad82a94bfca635094",
+    "web/lib/cron/nhlOffSeason.ts": "7b3202d5d4e8006a908ae2cdbeef217949f357499456f99353fd17f902ebd77f"
+  },
+  "archive_sha256": "6cb9bd758692c6163cae88a46249b7dfeda03a8ad87187442ae18c00700dc75e",
+  "snapshot_file_count": 3356,
+  "accepted_audit_archive_unchanged": true,
+  "source_snapshot_combined_release_candidate": false,
+  "tests": {
+    "baseline": {
+      "expected_failures": 4,
+      "skipped": 48
+    },
+    "final": {
+      "pipeline": 54,
+      "producer": 101,
+      "passed": 155
+    }
+  },
+  "typecheck": "passed",
+  "scoped_lint": "passed",
+  "scoped_diff_check": "passed",
+  "patch_check": "passed",
+  "final_integrity_at": "2026-10-22T12:46:03.144501+00:00",
+  "other_original_audit_files_unchanged": 11,
+  "branch": "octoberBranch",
+  "final_observed_head": "d3f057c6c849d5d5474bc912a6f461f617c65b15",
+  "head_changed_by_another_task": true
+}

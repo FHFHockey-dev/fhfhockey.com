@@ -1,0 +1,15 @@
+{
+  "kind": "explicit_user_confirmation_via_trusted_parent_delegation",
+  "confirmedAt": "2026-10-20T22:58:26Z",
+  "userReply": "yes",
+  "scope": "One previously denied sealed S06 Responses operation only; same payload, destination and model; no retries after dispatch or extra calls.",
+  "destination": "https://api.openai.com/v1/responses",
+  "model": "gpt-6-luna",
+  "wireSha256": "3f30779c9e886822373e491404a26d49e87edca98799abdd1a4676664988127f",
+  "manifestSha256": "1bf7243e870dd0a7c82f5883e4e5fcd7657384685759b18fe54d83db88edba08",
+  "maximumReservationNanoUsd": 231844800,
+  "existingAggregateCapNanoUsd": 520000000,
+  "newAllowance": false,
+  "priorDeniedProcessConfirmedNotExecuted": true,
+  "admissionRetryUnderNewEvidence": 1
+}

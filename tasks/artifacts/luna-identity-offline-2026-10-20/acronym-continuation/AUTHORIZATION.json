@@ -1,0 +1,12 @@
+{
+  "scope": "User authorized generic acronym correction and exactly one bounded S06 Responses request after review, same total cap; no retries, paid widening, fan-out, alias writes or publication.",
+  "attemptId": "identity-s06-shadow-v1-0",
+  "maxRequests": 1,
+  "capNanoUsd": 520000000,
+  "reserveNanoUsd": 231844800,
+  "baselineLedgerSha256": "52d4848b5a9eb1a91b3ddfd9928625951fe2da81814669d41bdbd08a261c9b5c",
+  "baselineFingerprint": "3dc641c1be6fd951a97edf05c6871dbee7beb5aaa2a829b723f37eda75c78245",
+  "baselineExposureNanoUsd": 262177193,
+  "wireSha256": "3f30779c9e886822373e491404a26d49e87edca98799abdd1a4676664988127f",
+  "preserveOriginalUnknown": true
+}

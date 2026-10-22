@@ -1,0 +1,1149 @@
+--- a/web/lib/stats/percentUnits.ts
++++ b/web/lib/stats/percentUnits.ts
+@@ -36,7 +36,7 @@
+   return numerator / denominator;
+ }
+ 
+-/** Sums one field across rows; null when no row carries a finite value. */
++/** Full-sample sum: null for an empty sample or any missing/nonfinite value. */
+ export function sumField<T>(
+   rows: readonly T[],
+   read: (row: T) => number | null | undefined
+@@ -44,7 +44,8 @@
+   let total: number | null = null;
+   for (const row of rows) {
+     const value = read(row);
+-    if (isFiniteNumber(value)) total = (total ?? 0) + value;
++    if (!isFiniteNumber(value)) return null;
++    total = (total ?? 0) + value;
+   }
+   return total;
+ }
+@@ -81,7 +82,7 @@
+ }
+ 
+ export interface NstTeamShareAggregate {
+-  games: number;
++  games: number | null;
+   toiSeconds: number | null;
+   goalsFor: number | null;
+   goalsAgainst: number | null;
+@@ -99,16 +100,19 @@
+ 
+ /**
+  * Aggregates NST team rows with matching numerators and exposure
+- * (ratio of sums), never a mean of per-row percentages. Rows without games
+- * played are excluded.
++ * (ratio of sums), never a mean of per-row percentages. Known zero-game rows
++ * are excluded; unknown game exposure invalidates the sample. Each metric
++ * requires all of its count fields across that same sample.
+  */
+ export function aggregateNstTeamCounts(
+   rows: readonly NstTeamCountRow[]
+ ): NstTeamShareAggregate {
+-  const played = rows.filter((row) => isFiniteNumber(row.gp) && row.gp > 0);
+-  const games = played.reduce((total, row) => total + (row.gp as number), 0);
++  const played = rows.filter((row) => row.gp !== 0);
++  const games = played.length === 0 ? 0 : sumField(played, (row) =>
++    isFiniteNumber(row.gp) && row.gp > 0 ? row.gp : null
++  );
+   const sum = (key: keyof NstTeamCountRow) =>
+-    sumField(played, (row) => row[key]);
++    games === null ? null : sumField(played, (row) => row[key]);
+ 
+   const goalsFor = sum("gf");
+   const goalsAgainst = sum("ga");
+@@ -132,8 +136,8 @@
+     savePct,
+     pdo:
+       shootingPct === null || savePct === null ? null : shootingPct + savePct,
+-    xgfPerGame: games > 0 ? ratio(xgf, games) : null,
+-    xgaPerGame: games > 0 ? ratio(xga, games) : null
++    xgfPerGame: ratio(xgf, games),
++    xgaPerGame: ratio(xga, games)
+   };
+ }
+ 
+@@ -157,14 +161,14 @@
+   faceoffs_lost?: number | null;
+ }
+ 
+-/** Ratio-of-sums totals over WGO team game rows; rows without games are excluded. */
++/** Full-sample totals over WGO game rows; only known zero-game rows are excluded. */
+ export function aggregateWgoTeamGames(rows: readonly WgoTeamGameRow[]) {
+-  const played = rows.filter(
+-    (row) => isFiniteNumber(row.games_played) && row.games_played > 0
+-  );
+-  const games = played.reduce((total, row) => total + (row.games_played ?? 0), 0);
++  const played = rows.filter((row) => row.games_played !== 0);
++  const games = played.length === 0 ? 0 : sumField(played, (row) =>
++    isFiniteNumber(row.games_played) && row.games_played > 0 ? row.games_played : null
++  );
+   const sum = (read: (row: WgoTeamGameRow) => number | null | undefined) =>
+-    sumField(played, read);
++    games === null ? null : sumField(played, read);
+   const perGameTotal = (read: (row: WgoTeamGameRow) => number | null | undefined) =>
+     sum((row) => {
+       const value = read(row);
+@@ -194,7 +198,7 @@
+       shotsFor === null || shotsAgainst === null ? null : shotsFor - shotsAgainst,
+     powerPlayPct: ratio(ppGoalsFor, ppOpportunities),
+     penaltyKillPct: pkGoalsAgainstRate === null ? null : 1 - pkGoalsAgainstRate,
+-    ppOpportunitiesPerGame: games > 0 ? ratio(ppOpportunities, games) : null,
++    ppOpportunitiesPerGame: ratio(ppOpportunities, games),
+     ppGoalsFor,
+     ppGoalsAgainst,
+     shGoalsFor: sum((row) => row.sh_goals_for),
+--- a/web/lib/stats/percentUnits.test.ts
++++ b/web/lib/stats/percentUnits.test.ts
+@@ -1,10 +1,14 @@
+ import { describe, expect, it } from "vitest";
+ import {
+   aggregateNstTeamCounts,
++  aggregateWgoTeamGames,
+   formatFractionPercent,
+   ratio,
+   shareOfSums,
+-  toFraction
++  sumField,
++  toFraction,
++  type NstTeamCountRow,
++  type WgoTeamGameRow
+ } from "./percentUnits";
+ 
+ describe("declared percentage units", () => {
+@@ -37,6 +41,93 @@
+     expect(ratio(null, 10)).toBeNull();
+     expect(shareOfSums(0, 0)).toBeNull();
+     expect(shareOfSums(0, 10)).toBe(0);
++  });
++});
++
++describe("full-window count completeness", () => {
++  const nst: NstTeamCountRow = {
++    gp: 1, toi: 3000, cf: 10, ca: 20, xgf: 1, xga: 2,
++    hdcf: 3, hdca: 4, scf: 5, sca: 6, gf: 0, ga: 1, sf: 10, sa: 20
++  };
++  const wgo: WgoTeamGameRow = {
++    games_played: 1, shots_for_per_game: 30, shots_against_per_game: 20,
++    power_play_goals_for: 1, pp_opportunities: 5, pp_goals_against: 1,
++    times_shorthanded: 4, sh_goals_for: 0, sh_goals_against: 0,
++    faceoffs_won: 10, faceoffs_lost: 20
++  };
++
++  it("does not silently sum a partial field", () => {
++    expect(sumField([1, null, 2], (value) => value)).toBeNull();
++    expect(sumField([1, undefined, 2], (value) => value)).toBeNull();
++    expect(sumField([1, NaN, 2], (value) => value)).toBeNull();
++    expect(sumField([0, 0], (value) => value)).toBe(0);
++    expect(sumField([], (value: number) => value)).toBeNull();
++  });
++
++  it.each([
++    ["cf", "cfPct"], ["ca", "cfPct"], ["xgf", "xgfPct"], ["xga", "xgfPct"],
++    ["hdcf", "hdcfPct"], ["hdca", "hdcfPct"], ["scf", "scfPct"], ["sca", "scfPct"],
++    ["gf", "shootingPct"], ["sf", "shootingPct"], ["ga", "savePct"], ["sa", "savePct"],
++    ["xgf", "xgfPerGame"], ["xga", "xgaPerGame"], ["toi", "toiSeconds"]
++  ] as const)("keeps asymmetric NST %s missingness unknown in %s", (field, metric) => {
++    const totals = aggregateNstTeamCounts([nst, { ...nst, [field]: null }]);
++    expect(totals[metric]).toBeNull();
++    expect(totals.games).toBe(2);
++  });
++
++  it.each([
++    ["power_play_goals_for", "powerPlayPct"], ["pp_opportunities", "powerPlayPct"],
++    ["pp_goals_against", "penaltyKillPct"], ["times_shorthanded", "penaltyKillPct"],
++    ["faceoffs_won", "faceoffWinPct"], ["faceoffs_lost", "faceoffWinPct"],
++    ["shots_for_per_game", "shotsFor"], ["shots_against_per_game", "shotsAgainst"],
++    ["pp_opportunities", "ppOpportunitiesPerGame"], ["sh_goals_for", "shGoalsFor"],
++    ["sh_goals_against", "shGoalsAgainst"]
++  ] as const)("keeps asymmetric WGO %s missingness unknown in %s", (field, metric) => {
++    const totals = aggregateWgoTeamGames([wgo, { ...wgo, [field]: null }]);
++    expect(totals[metric]).toBeNull();
++    expect(totals.games).toBe(2);
++  });
++
++  it.each([null, undefined, NaN, -1])("does not discard unknown game exposure (%s)", (games) => {
++    const nstTotals = aggregateNstTeamCounts([nst, { ...nst, gp: games }]);
++    expect(nstTotals.games).toBeNull();
++    expect(nstTotals.cfPct).toBeNull();
++    expect(nstTotals.xgfPerGame).toBeNull();
++    expect(nstTotals.goalsFor).toBeNull();
++    expect(nstTotals.toiSeconds).toBeNull();
++    const wgoTotals = aggregateWgoTeamGames([wgo, { ...wgo, games_played: games as number | null }]);
++    expect(wgoTotals.games).toBeNull();
++    expect(wgoTotals.powerPlayPct).toBeNull();
++    expect(wgoTotals.shotsFor).toBeNull();
++    expect(wgoTotals.shGoalsFor).toBeNull();
++  });
++
++  it("retains complete metrics and real zeros without inventing missing exposure", () => {
++    const totals = aggregateNstTeamCounts([nst, { ...nst, toi: null }]);
++    expect(totals.toiSeconds).toBeNull();
++    expect(totals.cfPct).toBeCloseTo(1 / 3);
++    expect(totals.goalsFor).toBe(0);
++    expect(totals.shootingPct).toBe(0);
++    expect(totals.xgfPerGame).toBe(1);
++
++    const zeroEvent = { ...wgo, shots_for_per_game: 0, power_play_goals_for: 0, pp_opportunities: 0 };
++    expect(aggregateWgoTeamGames([zeroEvent]).powerPlayPct).toBeNull();
++    const combined = aggregateWgoTeamGames([zeroEvent, wgo, { games_played: 0 }]);
++    expect(combined.games).toBe(2);
++    expect(combined.powerPlayPct).toBeCloseTo(1 / 5);
++    expect(combined.shotsFor).toBe(15);
++    expect(combined.shGoalsFor).toBe(0);
++    expect(aggregateWgoTeamGames([]).games).toBe(0);
++  });
++
++  it("does not combine complementary missing sides or publish derived partial metrics", () => {
++    const nstTotals = aggregateNstTeamCounts([{ ...nst, gf: null }, { ...nst, sf: null }]);
++    expect(nstTotals.shootingPct).toBeNull();
++    expect(nstTotals.pdo).toBeNull();
++    const wgoTotals = aggregateWgoTeamGames([{ ...wgo, shots_for_per_game: null }, wgo]);
++    expect(wgoTotals.shotsFor).toBeNull();
++    expect(wgoTotals.shotsAgainst).toBe(20);
++    expect(wgoTotals.shotDifferential).toBeNull();
+   });
+ });
+ 
+--- a/web/components/GoalieShareChart/index.tsx
++++ b/web/components/GoalieShareChart/index.tsx
+@@ -162,6 +162,7 @@
+   const [goalieGames, setGoalieGames] = useState<GoalieGameRow[]>([]);
+   const [selectedSpan, setSelectedSpan] = useState<SpanType>("Season");
+   const [loading, setLoading] = useState<boolean>(true);
++  const [loadError, setLoadError] = useState<string | null>(null);
+   const [selectedTeam, setSelectedTeam] = useState<string>(() => {
+     // Default to first team alphabetically
+     const sortedTeamAbbrevs = Object.keys(teamsInfo).sort();
+@@ -175,7 +176,7 @@
+     if (hasLoggedRateLimit.current) return;
+     hasLoggedRateLimit.current = true;
+     console.warn(
+-      "NHL API rate-limited some requests (429). Showing partial goalie data."
++      "NHL API rate-limited some requests (429). Goalie data is unavailable."
+     );
+   }, []);
+ 
+@@ -183,7 +184,7 @@
+     url: string,
+     context: string,
+     maxAttempts = 2
+-  ): Promise<any | null> => {
++  ): Promise<any> => {
+     let lastError: unknown = null;
+ 
+     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+@@ -215,7 +216,6 @@
+ 
+     if (isRateLimitError(lastError)) {
+       logRateLimitOnce();
+-      return null;
+     }
+     throw lastError;
+   }, [logRateLimitOnce]);
+@@ -251,10 +251,17 @@
+     };
+     const readPage = async (start: number): Promise<{ rows: GoalieGameRow[]; total: number }> => {
+       const response = await fetchJsonWithRetry(pageUrl(start), context);
+-      const payload = response ? unwrapProxyPayload(response, context) : null;
++      const payload = unwrapProxyPayload(response, context);
++      if (!Array.isArray(payload?.data) || !Number.isInteger(payload.total) || payload.total < 0) {
++        throw new Error(`${context}: invalid page metadata`);
++      }
++      const expectedRows = Math.min(GOALIE_GAME_PAGE_SIZE, Math.max(0, payload.total - start));
++      if (payload.data.length !== expectedRows) {
++        throw new Error(`${context}: incomplete page at ${start}`);
++      }
+       return {
+-        rows: Array.isArray(payload?.data) ? payload.data : [],
+-        total: Number(payload?.total) || 0
++        rows: payload.data,
++        total: payload.total
+       };
+     };
+ 
+@@ -268,7 +275,12 @@
+       const pages = await Promise.all(
+         starts.slice(index, index + GOALIE_GAME_PAGE_CONCURRENCY).map(readPage)
+       );
+-      pages.forEach((page) => rows.push(...page.rows));
++      pages.forEach((page) => {
++        if (page.total !== firstPage.total) {
++          throw new Error(`${context}: total changed between pages`);
++        }
++        rows.push(...page.rows);
++      });
+     }
+     setGoalieGames(rows);
+   }, [fetchJsonWithRetry]);
+@@ -305,6 +317,8 @@
+       try {
+         await fetchGoalieGames(seasonId);
+       } catch (error) {
++        setGoalieGames([]);
++        setLoadError("Goalie data is unavailable because the complete season could not be loaded.");
+         if (!isRateLimitError(error)) {
+           console.error("Error fetching goalie game data:", error);
+         }
+@@ -616,6 +630,8 @@
+ 
+       {loading ? (
+         <div className={styles.loadingMessage}>Loading goalie data...</div>
++      ) : loadError ? (
++        <div className={styles.noDataMessage} role="alert">{loadError}</div>
+       ) : (
+         <>
+           {Object.keys(goalieStats).length > 0 ? (
+--- /dev/null
++++ b/web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx
+@@ -0,0 +1,162 @@
++import React from "react";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
++
++const mocks = vi.hoisted(() => ({ fetch: vi.fn() }));
++vi.mock("lib/cors-fetch", () => ({ default: mocks.fetch }));
++vi.mock("react-chartjs-2", () => ({
++  Doughnut: ({ data }: any) => <pre data-testid="chart">{JSON.stringify(data)}</pre>
++}));
++
++import GoalieShareChart, { type GoalieGameRow } from "./index";
++
++const rows: GoalieGameRow[] = Array.from({ length: 250 }, (_, index) => ({
++  gameId: index + 1,
++  gameDate: new Date(Date.UTC(2025, 9, 1 + index)).toISOString().slice(0, 10),
++  teamAbbrev: "PHI",
++  playerId: index < 200 ? 1 : 2,
++  goalieFullName: index < 200 ? "Starter One" : "Backup Two",
++  gamesPlayed: 1,
++  wins: 0,
++  losses: 0,
++  otLosses: 0,
++  saves: 27,
++  shotsAgainst: 30,
++  goalsAgainst: 3,
++  timeOnIce: 3600
++}));
++
++const response = (data: unknown, status = 200) => ({
++  ok: status === 200,
++  status,
++  json: async () => data
++});
++
++function mockPages(page: (start: number) => ReturnType<typeof response>) {
++  mocks.fetch.mockImplementation(async (url: string) => {
++    const parsed = new URL(url);
++    return parsed.pathname.endsWith("/season")
++      ? response({ data: [{ id: 20252026 }] })
++      : page(Number(parsed.searchParams.get("start")));
++  });
++}
++
++const completePage = (start: number) =>
++  response({ total: rows.length, data: rows.slice(start, start + 100) });
++
++async function finishRequests() {
++  await act(async () => { await vi.advanceTimersByTimeAsync(2500); });
++}
++
++beforeEach(() => {
++  vi.useFakeTimers();
++  vi.spyOn(console, "warn").mockImplementation(() => {});
++  vi.spyOn(console, "error").mockImplementation(() => {});
++});
++
++afterEach(() => {
++  cleanup();
++  vi.useRealTimers();
++  vi.restoreAllMocks();
++  vi.resetAllMocks();
++});
++
++describe("GoalieShareChart complete page sets", () => {
++  it.each([0, 100, 200])("withholds every window after repeated 429s at offset %i", async (failedStart) => {
++    mockPages((start) => start === failedStart ? response({}, 429) : completePage(start));
++    render(<GoalieShareChart />);
++    await finishRequests();
++
++    expect(screen.queryAllByTestId("chart")).toHaveLength(0);
++    expect(screen.getByRole("alert").textContent).toMatch(/unavailable|incomplete/i);
++    const failedCalls = mocks.fetch.mock.calls.filter(([url]) =>
++      new URL(url).searchParams.get("start") === String(failedStart));
++    expect(failedCalls).toHaveLength(2);
++
++    const calls = mocks.fetch.mock.calls.length;
++    for (const span of ["L10", "L20", "L30", "Season"]) {
++      fireEvent.click(screen.getByRole("button", { name: span }));
++      expect(screen.queryAllByTestId("chart")).toHaveLength(0);
++    }
++    expect(mocks.fetch).toHaveBeenCalledTimes(calls);
++  });
++
++  it.each([0, 100, 200])("rejects a successful but short page at offset %i", async (shortStart) => {
++    mockPages((start) => start === shortStart
++      ? response({ total: rows.length, data: rows.slice(start, start + 1) })
++      : completePage(start));
++    render(<GoalieShareChart />);
++    await finishRequests();
++    expect(screen.queryAllByTestId("chart")).toHaveLength(0);
++    expect(screen.getByRole("alert").textContent).toMatch(/unavailable|incomplete/i);
++  });
++
++  it.each([
++    { data: rows.slice(0, 100) },
++    { total: 250, data: null },
++    { total: -1, data: [] }
++  ])("rejects invalid completeness metadata: %j", async (payload) => {
++    mockPages(() => response(payload));
++    render(<GoalieShareChart />);
++    await finishRequests();
++    expect(screen.queryAllByTestId("chart")).toHaveLength(0);
++    expect(screen.getByRole("alert")).toBeTruthy();
++  });
++
++  it("rejects totals that change between pages", async () => {
++    mockPages((start) => start === 100
++      ? response({ total: 300, data: rows.slice(100, 200) })
++      : completePage(start));
++    render(<GoalieShareChart />);
++    await finishRequests();
++    expect(screen.queryAllByTestId("chart")).toHaveLength(0);
++    expect(screen.getByRole("alert")).toBeTruthy();
++  });
++
++  it("recovers within the retry budget and re-slices complete data without fetching", async () => {
++    let attempts = 0;
++    mockPages((start) => start === 100 && attempts++ === 0
++      ? response({}, 429)
++      : completePage(start));
++    render(<GoalieShareChart />);
++    await finishRequests();
++    expect(screen.queryByRole("alert")).toBeNull();
++    expect(JSON.parse(screen.getByTestId("chart").textContent!).datasets[0].data).toEqual([200, 50]);
++    const calls = mocks.fetch.mock.calls.length;
++    fireEvent.click(screen.getByRole("button", { name: "L10" }));
++    expect(JSON.parse(screen.getByTestId("chart").textContent!).datasets[0].data).toEqual([10]);
++    expect(mocks.fetch).toHaveBeenCalledTimes(calls);
++  });
++
++  it("keeps a verified empty season distinct from a failed page", async () => {
++    mockPages(() => response({ total: 0, data: [] }));
++    render(<GoalieShareChart />);
++    await finishRequests();
++    expect(screen.queryByRole("alert")).toBeNull();
++    expect(screen.getByText(/No goalie data available/)).toBeTruthy();
++    expect(mocks.fetch).toHaveBeenCalledTimes(2);
++  });
++
++  it("keeps page concurrency bounded at eight", async () => {
++    let active = 0;
++    let maximum = 0;
++    mocks.fetch.mockImplementation(async (url: string) => {
++      const parsed = new URL(url);
++      if (parsed.pathname.endsWith("/season")) return response({ data: [{ id: 20252026 }] });
++      const start = Number(parsed.searchParams.get("start"));
++      active++;
++      maximum = Math.max(maximum, active);
++      await new Promise((resolve) => setTimeout(resolve, 10));
++      active--;
++      return response({
++        total: 1000,
++        data: Array.from({ length: 100 }, (_, index) => ({ ...rows[0], gameId: start + index + 1 }))
++      });
++    });
++    render(<GoalieShareChart />);
++    await finishRequests();
++    expect(maximum).toBe(8);
++    expect(mocks.fetch).toHaveBeenCalledTimes(11);
++    expect(screen.getAllByTestId("chart")).toHaveLength(1);
++  });
++});
+--- a/web/hooks/useShotData.ts
++++ b/web/hooks/useShotData.ts
+@@ -60,16 +60,21 @@
+   const [isLoading, setIsLoading] = useState<boolean>(true);
+   const [error, setError] = useState<Error | null>(null);
+   const loadedKey = useRef<string | null>(null);
++  const filterKey = JSON.stringify({
++    eventTypes: filters.eventTypes,
++    gameTypes: filters.gameTypes
++  });
++  const requestKey = JSON.stringify([teamId, season, filterKey]);
+ 
+   useEffect(() => {
+-    const requestKey = JSON.stringify([
+-      teamId,
+-      season,
+-      filters.eventTypes,
+-      filters.gameTypes
+-    ]);
++    let active = true;
++    const requestFilters: ShotDataFilters = JSON.parse(filterKey);
++    setError(null);
+     // Keep already-loaded data when the tab is hidden and shown again.
+-    if (!enabled || loadedKey.current === requestKey) return;
++    if (!enabled || loadedKey.current === requestKey) {
++      setIsLoading(false);
++      return;
++    }
+ 
+     console.log("useShotData called with teamId:", teamId, "season:", season);
+     if (!teamId || !season) {
+@@ -87,12 +92,13 @@
+ 
+         // Initialize game type filter condition
+         const gameTypeFilters =
+-          filters.gameTypes?.map((gameType) => {
++          requestFilters.gameTypes?.map((gameType) => {
+             const seasonStart = season!.substring(0, 4);
+             return `id.like.${seasonStart}${gameType}%`;
+           }) || [];
+ 
+         const games = await fetchAllSupabasePages<any>(({ from, to }) => {
++          if (!active) return Promise.resolve({ data: [], error: null });
+           let gamesQuery = supabase
+             .from("pbp_games")
+             .select("id, hometeamid, awayteamid")
+@@ -104,6 +110,7 @@
+ 
+           return gamesQuery.range(from, to) as any;
+         }, { pageSize: PAGE_SIZE });
++        if (!active) return;
+ 
+         console.log("Fetched games for team", teamId, ":", games.length);
+ 
+@@ -150,6 +157,7 @@
+         // Process each chunk of game IDs
+         for (const gameIdChunk of gameIdChunks) {
+           const events = await fetchAllSupabasePages<any>(({ from, to }) => {
++            if (!active) return Promise.resolve({ data: [], error: null });
+             let eventsQuery = supabase
+               .from("pbp_plays")
+               .select(
+@@ -160,12 +168,13 @@
+             // Don't filter out shots without coordinates initially
+             // We'll normalize them later in the processing step
+ 
+-            if (filters.eventTypes && filters.eventTypes.length > 0) {
+-              eventsQuery = eventsQuery.in("typedesckey", filters.eventTypes);
++            if (requestFilters.eventTypes && requestFilters.eventTypes.length > 0) {
++              eventsQuery = eventsQuery.in("typedesckey", requestFilters.eventTypes);
+             }
+ 
+             return eventsQuery.range(from, to) as any;
+           }, { pageSize: PAGE_SIZE });
++          if (!active) return;
+ 
+           if (events.length > 0) {
+             console.log("All events count:", events.length);
+@@ -250,15 +259,22 @@
+         setOpponentShotData(allOpponentShots);
+         loadedKey.current = requestKey;
+       } catch (err) {
++        if (!active) return;
+         setError(err instanceof Error ? err : new Error(String(err)));
+         console.error("Error fetching shot data:", err);
+       } finally {
+-        setIsLoading(false);
++        if (active) setIsLoading(false);
+       }
+     }
+ 
+     fetchTeamShotData();
+-  }, [teamId, season, filters.eventTypes, filters.gameTypes, enabled]);
+-
+-  return { shotData, opponentShotData, isLoading, error };
++    return () => { active = false; };
++  }, [teamId, season, filterKey, requestKey, enabled]);
++
++  return {
++    shotData: loadedKey.current === requestKey ? shotData : [],
++    opponentShotData: loadedKey.current === requestKey ? opponentShotData : [],
++    isLoading,
++    error
++  };
+ }
+--- /dev/null
++++ b/web/hooks/useShotData.test.tsx
+@@ -0,0 +1,152 @@
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { act, cleanup, renderHook } from "@testing-library/react";
++
++const mocks = vi.hoisted(() => ({ pages: vi.fn() }));
++vi.mock("lib/supabase", () => ({
++  default: { from: () => { throw new Error("Unexpected unmocked query"); } }
++}));
++vi.mock("lib/supabase/pagination", () => ({ fetchAllSupabasePages: mocks.pages }));
++
++import { useShotData } from "./useShotData";
++
++function deferred<T>() {
++  let resolve!: (value: T) => void;
++  let reject!: (error: Error) => void;
++  const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; });
++  return { promise, resolve, reject };
++}
++
++const games = (team: number) => [{ id: team, hometeamid: team, awayteamid: 99 }];
++const shots = (team: number, type = "goal") => [
++  { gameid: team, eventownerteamid: team, xcoord: 10, ycoord: 5, typedesckey: type },
++  { gameid: team, eventownerteamid: 99, xcoord: -10, ycoord: 5, typedesckey: type }
++];
++const filters = { eventTypes: ["goal"], gameTypes: ["02"] };
++
++async function flush() {
++  await act(async () => { await Promise.resolve(); });
++}
++
++beforeEach(() => {
++  vi.spyOn(console, "log").mockImplementation(() => {});
++  vi.spyOn(console, "error").mockImplementation(() => {});
++});
++afterEach(() => {
++  cleanup();
++  vi.restoreAllMocks();
++  vi.resetAllMocks();
++});
++
++describe("useShotData request ownership", () => {
++  it.each(["games", "shots"])("keeps cached A after A → B → A while B %s are pending", async (stage) => {
++    const pending = deferred<any[]>();
++    mocks.pages.mockResolvedValueOnce(games(1)).mockResolvedValueOnce(shots(1));
++    const { result, rerender } = renderHook(({ team }) => useShotData(team, "20262027", filters), {
++      initialProps: { team: 1 }
++    });
++    await flush();
++    expect(result.current.shotData[0].eventownerteamid).toBe(1);
++
++    if (stage === "shots") mocks.pages.mockResolvedValueOnce(games(2));
++    mocks.pages.mockReturnValueOnce(pending.promise);
++    rerender({ team: 2 });
++    await flush();
++    expect(result.current.shotData).toEqual([]);
++    rerender({ team: 1 });
++    expect(result.current.isLoading).toBe(false);
++    expect(result.current.shotData[0].eventownerteamid).toBe(1);
++    await act(async () => { pending.resolve(stage === "games" ? games(2) : shots(2)); });
++
++    expect(result.current.shotData[0].eventownerteamid).toBe(1);
++    expect(result.current.opponentShotData[0].eventownerteamid).toBe(99);
++    expect(result.current.error).toBeNull();
++    expect(result.current.isLoading).toBe(false);
++    expect(mocks.pages).toHaveBeenCalledTimes(stage === "games" ? 3 : 4);
++  });
++
++  it.each(["success", "empty", "error"])("ignores stale %s and finally while the current request is loading", async (outcome) => {
++    const old = deferred<any[]>();
++    const current = deferred<any[]>();
++    mocks.pages.mockReturnValueOnce(old.promise).mockReturnValueOnce(current.promise);
++    const { result, rerender } = renderHook(({ team }) => useShotData(team, "20262027", filters), {
++      initialProps: { team: 1 }
++    });
++    rerender({ team: 2 });
++    await act(async () => {
++      if (outcome === "error") old.reject(new Error("obsolete failure"));
++      else old.resolve(outcome === "empty" ? [] : games(1));
++    });
++    expect(result.current).toMatchObject({ isLoading: true, error: null, shotData: [], opponentShotData: [] });
++    expect(mocks.pages).toHaveBeenCalledTimes(2);
++    await act(async () => { current.resolve([]); });
++    expect(result.current).toMatchObject({ isLoading: false, error: null, shotData: [] });
++  });
++
++  it("defers hidden reads and preserves the loaded key across tab visibility and equal filters", async () => {
++    mocks.pages.mockResolvedValueOnce(games(1)).mockResolvedValueOnce(shots(1));
++    const { result, rerender } = renderHook(({ enabled }) => useShotData(1, "20262027", {
++      eventTypes: ["goal"], gameTypes: ["02"]
++    }, enabled), { initialProps: { enabled: false } });
++    expect(mocks.pages).not.toHaveBeenCalled();
++    rerender({ enabled: true });
++    await flush();
++    expect(result.current.shotData[0].eventownerteamid).toBe(1);
++    rerender({ enabled: false });
++    rerender({ enabled: true });
++    await flush();
++    expect(result.current.isLoading).toBe(false);
++    expect(mocks.pages).toHaveBeenCalledTimes(2);
++  });
++
++  it("retires a pending hidden-tab request and fetches again when shown", async () => {
++    const hidden = deferred<any[]>();
++    mocks.pages.mockResolvedValueOnce(games(1)).mockReturnValueOnce(hidden.promise);
++    const { result, rerender } = renderHook(({ enabled }) => useShotData(1, "20262027", filters, enabled), {
++      initialProps: { enabled: true }
++    });
++    await flush();
++    rerender({ enabled: false });
++    await act(async () => { hidden.resolve(shots(1)); });
++    expect(result.current.shotData).toEqual([]);
++    mocks.pages.mockResolvedValueOnce(games(1)).mockResolvedValueOnce(shots(1));
++    rerender({ enabled: true });
++    await flush();
++    expect(result.current.shotData[0].eventownerteamid).toBe(1);
++    expect(mocks.pages).toHaveBeenCalledTimes(4);
++  });
++
++  it.each(["event", "game", "season"])("owns pending reads by %s filter as well as team", async (changed) => {
++    const old = deferred<any[]>();
++    mocks.pages.mockResolvedValueOnce(games(1)).mockReturnValueOnce(old.promise);
++    const { result, rerender } = renderHook(({ event, game, season }) => useShotData(1, season, {
++      eventTypes: [event], gameTypes: [game]
++    }), { initialProps: { event: "goal", game: "02", season: "20262027" } });
++    await flush();
++    mocks.pages.mockResolvedValueOnce(games(1)).mockResolvedValueOnce(shots(1, "hit"));
++    rerender({
++      event: changed === "event" ? "hit" : "goal",
++      game: changed === "game" ? "03" : "02",
++      season: changed === "season" ? "20252026" : "20262027"
++    });
++    await flush();
++    await act(async () => { old.resolve(shots(1)); });
++    expect(result.current.shotData[0].typedesckey).toBe("hit");
++    expect(result.current.isLoading).toBe(false);
++    expect(result.current.error).toBeNull();
++    expect(mocks.pages).toHaveBeenCalledTimes(4);
++  });
++
++  it("clears the previous error when loading a different key", async () => {
++    mocks.pages.mockRejectedValueOnce(new Error("current failure"));
++    const { result, rerender } = renderHook(({ team }) => useShotData(team, "20262027", filters), {
++      initialProps: { team: 1 }
++    });
++    await flush();
++    expect(result.current.error?.message).toBe("current failure");
++    mocks.pages.mockResolvedValueOnce([]);
++    rerender({ team: 2 });
++    await flush();
++    expect(result.current.error).toBeNull();
++    expect(result.current.isLoading).toBe(false);
++  });
++});
+--- a/web/components/GameStateAnalysis/GameStateAnalysis.tsx
++++ b/web/components/GameStateAnalysis/GameStateAnalysis.tsx
+@@ -37,7 +37,7 @@
+   goalsAgainst: number | null;
+   pdo: number | null;
+   toiSeconds: number | null;
+-  games: number;
++  games: number | null;
+   note: string;
+ }
+ 
+@@ -75,7 +75,9 @@
+     toiSeconds: totals.toiSeconds,
+     games: totals.games,
+     note:
+-      totals.games > 0
++      totals.games === null
++        ? "Incomplete game sample · Natural Stat Trick"
++        : totals.games > 0
+         ? `Regular season · ${gamesLabel(totals.games)} · Natural Stat Trick`
+         : "No games in sample"
+   };
+--- a/web/components/GameStateAnalysis/GameStateAnalysis.test.tsx
++++ b/web/components/GameStateAnalysis/GameStateAnalysis.test.tsx
+@@ -92,6 +92,15 @@
+ });
+ 
+ describe("situation cards", () => {
++  it("keeps an incomplete strength sample unknown", () => {
++    const card = buildStrengthCard("5v5", "5v5", [strengthRow(), strengthRow({ gp: null })]);
++    expect(card.games).toBeNull();
++    expect(card.attemptsPct).toBeNull();
++    expect(card.goalsFor).toBeNull();
++    expect(card.toiSeconds).toBeNull();
++    expect(card.note).toBe("Incomplete game sample · Natural Stat Trick");
++  });
++
+   it("never labels shot-attempt shares as xGF", () => {
+     const card = buildScoreStateCard(
+       "leading",
+--- a/web/components/TeamDashboard/AdvancedL10Metrics.tsx
++++ b/web/components/TeamDashboard/AdvancedL10Metrics.tsx
+@@ -32,9 +32,9 @@
+   pdo: number | null;
+   homeRecord: string;
+   roadRecord: string;
+-  teamGames: number;
++  teamGames: number | null;
+   teamThroughDate: string | null;
+-  advancedGames: number;
++  advancedGames: number | null;
+   advancedThroughDate: string | null;
+ }
+ 
+@@ -227,16 +227,16 @@
+           const l5Team = aggregateWgoTeamGames(teamGames.slice(0, 5));
+           const l5Advanced = aggregateNstTeamCounts(advancedGames.slice(0, 5));
+           const trends = [
+-            l5Team.games >= 5
++            l5Team.games !== null && l5Team.games >= 5
+               ? compareTrend("Shots For/Game", l5Team.shotsFor, l10Team.shotsFor, 1)
+               : null,
+-            l5Team.games >= 5
++            l5Team.games !== null && l5Team.games >= 5
+               ? compareTrend("Power Play %", l5Team.powerPlayPct, l10Team.powerPlayPct, 100)
+               : null,
+-            l5Team.games >= 5
++            l5Team.games !== null && l5Team.games >= 5
+               ? compareTrend("Penalty Kill %", l5Team.penaltyKillPct, l10Team.penaltyKillPct, 100)
+               : null,
+-            l5Advanced.games >= 5
++            l5Advanced.games !== null && l5Advanced.games >= 5
+               ? compareTrend("Corsi For %", l5Advanced.cfPct, l10Advanced.cfPct, 100)
+               : null
+           ].filter((trend): trend is TrendData => trend !== null);
+@@ -285,8 +285,10 @@
+     }
+   };
+ 
+-  const sampleNote = (games: number, throughDate: string | null) =>
+-    games > 0
++  const sampleNote = (games: number | null, throughDate: string | null) =>
++    games === null
++      ? "Incomplete game sample"
++      : games > 0
+       ? `Last ${games} game${games === 1 ? "" : "s"} through ${throughDate}`
+       : "No games in sample";
+ 
+--- a/web/components/TeamDashboard/AdvancedL10Metrics.test.tsx
++++ b/web/components/TeamDashboard/AdvancedL10Metrics.test.tsx
+@@ -79,6 +79,33 @@
+ });
+ 
+ describe("AdvancedL10Metrics", () => {
++  it("shows incomplete game exposure separately from zero games", async () => {
++    install({
++      nhl_standings_details: [standings],
++      wgo_team_stats: [wgoRows[0], { ...wgoRows[1], games_played: null }],
++      nst_team_5v5: [nstRows[0], { ...nstRows[1], gp: null }]
++    });
++    render(<AdvancedL10Metrics teamId="4" teamAbbrev="PHI" seasonId="20262027" />);
++    await waitFor(() => expect(screen.getByText("Corsi For %")).toBeTruthy());
++    expect(screen.getAllByText(/Incomplete game sample/)).toHaveLength(3);
++    expect(screen.queryByText("No games in sample")).toBeNull();
++    expect(screen.getAllByText("—").length).toBeGreaterThan(5);
++    expect(screen.queryByText("0.0%")).toBeNull();
++  });
++
++  it("does not render precise rates from asymmetric missing counts", async () => {
++    install({
++      nhl_standings_details: [standings],
++      wgo_team_stats: [wgoRows[0], { ...wgoRows[1], power_play_goals_for: null, shots_for_per_game: null }],
++      nst_team_5v5: [nstRows[0], { ...nstRows[1], ca: null }]
++    });
++    render(<AdvancedL10Metrics teamId="4" teamAbbrev="PHI" seasonId="20262027" />);
++    await waitFor(() => expect(screen.getByText("Corsi For %")).toBeTruthy());
++    for (const label of ["Corsi For %", "Power Play", "Shots For/GP"]) {
++      expect(screen.getByText(label).parentElement?.textContent).toContain("—");
++    }
++  });
++
+   it("shows L10 shares from summed counts with fraction thresholds", async () => {
+     const queries = install({
+       nhl_standings_details: [standings],
+--- a/web/components/TeamDashboard/TeamDashboard.tsx
++++ b/web/components/TeamDashboard/TeamDashboard.tsx
+@@ -103,8 +103,8 @@
+   goals_against_l10: number;
+   shots_for_l10: number;
+   shots_against_l10: number;
+-  pp_pct_l10: number;
+-  pk_pct_l10: number;
++  pp_pct_l10: number | null;
++  pk_pct_l10: number | null;
+ }
+ 
+ interface LeagueRankings {
+@@ -263,7 +263,7 @@
+   const [goaltendingLoading, setGoaltendingLoading] = useState(true);
+   const [rankingsLoading, setRankingsLoading] = useState(true);
+   const [error, setError] = useState<string | null>(null);
+-  const [gameRecordsCount, setGameRecordsCount] = useState<number>(0);
++  const [gameRecordsCount, setGameRecordsCount] = useState<number | null>(0);
+   const [includePlayoffs, setIncludePlayoffs] = useState<boolean>(false);
+   const [settledRequestIdentity, setSettledRequestIdentity] = useState<
+     string | null
+@@ -494,7 +494,7 @@
+           const season5v5 = aggregateNstTeamCounts(stats5v5);
+           setGameRecordsCount(season5v5.games);
+ 
+-          if (season5v5.games > 0) {
++          if (season5v5.games !== 0) {
+             setTeamStats({
+               cf_pct: season5v5.cfPct,
+               xgf_pct: season5v5.xgfPct,
+@@ -536,10 +536,10 @@
+             shots_against_l10: 0,
+             pp_pct_l10:
+               aggregateWgoTeamGames(specialTeams?.slice(0, 10) ?? [])
+-                .powerPlayPct ?? 0,
++                .powerPlayPct,
+             pk_pct_l10:
+               aggregateWgoTeamGames(specialTeams?.slice(0, 10) ?? [])
+-                .penaltyKillPct ?? 0,
++                .penaltyKillPct,
+           };
+           setRecentPerformance(recent);
+         }
+@@ -787,16 +787,17 @@
+               if (allTeamsSummary && summaryData) {
+                 // Calculate rankings
+                 const calculateRank = (
+-                  value: number,
+-                  allValues: number[],
++                  value: number | null | undefined,
++                  allValues: (number | null | undefined)[],
+                   higherIsBetter: boolean = true,
+                 ) => {
+-                  if (value === null || value === undefined || isNaN(value))
+-                    return 32;
++                  // Zero is the existing unranked sentinel, never a league rank.
++                  if (value === null || value === undefined || !Number.isFinite(value))
++                    return 0;
+                   const validValues = allValues.filter(
+-                    (v) => v !== null && v !== undefined && !isNaN(v),
++                    (v): v is number => typeof v === "number" && Number.isFinite(v),
+                   );
+-                  if (validValues.length === 0) return 32;
++                  if (validValues.length === 0 || validValues.length !== allValues.length) return 0;
+ 
+                   const sortedValues = [...validValues].sort((a, b) =>
+                     higherIsBetter ? b - a : a - b,
+@@ -888,19 +889,19 @@
+                   // Special teams additional stats
+                   const allPpOpportunities =
+                     allTeamsSpecialTeams?.map(
+-                      (team) => team.pp_opportunities_per_game || 0,
++                      (team) => team.pp_opportunities_per_game,
+                     ) || [];
+                   const allPpGoalsFor =
+                     allTeamsSpecialTeams?.map(
+-                      (team) => team.power_play_goals_for || 0,
++                      (team) => team.power_play_goals_for,
+                     ) || [];
+                   const allPpGoalsAgainst =
+                     allTeamsSpecialTeams?.map(
+-                      (team) => team.pp_goals_against || 0,
++                      (team) => team.pp_goals_against,
+                     ) || [];
+                   const allShGoalsFor =
+                     allTeamsSpecialTeams?.map(
+-                      (team) => team.sh_goals_for || 0,
++                      (team) => team.sh_goals_for,
+                     ) || [];
+ 
+                   // Calculate home/road/L10 rankings
+@@ -974,75 +975,75 @@
+                     );
+ 
+                     const allCfPct = latestAdvancedStats.map(
+-                      (team) => team.cf_pct || 0,
++                      (team) => team.cf_pct,
+                     );
+                     const allXgfPct = latestAdvancedStats.map(
+-                      (team) => team.xgf_pct || 0,
++                      (team) => team.xgf_pct,
+                     );
+                     const allPdo = latestAdvancedStats.map(
+-                      (team) => team.pdo || 0,
++                      (team) => team.pdo,
+                     );
+                     const allHdcfPct = latestAdvancedStats.map(
+-                      (team) => team.hdcf_pct || 0,
++                      (team) => team.hdcf_pct,
+                     );
+                     const allScfPct = latestAdvancedStats.map(
+-                      (team) => team.scf_pct || 0,
++                      (team) => team.scf_pct,
+                     );
+                     const allSavePct = latestAdvancedStats.map(
+-                      (team) => team.sv_pct || 0,
++                      (team) => team.sv_pct,
+                     );
+                     const allShootingPct = latestAdvancedStats.map(
+-                      (team) => team.sh_pct || 0,
++                      (team) => team.sh_pct,
+                     );
+                     const allXgf = latestAdvancedStats.map(
+-                      (team) => team.xgf || 0,
++                      (team) => team.xgf,
+                     );
+                     const allXga = latestAdvancedStats.map(
+-                      (team) => team.xga || 0,
++                      (team) => team.xga,
+                     );
+ 
+                     cfPctRank = calculateRank(
+-                      currentTeamAdvanced.cf_pct || 0,
++                      currentTeamAdvanced.cf_pct,
+                       allCfPct,
+                       true,
+                     );
+                     xgfPctRank = calculateRank(
+-                      currentTeamAdvanced.xgf_pct || 0,
++                      currentTeamAdvanced.xgf_pct,
+                       allXgfPct,
+                       true,
+                     );
+                     pdoRank = calculateRank(
+-                      currentTeamAdvanced.pdo || 0,
++                      currentTeamAdvanced.pdo,
+                       allPdo,
+                       true,
+                     );
+                     hdcfPctRank = calculateRank(
+-                      currentTeamAdvanced.hdcf_pct || 0,
++                      currentTeamAdvanced.hdcf_pct,
+                       allHdcfPct,
+                       true,
+                     );
+                     scfPctRank = calculateRank(
+-                      currentTeamAdvanced.scf_pct || 0,
++                      currentTeamAdvanced.scf_pct,
+                       allScfPct,
+                       true,
+                     );
+                     savePct5v5Rank = calculateRank(
+-                      currentTeamAdvanced.sv_pct || 0,
++                      currentTeamAdvanced.sv_pct,
+                       allSavePct,
+                       true,
+                     );
+                     shootingPct5v5Rank = calculateRank(
+-                      currentTeamAdvanced.sh_pct || 0,
++                      currentTeamAdvanced.sh_pct,
+                       allShootingPct,
+                       true,
+                     );
+                     xgfRank = calculateRank(
+-                      currentTeamAdvanced.xgf || 0,
++                      currentTeamAdvanced.xgf,
+                       allXgf,
+                       true,
+                     );
+                     xgaRank = calculateRank(
+-                      currentTeamAdvanced.xga || 0,
++                      currentTeamAdvanced.xga,
+                       allXga,
+                       false,
+                     ); // Lower is better for xGA
+@@ -1106,22 +1107,22 @@
+                     ),
+                     goal_diff_rank: calculateRank(goalDiff, allGoalDiffs, true),
+                     pp_opportunities_rank: calculateRank(
+-                      currentTeamSpecialTeams?.pp_opportunities_per_game || 0,
++                      currentTeamSpecialTeams?.pp_opportunities_per_game,
+                       allPpOpportunities,
+                       true,
+                     ),
+                     pp_goals_for_rank: calculateRank(
+-                      currentTeamSpecialTeams?.power_play_goals_for || 0,
++                      currentTeamSpecialTeams?.power_play_goals_for,
+                       allPpGoalsFor,
+                       true,
+                     ),
+                     pp_goals_against_rank: calculateRank(
+-                      currentTeamSpecialTeams?.pp_goals_against || 0,
++                      currentTeamSpecialTeams?.pp_goals_against,
+                       allPpGoalsAgainst,
+                       false,
+                     ),
+                     sh_goals_for_rank: calculateRank(
+-                      currentTeamSpecialTeams?.sh_goals_for || 0,
++                      currentTeamSpecialTeams?.sh_goals_for,
+                       allShGoalsFor,
+                       true,
+                     ),
+@@ -1248,10 +1249,10 @@
+   };
+ 
+   const formatRank = (rank: number | undefined) =>
+-    rank === undefined ? (rankingsLoading ? "#…" : "#—") : `#${rank}`;
++    rank === undefined ? (rankingsLoading ? "#…" : "#—") : rank > 0 ? `#${rank}` : "#—";
+ 
+   const getRankingColor = (rank: number | undefined) => {
+-    if (rank === undefined) return "";
++    if (rank === undefined || rank <= 0) return "";
+     if (rank <= 10) return styles.excellent;
+     if (rank >= 23) return styles.poor;
+     return styles.average;
+@@ -1292,7 +1293,7 @@
+       xga: leagueRankings.xga_rank,
+     };
+ 
+-    return rankMap[statName] || 16; // Default to middle if stat not found
++    return rankMap[statName] || null;
+   };
+ 
+   if (isLoading || settledRequestIdentity !== requestIdentity) {
+@@ -1835,7 +1836,7 @@
+               Advanced Analytics
+               <span
+                 className={styles.infoIcon}
+-                title={`5v5 ${includePlayoffs ? "season + playoffs" : "regular season"} averages based on ${gameRecordsCount} game records. Data includes: Expected Goals For/Against, Corsi, HDCF, PDO, and shooting percentages at even strength.`}
++                title={`5v5 ${includePlayoffs ? "season + playoffs" : "regular season"} averages ${gameRecordsCount === null ? "unavailable: incomplete game sample" : `based on ${gameRecordsCount} game records`}. Data includes: Expected Goals For/Against, Corsi, HDCF, PDO, and shooting percentages at even strength.`}
+               >
+                 &#9432;
+               </span>
+--- a/web/components/TeamDashboard/TeamDashboard.test.tsx
++++ b/web/components/TeamDashboard/TeamDashboard.test.tsx
+@@ -723,6 +723,56 @@
+     expect(wgo.gt).toHaveBeenCalledWith("games_played", 0);
+   });
+ 
++  it("withholds rates from asymmetric counts and labels unknown game exposure", async () => {
++    useCurrentSeasonQueryMock.mockReturnValue(successfulSeasonQuery({ seasonId: 20252026 }));
++    const summary = teamSummaryFixture();
++    installCompleteRequests({
++      summary: { data: summary, error: null },
++      standings: { data: [standingsFixture()], error: null },
++      stats5v5: {
++        data: [advancedFixture({ cf: 10, ca: 20 }), advancedFixture({ gp: null, cf: 10, ca: 20 })],
++        error: null,
++      },
++      specialTeams: {
++        data: [
++          specialTeamsFixture({ games_played: 1, power_play_goals_for: null, pp_opportunities: 5 }),
++          specialTeamsFixture({ games_played: 1, power_play_goals_for: 1, pp_opportunities: 5 }),
++        ],
++        error: null,
++      },
++      allTeamsSummary: { data: [summary], error: null },
++    });
++    render(<TeamDashboard teamId="22" teamAbbrev="EDM" seasonId="20252026" />);
++    const powerPlay = await screen.findByText("Power Play %");
++    expect(powerPlay.parentElement?.textContent).toContain("N/A");
++    expect(screen.getByTitle(/unavailable: incomplete game sample/)).toBeTruthy();
++    expect(screen.getByText("Corsi For %").parentElement?.textContent).toContain("N/A");
++  });
++
++  it.each(["current", "peer", "none"])("keeps aggregate ranks unknown when %s data is incomplete", async (missing) => {
++    useCurrentSeasonQueryMock.mockReturnValue(successfulSeasonQuery({ seasonId: 20252026 }));
++    const summary = teamSummaryFixture();
++    const currentAdvanced = advancedFixture({ cf: 0, ca: missing === "current" ? null : 20 });
++    const peerAdvanced = advancedFixture({ team_abbreviation: "PHI", cf: 10, ca: missing === "peer" ? null : 20 });
++    const currentSpecial = specialTeamsFixture({ games_played: 1, power_play_goals_for: missing === "current" ? null : 0 });
++    const peerSpecial = specialTeamsFixture({ team_id: 4, games_played: 1, power_play_goals_for: missing === "peer" ? null : 2 });
++    installCompleteRequests({
++      summary: { data: summary, error: null },
++      standings: { data: [standingsFixture()], error: null },
++      stats5v5: { data: [currentAdvanced], error: null },
++      specialTeams: { data: [currentSpecial], error: null },
++      allTeamsSummary: { data: [summary], error: null },
++      allTeamsAdvanced: { data: [currentAdvanced, peerAdvanced], error: null },
++      allTeamsSpecialTeams: { data: [currentSpecial, peerSpecial], error: null },
++    });
++    render(<TeamDashboard teamId="22" teamAbbrev="EDM" seasonId="20252026" />);
++    const corsiRank = await screen.findByText("CF%");
++    const expectedRank = missing === "none" ? "#2" : "#—";
++    expect(corsiRank.parentElement?.textContent).toContain(expectedRank);
++    expect(screen.getByText("PP Goals For").parentElement?.textContent).toContain(expectedRank);
++    expect(screen.getByText("xG%").parentElement?.textContent).toContain("#1");
++  });
++
+   it("renders primary content before league rankings finish", async () => {
+     useCurrentSeasonQueryMock.mockReturnValue(
+       successfulSeasonQuery({

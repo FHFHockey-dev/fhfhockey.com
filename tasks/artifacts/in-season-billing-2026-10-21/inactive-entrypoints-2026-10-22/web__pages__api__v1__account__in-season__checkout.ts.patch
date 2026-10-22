@@ -1,0 +1,43 @@
+--- before/web/pages/api/v1/account/in-season/checkout.ts
++++ after/web/pages/api/v1/account/in-season/checkout.ts
+@@ -4,13 +4,19 @@
+ import { createInSeasonCheckout } from "lib/in-season/billing";
+ import { assertInSeasonSandboxConfiguration, getInSeasonSandboxStripe, MONTHLY_CHECKOUT_BLOCKER } from "lib/in-season/billingConfig";
+ import { inSeasonBillingStore } from "lib/in-season/billingStore";
++import { createMonthlyBilling } from "lib/in-season/monthlyBilling";
++import { monthlyBillingStore } from "lib/in-season/monthlyStore";
++import { monthlyManagementEnabled, monthlySignupAvailability } from "lib/in-season/billingEntryConfig";
+ 
+ export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+   res.setHeader("Cache-Control", "private, no-store");
+   if (req.method === "GET") {
+     let available = false;
+     try { assertInSeasonSandboxConfiguration(); available = true; } catch { /* Disabled until test setup is approved. */ }
+-    return res.status(200).json({ data: { seasonPassAvailable: available, monthlyAvailable: false } });
++    const monthly = available ? monthlySignupAvailability() : null;
++    return res.status(200).json({ data: { seasonPassAvailable: available, monthlyAvailable: monthly?.available === true,
++      monthlyReason: monthly?.reason ?? "disabled", initialMonthlyAmountCents: monthly?.initialAmountCents ?? null,
++      managementAvailable: available && monthlyManagementEnabled() } });
+   }
+   if (req.method !== "POST") { res.setHeader("Allow", "GET, POST"); return res.status(405).end(); }
+   // No external Auth/DB/Stripe calls until isolated sandbox configuration passes.
+@@ -21,12 +27,17 @@
+   const user = await requireApiUser(req, res);
+   if (!user) return;
+   if (!req.body || Object.keys(req.body).some((key) => key !== "plan") || !["season_pass", "monthly"].includes(req.body.plan)) return res.status(400).json({ error: "Choose a valid plan." });
+-  if (req.body.plan === "monthly") return res.status(409).json({ error: MONTHLY_CHECKOUT_BLOCKER });
++  const monthly = req.body.plan === "monthly" ? monthlySignupAvailability() : null;
++  if (monthly && !monthly.available) return res.status(409).json({ error: monthly.reason === "below_verified_minimum"
++    ? "Monthly signup is unavailable because the first charge is below the verified payment minimum. No amount will be rounded up or carried forward."
++    : monthly.reason === "season_ended" ? "Monthly signup has closed for the season." : MONTHLY_CHECKOUT_BLOCKER });
+   try {
+     const access = await loadProviderSyncAccess(user.id);
+     if (typeof access.eligible !== "boolean" || access.reason === "verification_unavailable") return res.status(503).json({ error: "Existing access could not be checked. Please try again." });
+     if (access.eligible) return res.status(409).json({ error: "Premium sync is already active for this account." });
+-    const data = await createInSeasonCheckout({ stripe: getInSeasonSandboxStripe(), store: inSeasonBillingStore(), userId: user.id, origin, plan: req.body.plan });
++    const data = monthly && monthly.minimum
++      ? await createMonthlyBilling({ stripe: getInSeasonSandboxStripe(), store: monthlyBillingStore(), userId: user.id, minimum: monthly.minimum })
++      : await createInSeasonCheckout({ stripe: getInSeasonSandboxStripe(), store: inSeasonBillingStore(), userId: user.id, origin, plan: req.body.plan });
+     return res.status(200).json({ data });
+   } catch { return res.status(503).json({ error: "Checkout could not be started. Please try again." }); }
+ }

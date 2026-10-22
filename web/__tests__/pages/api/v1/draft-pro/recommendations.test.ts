@@ -9,6 +9,7 @@ vi.mock("lib/draft-pro/recommendationsRateLimit", () => ({ consumeRecommendation
 
 import handler, { config } from "../../../../../pages/api/v1/draft-pro/recommendations";
 import { draftProRecommendationsInputSchema } from "../../../../../lib/draft-pro/recommendationsContract";
+import { DraftProRequestError } from "../../../../../lib/draft-pro/requestError";
 
 const response = () => ({ statusCode: 200, body: null as unknown, headers: {} as Record<string, string>, status(code: number) { this.statusCode = code; return this; }, setHeader(name: string, value: string) { this.headers[name] = value; }, json(body: unknown) { this.body = body; return this; } });
 const body = { dataOrigin: "server", leagueType: "points", candidates: [{ id: "1", name: "Player", role: "skater", eligiblePositions: ["C"], globalVorp: 12, rankValue: 8 }] };
@@ -66,6 +67,14 @@ describe("POST /api/v1/draft-pro/recommendations", () => {
     expect(res.body).toEqual({ error: { code: "recommendations_unavailable", message: "Unable to calculate recommendations." } });
   });
 
+  it.each([403, 503, 700, "403"])("sanitizes dependency statusCode %s and backend text", async (statusCode) => {
+    loadAccessMock.mockRejectedValue(Object.assign(new Error("synthetic-private-database-detail"), { statusCode, code: "synthetic-backend-code" }));
+    const res = response();
+    await handler({ method: "POST", body, headers: {} } as any, res as any);
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({ error: { code: "recommendations_unavailable", message: "Unable to calculate recommendations." } });
+  });
+
   it("rejects oversized need records", async () => {
     const res = response();
     const positionNeeds = Object.fromEntries(Array.from({ length: 81 }, (_, index) => [`P${index}`, 1]));
@@ -92,7 +101,7 @@ it("authorizes local calculations through the existing capability guard", async 
   await handler(request as any, res as any);
   expect(res.body).toEqual({ data: { authorized: true } });
   expect(requireCapabilityMock).toHaveBeenCalledWith({}, "recommendations");
-  requireCapabilityMock.mockImplementationOnce(() => { throw Object.assign(new Error("Expired"), { statusCode: 403 }); });
+  requireCapabilityMock.mockImplementationOnce(() => { throw new DraftProRequestError(403, "Expired", "draft_pro_required"); });
   const denied = response();
   await handler(request as any, denied as any);
   expect(denied.statusCode).toBe(403);

@@ -54,7 +54,7 @@ function mockResponse() {
 describe("Yahoo live draft API safeguards", () => {
   it("keeps the board private and enforces entitlement before loading personal data", async () => {
     requireApiUser.mockResolvedValue({ id: "owner" });
-    boardMocks.access.mockResolvedValue({});
+    boardMocks.access.mockResolvedValue({ eligible: false, reason: "no_active_grant" });
     boardMocks.require.mockImplementation(() => { throw Object.assign(new Error("private entitlement detail"), { statusCode: 403 }); });
     const response = mockResponse();
     await boardHandler({ method: "POST", headers: {}, body: {} } as any, response);
@@ -67,7 +67,7 @@ describe("Yahoo live draft API safeguards", () => {
   });
   it("passes the authenticated account to the board loader and rejects injected account identifiers", async () => {
     requireApiUser.mockResolvedValue({ id: "owner" });
-    boardMocks.access.mockResolvedValue({});
+    boardMocks.access.mockResolvedValue({ eligible: true });
     boardMocks.load.mockResolvedValue({ status: "incomplete", limitations: [] });
     const bad = mockResponse();
     await boardHandler({ method: "POST", headers: {}, body: { userId: "another-account" } } as any, bad);
@@ -198,3 +198,5 @@ describe("Yahoo live draft API safeguards", () => {
     expect(response.body).toEqual({ error: "Yahoo live draft request could not be completed.", code: "internal_error" });
   });
 });
+
+vi.mock("lib/in-season/server", () => ({ loadInSeasonAccess: async () => ({ eligible: false, capabilities: [], reason: "no_active_grant" }) }));

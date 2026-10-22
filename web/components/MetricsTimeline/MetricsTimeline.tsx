@@ -35,12 +35,6 @@ type MetricOption = {
   referenceValue?: number;
 };
 
-type XgRow = {
-  game_date: string | null;
-  xg_for: number | null;
-  xg_against: number | null;
-};
-
 const metricOptions: MetricOption[] = [
   {
     key: "pointPct",
@@ -112,25 +106,6 @@ const formatDelta = (
   return `${sign}${delta.toFixed(2)}`;
 };
 
-const normalizeXgRows = (rows: readonly XgRow[]) => {
-  const rowsByDate = new Map<string, { date: string; xgf: number; xga: number }>();
-
-  rows.forEach((row) => {
-    if (!row.game_date || row.xg_for == null || row.xg_against == null) return;
-    const date = row.game_date.slice(0, 10);
-
-    if (!rowsByDate.has(date)) {
-      rowsByDate.set(date, {
-        date,
-        xgf: row.xg_for,
-        xga: row.xg_against,
-      });
-    }
-  });
-
-  return Array.from(rowsByDate.values());
-};
-
 const MetricsTimeline: React.FC<MetricsTimelineProps> = ({
   teamId,
   teamAbbrev,
@@ -139,6 +114,7 @@ const MetricsTimeline: React.FC<MetricsTimelineProps> = ({
   const [rows, setRows] = useState<MetricsTimelinePoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sourceWarnings, setSourceWarnings] = useState<string[]>([]);
   const [selectedMetric, setSelectedMetric] =
     useState<MetricsTimelineMetricKey>("pointPct");
 
@@ -161,12 +137,13 @@ const MetricsTimeline: React.FC<MetricsTimelineProps> = ({
     let isMounted = true;
     setLoading(true);
     setError(null);
+    setSourceWarnings([]);
 
     const fetchMetrics = async () => {
-      const { data: wgoRows, error: wgoError } = await supabase
-        .from("wgo_team_stats")
-        .select(
-          `
+      const [wgoResult, xgResult] = await Promise.allSettled([
+        supabase
+          .from("wgo_team_stats")
+          .select(`
             date,
             points,
             games_played,
@@ -174,48 +151,35 @@ const MetricsTimeline: React.FC<MetricsTimelineProps> = ({
             goals_against_per_game,
             power_play_pct,
             shots_for_per_game
-          `
-        )
-        .eq("team_id", teamIdNumber)
-        .eq("season_id", seasonIdNumber)
-        .order("date", { ascending: true });
-
-      if (wgoError) throw wgoError;
-
-      const { data: approvedXgRows, error: approvedXgError } = await supabase
-        .from("nhl_xg_team_game_aggregates")
-        .select("game_date, xg_for, xg_against")
-        .eq("team_id", teamIdNumber)
-        .eq("season_id", seasonIdNumber)
-        .eq("source_model_approved", true)
-        .order("game_date", { ascending: true })
-        .order("feature_version", { ascending: false })
-        .order("updated_at", { ascending: false });
-
-      if (approvedXgError) throw approvedXgError;
-
-      let xgRows = approvedXgRows ?? [];
-
-      if (xgRows.length === 0) {
-        const { data: fallbackXgRows, error: fallbackXgError } = await supabase
-          .from("nhl_xg_team_game_aggregates")
-          .select("game_date, xg_for, xg_against")
+          `)
           .eq("team_id", teamIdNumber)
           .eq("season_id", seasonIdNumber)
+          .order("date", { ascending: true }),
+        supabase
+          .from("nhl_xg_team_game_aggregates")
+          .select("game_date, game_id, xg_for, xg_against, source_model_approved, source_prediction_type")
+          .eq("team_id", teamIdNumber)
+          .eq("season_id", seasonIdNumber)
+          .eq("source_model_approved", true)
+          .eq("source_prediction_type", "shot_goal")
           .order("game_date", { ascending: true })
           .order("feature_version", { ascending: false })
-          .order("updated_at", { ascending: false });
-
-        if (fallbackXgError) throw fallbackXgError;
-        xgRows = fallbackXgRows ?? [];
-      }
+          .order("updated_at", { ascending: false }),
+      ]);
 
       if (!isMounted) return;
 
+      const wgoUnavailable = wgoResult.status === "rejected" || !!wgoResult.value.error;
+      const xgUnavailable = xgResult.status === "rejected" || !!xgResult.value.error;
+      if (wgoUnavailable && xgUnavailable) throw new Error("Performance data could not be loaded.");
+      setSourceWarnings([
+        ...(wgoUnavailable ? ["WGO metrics could not be loaded."] : []),
+        ...(xgUnavailable ? ["Expected goals could not be loaded."] : []),
+      ]);
       setRows(
         buildMetricsTimelineRows({
-          wgoRows: wgoRows ?? [],
-          underlyingRows: normalizeXgRows(xgRows),
+          wgoRows: wgoResult.status === "fulfilled" && !wgoUnavailable ? wgoResult.value.data ?? [] : [],
+          xgRows: xgResult.status === "fulfilled" && !xgUnavailable ? xgResult.value.data ?? [] : [],
         })
       );
     };
@@ -327,6 +291,7 @@ const MetricsTimeline: React.FC<MetricsTimelineProps> = ({
         <div className={styles.error}>
           <h3>No Data Available</h3>
           <p>No performance data found for this team.</p>
+          {sourceWarnings.map((warning) => <p key={warning} role="status">{warning}</p>)}
         </div>
       </div>
     );
@@ -346,6 +311,8 @@ const MetricsTimeline: React.FC<MetricsTimelineProps> = ({
       <div className={styles.header}>
         <h2>Performance Timeline</h2>
         <p>Track {teamAbbrev} performance metrics over time</p>
+        <p>WGO values describe each dated source sample; expected goals are approved per-game totals.</p>
+        {sourceWarnings.map((warning) => <p key={warning} role="status">{warning}</p>)}
       </div>
 
       <div className={styles.controls}>
@@ -369,14 +336,14 @@ const MetricsTimeline: React.FC<MetricsTimelineProps> = ({
       <div className={styles.timeline}>
         <div className={styles.timelineHeader}>
           <h3>{selectedOption.label}</h3>
-          <span>{rowsWithMetric.length} games with data</span>
+          <span>{rowsWithMetric.length} {rowsWithMetric.length === 1 ? "observation" : "observations"} with data</span>
         </div>
 
         {rowsWithMetric.length > 1 ? (
           <div className={styles.chartShell}>
             <ResponsiveContainer width="100%" height={340}>
               <LineChart
-                data={rowsWithMetric}
+                data={rows}
                 margin={{ top: 16, right: 28, bottom: 8, left: 4 }}
               >
                 <CartesianGrid stroke="rgba(255, 255, 255, 0.08)" />
@@ -415,7 +382,7 @@ const MetricsTimeline: React.FC<MetricsTimelineProps> = ({
                   strokeWidth={3}
                   dot={false}
                   activeDot={{ r: 5, fill: strokeColor, stroke: "#ffffff" }}
-                  connectNulls
+                  connectNulls={false}
                   isAnimationActive={false}
                 />
               </LineChart>
@@ -449,10 +416,10 @@ const MetricsTimeline: React.FC<MetricsTimelineProps> = ({
             >
               {formatDelta(delta, selectedOption)}
             </strong>
-            <span className={styles.summaryMeta}>Change vs 5 games ago</span>
+            <span className={styles.summaryMeta}>Change vs 5 available observations ago</span>
           </div>
           <div className={styles.summaryCard}>
-            <span className={styles.summaryLabel}>Best Game</span>
+            <span className={styles.summaryLabel}>Best Observation</span>
             <strong className={styles.summaryValue}>
               {formatValue(
                 bestRow ? getMetricValue(bestRow, selectedMetric) : null,
@@ -464,14 +431,14 @@ const MetricsTimeline: React.FC<MetricsTimelineProps> = ({
           <div className={styles.summaryCard}>
             <span className={styles.summaryLabel}>Coverage</span>
             <strong className={styles.summaryValue}>{rowsWithMetric.length}</strong>
-            <span className={styles.summaryMeta}>Tracked games</span>
+            <span className={styles.summaryMeta}>Available observations</span>
           </div>
         </div>
       </div>
 
       <div className={styles.tableShell}>
         <div className={styles.tableHeader}>
-          <h3>Recent Games</h3>
+          <h3>Recent Observations</h3>
           <span>{selectedOption.shortLabel} trend sample</span>
         </div>
         <div className={styles.tableScroll}>
@@ -479,19 +446,21 @@ const MetricsTimeline: React.FC<MetricsTimelineProps> = ({
             <thead>
               <tr>
                 <th>Date</th>
+                <th>WGO sample (games)</th>
                 <th>{selectedOption.shortLabel}</th>
                 <th>GF/G</th>
                 <th>GA/G</th>
                 <th>PP%</th>
                 <th>SF/G</th>
-                <th>xGF</th>
-                <th>xGA</th>
+                <th>xGF (game)</th>
+                <th>xGA (game)</th>
               </tr>
             </thead>
             <tbody>
               {recentRows.map((row) => (
                 <tr key={row.date}>
                   <td>{row.date}</td>
+                  <td>{row.wgoGamesPlayed ?? "N/A"}</td>
                   <td>{formatValue(getMetricValue(row, selectedMetric), selectedOption)}</td>
                   <td>
                     {formatValue(

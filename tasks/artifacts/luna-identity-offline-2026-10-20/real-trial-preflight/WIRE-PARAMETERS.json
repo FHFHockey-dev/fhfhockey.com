@@ -1,0 +1,14 @@
+{
+  "max_output_tokens": 1024,
+  "model": "gpt-6-luna",
+  "prompt_cache_options": {
+    "mode": "explicit",
+    "ttl": "30m"
+  },
+  "reasoning": {
+    "effort": "none"
+  },
+  "service_tier": "default",
+  "store": false,
+  "tools": []
+}

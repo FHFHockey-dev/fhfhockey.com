@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "next-bootstrap.d.ts",
+    "yahoo-fantasy.d.ts",
+    "lib/stats/percentUnits.ts",
+    "lib/stats/percentUnits.test.ts",
+    "components/GoalieShareChart/index.tsx",
+    "components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+    "hooks/useShotData.ts",
+    "hooks/useShotData.test.tsx",
+    "components/GameStateAnalysis/GameStateAnalysis.tsx",
+    "components/GameStateAnalysis/GameStateAnalysis.test.tsx",
+    "components/TeamDashboard/AdvancedL10Metrics.tsx",
+    "components/TeamDashboard/AdvancedL10Metrics.test.tsx",
+    "components/TeamDashboard/TeamDashboard.tsx",
+    "components/TeamDashboard/TeamDashboard.test.tsx",
+    "lib/stats/teamCountConsumers.test.tsx"
+  ]
+}

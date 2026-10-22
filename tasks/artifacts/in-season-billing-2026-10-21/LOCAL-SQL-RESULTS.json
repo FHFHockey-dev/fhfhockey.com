@@ -1,0 +1,28 @@
+{
+  "success": true,
+  "checks": 18,
+  "passed": [
+    "fresh task-owned loopback cluster, empty public schema",
+    "prerequisite and billing draft SQL executed successfully in disposable cluster",
+    "exactly two synthetic Auth rows and independent grant/manual workspace seeded",
+    "anon cannot read billing ledger",
+    "anon cannot call privileged billing RPC even with forged role claim",
+    "authenticated cannot read billing ledger",
+    "authenticated cannot call privileged billing RPC even with forged role claim",
+    "season reconciliation refuses another account",
+    "global season receipt cannot move to another account",
+    "season payment persists one grant and duplicate receipt",
+    "season adjustment changes only status and retains original coverage",
+    "concurrent reconciliation is fenced on separate database connection",
+    "wrong lease token cannot persist payment or grant",
+    "monthly state, payment binding, receipt and grant commit together",
+    "payment cannot fund a second account",
+    "rejected cross-account payment rolls back state and grants",
+    "cancellation queues one stop; job lease, snapshot and completion execute",
+    "independent grandfather access and manual workspace remain unchanged"
+  ],
+  "postgres": "17.11",
+  "target": "disposable 127.0.0.1:65439",
+  "auth": "minimal SQL fixtures; GoTrue/HTTP Auth not run",
+  "stripeCasesExecuted": 0
+}

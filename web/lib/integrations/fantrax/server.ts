@@ -1,3 +1,4 @@
+import { ProviderSyncAccessError, requireProviderSyncAccess } from "lib/integrations/providerSyncAccessServer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import serviceRoleClient from "lib/supabase/server";
@@ -34,6 +35,7 @@ const MANUAL_REFRESH_COOLDOWN_MS = 15 * 60 * 1000;
 const SCHEDULED_FRESHNESS_MS = 24 * 60 * 60 * 1000;
 const CRON_RUNTIME_BUDGET_MS = 200_000;
 const SCHEDULED_REQUEST_HEADROOM_MS = 35_000;
+const SCHEDULED_ELIGIBILITY_SCAN_LIMIT = 60;
 
 export class FantraxIntegrationError extends Error {
   constructor(
@@ -194,6 +196,7 @@ export async function discoverFantraxLeagues(args: {
   secretId: unknown;
   selectedLeagueKeys?: unknown;
 }) {
+  await requireProviderSyncAccess(args.userId);
   assertFantraxApiEnabled(args.userId);
   const secretId = validateFantraxSecretId(args.secretId);
   try {
@@ -227,6 +230,7 @@ export async function discoverLinkedFantraxLeagues(args: {
   selectedLeagueKeys?: unknown;
   client?: DbClient;
 }) {
+  await requireProviderSyncAccess(args.userId);
   assertFantraxApiEnabled(args.userId);
   if (typeof args.accountId !== "string" || !args.accountId.trim()) {
     throw new FantraxIntegrationError(
@@ -357,6 +361,7 @@ export async function linkFantraxAccount(args: {
   allowEmptySelection?: boolean;
   client?: DbClient;
 }) {
+  await requireProviderSyncAccess(args.userId);
   assertFantraxApiEnabled(args.userId);
   const secretId = validateFantraxSecretId(args.secretId);
   const accountLabel = validateAccountLabel(args.accountLabel);
@@ -827,6 +832,8 @@ async function syncAccountLeagues(args: {
   now: Date;
   shouldContinue?: () => boolean;
 }) {
+  await requireProviderSyncAccess(args.account.user_id);
+  if (args.shouldContinue && !args.shouldContinue()) return [];
   const secretId = await loadFantraxSecret(args.client, args.account.user_id, args.account.id);
   const discovery = normalizeFantraxDiscovery(await getFantraxLeagues(secretId));
   const discoveryByKey = new Map(
@@ -867,6 +874,7 @@ export async function refreshFantrax(args: {
   client?: DbClient;
   now?: Date;
 }) {
+  await requireProviderSyncAccess(args.userId);
   assertFantraxApiEnabled(args.userId);
   if (typeof args.accountId !== "string" || !args.accountId.trim()) {
     throw new FantraxIntegrationError(
@@ -918,6 +926,7 @@ export async function updateFantraxConnection(args: {
   selectedLeagueKeys?: unknown;
   client?: DbClient;
 }) {
+  if (args.selectedLeagueKeys !== undefined) await requireProviderSyncAccess(args.userId);
   assertFantraxApiEnabled(args.userId);
   const client = args.client ?? serviceRoleClient;
   const { data: account, error } = await client
@@ -960,6 +969,7 @@ export async function applyFantraxSettings(args: {
   acknowledgeWarnings: unknown;
   client?: DbClient;
 }) {
+  await requireProviderSyncAccess(args.userId);
   assertFantraxApiEnabled(args.userId);
   if (typeof args.externalLeagueId !== "string" || !args.externalLeagueId.trim()) {
     throw new FantraxIntegrationError("Fantrax league is required.", 400, "FANTRAX_LEAGUE_REQUIRED");
@@ -1025,40 +1035,61 @@ export async function runFantraxScheduledSync(args: {
   if (!globallyEnabled && !allowlistedUserIds.length) {
     return { processed: 0, changed: 0, failed: 0, disabled: true };
   }
-  let dueQuery = client
-    .from("external_leagues")
-    .select("*")
-    .eq("provider", FANTRAX_PROVIDER)
-    .contains("league_metadata", { api_sync_enabled: true })
-    .or(`imported_at.is.null,imported_at.lt.${staleBefore.toISOString()}`)
-    .order("imported_at", { ascending: true, nullsFirst: true });
-  if (!globallyEnabled) {
-    dueQuery = dueQuery.in("user_id", allowlistedUserIds);
-  }
-  const { data: leagueRows, error: leagueError } = await dueQuery.limit(6);
-  if (leagueError) throw new Error(leagueError.message);
-  const due = (leagueRows ?? [])
-    .filter((league) => object(league.league_metadata).api_sync_enabled === true)
-    .slice(0, 6);
-  const accountIds = [...new Set(due.map((league) => league.connected_account_id))];
-  if (!accountIds.length) return { processed: 0, changed: 0, failed: 0 };
-  const { data: accountRows, error: accountError } = await client
-    .from("connected_accounts")
-    .select("*")
-    .in("id", accountIds)
-    .eq("provider", FANTRAX_PROVIDER);
-  if (accountError) throw new Error(accountError.message);
-  const accounts = new Map(
-    ((accountRows ?? []) as ConnectedAccountRow[]).map((account) => [account.id, account]),
-  );
   let processed = 0;
   let changed = 0;
   let failed = 0;
   let rateLimited = false;
   const hasRequestBudget = () =>
-    !rateLimited &&
-    Date.now() - startedAt <
-      CRON_RUNTIME_BUDGET_MS - SCHEDULED_REQUEST_HEADROOM_MS;
+    !rateLimited && Date.now() - startedAt < CRON_RUNTIME_BUDGET_MS - SCHEDULED_REQUEST_HEADROOM_MS;
+  const dueQuery = (head = false) => {
+    let query = client
+      .from("external_leagues")
+      .select("*", head ? { count: "exact", head: true } : undefined)
+      .eq("provider", FANTRAX_PROVIDER)
+      .contains("league_metadata", { api_sync_enabled: true })
+      .or(`imported_at.is.null,imported_at.lt.${staleBefore.toISOString()}`);
+    if (!globallyEnabled) query = query.in("user_id", allowlistedUserIds);
+    return query;
+  };
+  const { count, error: countError } = await dueQuery(true);
+  if (countError || count == null) throw new Error(countError?.message ?? "Fantrax eligibility scan count unavailable.");
+  if (!count || !hasRequestBudget()) return { processed, changed, failed };
+  // The hourly cron rotates bounded windows when there are many denied leagues.
+  // This cursor does not change imported_at or pretend skipped data was synced.
+  const pages = Math.ceil(count / SCHEDULED_ELIGIBILITY_SCAN_LIMIT);
+  const offset = (Math.floor(now.getTime() / 3_600_000) % pages) * SCHEDULED_ELIGIBILITY_SCAN_LIMIT;
+  const { data: leagueRows, error: leagueError } = await dueQuery()
+    .order("imported_at", { ascending: true, nullsFirst: true }).order("id")
+    .range(offset, offset + SCHEDULED_ELIGIBILITY_SCAN_LIMIT - 1);
+  if (leagueError) throw new Error(leagueError.message);
+  const candidates = (leagueRows ?? []).filter((league) => object(league.league_metadata).api_sync_enabled === true);
+  const candidateAccounts = [...new Set(candidates.map((league) => league.connected_account_id))];
+  if (!candidateAccounts.length || !hasRequestBudget()) return { processed, changed, failed };
+  const { data: accountRows, error: accountError } = await client
+    .from("connected_accounts")
+    .select("*")
+    .in("id", candidateAccounts)
+    .eq("provider", FANTRAX_PROVIDER);
+  if (accountError) throw new Error(accountError.message);
+  const accounts = new Map(
+    ((accountRows ?? []) as ConnectedAccountRow[]).map((account) => [account.id, account]),
+  );
+  const eligibility = new Map<string, boolean>();
+  const due: ExternalLeagueRow[] = [];
+  for (const league of candidates) {
+    if (!hasRequestBudget() || due.length === 6) break;
+    const account = accounts.get(league.connected_account_id);
+    if (!account || account.user_id !== league.user_id) continue;
+    if (!eligibility.has(account.user_id)) {
+      try { await requireProviderSyncAccess(account.user_id); eligibility.set(account.user_id, true); }
+      catch (error) {
+        eligibility.set(account.user_id, false);
+        if (!(error instanceof ProviderSyncAccessError && error.statusCode === 403)) failed += 1;
+      }
+    }
+    if (eligibility.get(account.user_id)) due.push(league);
+  }
+  const accountIds = [...new Set(due.map((league) => league.connected_account_id))];
   for (let index = 0; index < accountIds.length; index += 2) {
     if (!hasRequestBudget()) break;
     const batch = accountIds.slice(index, index + 2);
@@ -1076,6 +1107,7 @@ export async function runFantraxScheduledSync(args: {
             shouldContinue: hasRequestBudget,
           });
         } catch (error) {
+          if (error instanceof ProviderSyncAccessError && error.statusCode === 403) return [];
           failed += 1;
           if (mappedError(error).statusCode === 429) {
             rateLimited = true;

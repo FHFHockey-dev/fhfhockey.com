@@ -1,0 +1,42 @@
+{
+  "candidate_snapshot": "/tmp/fhfh-queue-check-czo1qy0n/isolation/snapshot/web",
+  "review_runtime": "/tmp/fhfh-a5-a10-review-a6_pmili",
+  "checks": [
+    {
+      "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+      "live_matches_candidate_snapshot": true,
+      "sha256": "472d5ec5fc40e17be463db1b9e2bfe0ba78119dbc0824e987952ad55ef09c462"
+    },
+    {
+      "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+      "live_matches_candidate_snapshot": true,
+      "sha256": "3f95cb4ca8f54f442924828dbe396cc758ad23bcbdf2f205b022d6aa8696006a"
+    },
+    {
+      "path": "web/lib/integrations/providerSyncAccessServer.ts",
+      "live_matches_candidate_snapshot": true,
+      "sha256": "6feba64d25aad65ae6322fcc812be8ad202c18545ba38eaaf4566f3379dd0bf1"
+    },
+    {
+      "path": "web/lib/integrations/providerSyncAccess.ts",
+      "live_matches_candidate_snapshot": true,
+      "sha256": "5e34f581be828b4f0b45cbfbb0e0851b65567f81fc35795000af4e79f7483ae5"
+    },
+    {
+      "path": "web/lib/integrations/providerSyncAccess.test.ts",
+      "live_matches_candidate_snapshot": true,
+      "sha256": "e02a9e1efedefae017aa5259cdaadf6f9cbc5bca247201f0c1adcf1ef52b2103"
+    },
+    {
+      "path": "web/lib/integrations/providerSyncPaywall.test.ts",
+      "live_matches_candidate_snapshot": true,
+      "sha256": "d1ed5ef030e2af624fbc9029f8958bae3915f2bc3e7ae8cd34b97d7aa562637b"
+    },
+    {
+      "path": "web/pages/api/v1/roster-schedule-optimizer/provider.ts",
+      "live_matches_candidate_snapshot": true,
+      "sha256": "7d2eaddedbf4ad6993cd41f451aaaa05a4a6fae45e80d844387ee84222bb571d"
+    }
+  ],
+  "candidate_patch_matches_working_diff": true
+}

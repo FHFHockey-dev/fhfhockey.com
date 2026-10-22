@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-10-22T12:50:49.336231+00:00",
+  "head": "d3f057c6c849d5d5474bc912a6f461f617c65b15",
+  "candidate_files_stable": 3,
+  "all_preflight_sources_stable": 106,
+  "canonical_migrations_stable": 97,
+  "historical_evidence_sha256": {
+    "tasks/artifacts/d4-grants-2026-10-20/run-v7/data_api_grants.sql.tap": "242662e2ebe8f52a543d983a4b7e14a3a293b18b0b19b102c154a0a35aee9b13",
+    "tasks/artifacts/d4-grants-2026-10-20/run-v7/acl-after.csv": "177f1b7b5efc443c59c38a41b3107bfa3292fd856e36026bc64b43a17f5a43e2",
+    "tasks/artifacts/d4-grants-2026-10-20/run-v9/receipt.json": "7095241ac7d20910bc56b9707f13037159e62068226589db32a1434c6a9bda07",
+    "tasks/artifacts/d4-grants-2026-10-20/run-v9/log.txt": "baeeaf15f6c93c193a47b805cb98187491c97eace1ea8608233b3eec4b3238ab"
+  },
+  "finalDeliveryCheck": "2026-10-22T12:52:59.125213+00:00"
+}

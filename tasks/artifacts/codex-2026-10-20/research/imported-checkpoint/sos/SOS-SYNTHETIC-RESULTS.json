@@ -1,0 +1,1863 @@
+{
+  "scope": "Invented fixtures only; arithmetic and contract checks, not an NHL backtest",
+  "implementation": "Python standard library; Fraction arithmetic; no stochastic draws",
+  "contract": {
+    "outcome_default": "final_win: 1/0, inclusive of OT and shootout",
+    "prior_default": "kappa=2, mu=1/2; demonstration only, not calibrated",
+    "fixture_weighting": "Outer n_ij/n_i; future list changes only outer counts",
+    "direct_exclusion": "Opponent rate excludes every game against focal i",
+    "second_hop_exclusion": "Intermediary opponent mix excludes i; rate of k excludes i and intermediary j",
+    "missing_policy": "No fixtures => no schedule score; zero unsmoothed denominator/no eligible games => unavailable composite; observed zero credit with positive denominator => valid zero; no intermediary alternatives => explicit prior-only fallback",
+    "points_exception": "Ordinary scoring only; exceptional standings-point forfeiture not modeled"
+  },
+  "tests": {
+    "run": 15,
+    "failures": 0,
+    "errors": 0,
+    "successful": true,
+    "names": [
+      "test_credit_modes_and_non_zero_sum_points_are_explicit",
+      "test_disconnected_components_are_visible_not_new_evidence",
+      "test_duplicate_ids_and_invalid_fixtures_are_rejected",
+      "test_focal_result_feedback_is_excluded",
+      "test_future_list_changes_outer_weights_not_history",
+      "test_input_order_and_team_labels_do_not_change_values",
+      "test_known_future_fixtures_can_be_all_prior_not_no_fixtures",
+      "test_naive_triangle_collapse_and_anchored_noncollapse",
+      "test_no_games_is_not_observed_average_schedule",
+      "test_observed_zero_with_positive_denominator_is_valid",
+      "test_one_game_excludes_head_to_head",
+      "test_repeated_opponents_unequal_histories_not_interchangeable",
+      "test_scores_stay_bounded_and_each_defined_mix_normalizes",
+      "test_shrunk_composite_has_exact_hand_checked_value",
+      "test_unsmoothed_missing_second_hop_is_not_dropped"
+    ]
+  },
+  "test_log": "test_credit_modes_and_non_zero_sum_points_are_explicit (__main__.ContractTests.test_credit_modes_and_non_zero_sum_points_are_explicit) ... ok\ntest_disconnected_components_are_visible_not_new_evidence (__main__.ContractTests.test_disconnected_components_are_visible_not_new_evidence) ... ok\ntest_duplicate_ids_and_invalid_fixtures_are_rejected (__main__.ContractTests.test_duplicate_ids_and_invalid_fixtures_are_rejected) ... ok\ntest_focal_result_feedback_is_excluded (__main__.ContractTests.test_focal_result_feedback_is_excluded) ... ok\ntest_future_list_changes_outer_weights_not_history (__main__.ContractTests.test_future_list_changes_outer_weights_not_history) ... ok\ntest_input_order_and_team_labels_do_not_change_values (__main__.ContractTests.test_input_order_and_team_labels_do_not_change_values) ... ok\ntest_known_future_fixtures_can_be_all_prior_not_no_fixtures (__main__.ContractTests.test_known_future_fixtures_can_be_all_prior_not_no_fixtures) ... ok\ntest_naive_triangle_collapse_and_anchored_noncollapse (__main__.ContractTests.test_naive_triangle_collapse_and_anchored_noncollapse) ... ok\ntest_no_games_is_not_observed_average_schedule (__main__.ContractTests.test_no_games_is_not_observed_average_schedule) ... ok\ntest_observed_zero_with_positive_denominator_is_valid (__main__.ContractTests.test_observed_zero_with_positive_denominator_is_valid) ... ok\ntest_one_game_excludes_head_to_head (__main__.ContractTests.test_one_game_excludes_head_to_head) ... ok\ntest_repeated_opponents_unequal_histories_not_interchangeable (__main__.ContractTests.test_repeated_opponents_unequal_histories_not_interchangeable) ... ok\ntest_scores_stay_bounded_and_each_defined_mix_normalizes (__main__.ContractTests.test_scores_stay_bounded_and_each_defined_mix_normalizes) ... ok\ntest_shrunk_composite_has_exact_hand_checked_value (__main__.ContractTests.test_shrunk_composite_has_exact_hand_checked_value) ... ok\ntest_unsmoothed_missing_second_hop_is_not_dropped (__main__.ContractTests.test_unsmoothed_missing_second_hop_is_not_dropped) ... ok\n\n----------------------------------------------------------------------\nRan 15 tests (elapsed omitted for deterministic output)\n\nOK\n",
+  "fixtures": {
+    "unequal_histories": [
+      {
+        "game_id": "IA0",
+        "home": "I",
+        "away": "A",
+        "outcome": "home_reg"
+      },
+      {
+        "game_id": "IA1",
+        "home": "I",
+        "away": "A",
+        "outcome": "home_reg"
+      },
+      {
+        "game_id": "IA2",
+        "home": "I",
+        "away": "A",
+        "outcome": "home_reg"
+      },
+      {
+        "game_id": "IB",
+        "home": "I",
+        "away": "B",
+        "outcome": "home_reg"
+      },
+      {
+        "game_id": "AX0",
+        "home": "A",
+        "away": "X",
+        "outcome": "home_reg"
+      },
+      {
+        "game_id": "AX1",
+        "home": "A",
+        "away": "X",
+        "outcome": "home_reg"
+      },
+      {
+        "game_id": "AX2",
+        "home": "A",
+        "away": "X",
+        "outcome": "home_reg"
+      },
+      {
+        "game_id": "AX3",
+        "home": "A",
+        "away": "X",
+        "outcome": "home_reg"
+      },
+      {
+        "game_id": "AX4",
+        "home": "A",
+        "away": "X",
+        "outcome": "away_reg"
+      },
+      {
+        "game_id": "BY0",
+        "home": "B",
+        "away": "Y",
+        "outcome": "home_reg"
+      },
+      {
+        "game_id": "BY1",
+        "home": "B",
+        "away": "Y",
+        "outcome": "away_reg"
+      },
+      {
+        "game_id": "BY2",
+        "home": "B",
+        "away": "Y",
+        "outcome": "away_reg"
+      },
+      {
+        "game_id": "BY3",
+        "home": "B",
+        "away": "Y",
+        "outcome": "away_reg"
+      },
+      {
+        "game_id": "BY4",
+        "home": "B",
+        "away": "Y",
+        "outcome": "away_reg"
+      },
+      {
+        "game_id": "BY5",
+        "home": "B",
+        "away": "Y",
+        "outcome": "away_reg"
+      },
+      {
+        "game_id": "BY6",
+        "home": "B",
+        "away": "Y",
+        "outcome": "away_reg"
+      },
+      {
+        "game_id": "BY7",
+        "home": "B",
+        "away": "Y",
+        "outcome": "away_reg"
+      },
+      {
+        "game_id": "BY8",
+        "home": "B",
+        "away": "Y",
+        "outcome": "away_reg"
+      },
+      {
+        "game_id": "BY9",
+        "home": "B",
+        "away": "Y",
+        "outcome": "away_reg"
+      }
+    ],
+    "focal_flip_before": [
+      {
+        "game_id": "IA1",
+        "home": "I",
+        "away": "A",
+        "outcome": "home_reg"
+      },
+      {
+        "game_id": "IA2",
+        "home": "I",
+        "away": "A",
+        "outcome": "home_reg"
+      },
+      {
+        "game_id": "IB",
+        "home": "I",
+        "away": "B",
+        "outcome": "home_reg"
+      },
+      {
+        "game_id": "AB",
+        "home": "A",
+        "away": "B",
+        "outcome": "home_reg"
+      },
+      {
+        "game_id": "AC",
+        "home": "A",
+        "away": "C",
+        "outcome": "away_reg"
+      },
+      {
+        "game_id": "BC",
+        "home": "B",
+        "away": "C",
+        "outcome": "home_reg"
+      },
+      {
+        "game_id": "BD",
+        "home": "B",
+        "away": "D",
+        "outcome": "away_reg"
+      },
+      {
+        "game_id": "CD",
+        "home": "C",
+        "away": "D",
+        "outcome": "home_reg"
+      }
+    ],
+    "focal_flip_after": [
+      {
+        "game_id": "IA1",
+        "home": "I",
+        "away": "A",
+        "outcome": "away_reg"
+      },
+      {
+        "game_id": "IA2",
+        "home": "I",
+        "away": "A",
+        "outcome": "away_reg"
+      },
+      {
+        "game_id": "IB",
+        "home": "I",
+        "away": "B",
+        "outcome": "away_reg"
+      },
+      {
+        "game_id": "AB",
+        "home": "A",
+        "away": "B",
+        "outcome": "home_reg"
+      },
+      {
+        "game_id": "AC",
+        "home": "A",
+        "away": "C",
+        "outcome": "away_reg"
+      },
+      {
+        "game_id": "BC",
+        "home": "B",
+        "away": "C",
+        "outcome": "home_reg"
+      },
+      {
+        "game_id": "BD",
+        "home": "B",
+        "away": "D",
+        "outcome": "away_reg"
+      },
+      {
+        "game_id": "CD",
+        "home": "C",
+        "away": "D",
+        "outcome": "home_reg"
+      }
+    ]
+  },
+  "examples": {
+    "no_games": {
+      "focal": "A",
+      "window": "historical_fixtures",
+      "mode": "final_win",
+      "kappa": {
+        "exact": "2",
+        "decimal": 2.0
+      },
+      "mu": {
+        "exact": "1/2",
+        "decimal": 0.5
+      },
+      "historical_focal_games": 0,
+      "outer_fixture_count": 0,
+      "unique_outer_opponents": 0,
+      "own_rate": {
+        "eligible_games": 0,
+        "credit_total": {
+          "exact": "0",
+          "decimal": 0.0
+        },
+        "value": {
+          "exact": "1/2",
+          "decimal": 0.5
+        },
+        "prior_weight": {
+          "exact": "1",
+          "decimal": 1.0
+        },
+        "state": "prior_only"
+      },
+      "schedule_components": [
+        [
+          "A"
+        ],
+        [
+          "B"
+        ],
+        [
+          "C"
+        ],
+        [
+          "D"
+        ]
+      ],
+      "opponents": [],
+      "owp": null,
+      "oowp": null,
+      "sos": null,
+      "rpi_style": null,
+      "direct_prior_only_fixture_weight": null,
+      "second_hop_prior_only_weight": null,
+      "state": "no_fixtures"
+    },
+    "known_future_all_prior": {
+      "focal": "I",
+      "window": "future_fixture_list",
+      "mode": "final_win",
+      "kappa": {
+        "exact": "2",
+        "decimal": 2.0
+      },
+      "mu": {
+        "exact": "1/2",
+        "decimal": 0.5
+      },
+      "historical_focal_games": 0,
+      "outer_fixture_count": 2,
+      "unique_outer_opponents": 2,
+      "own_rate": {
+        "eligible_games": 0,
+        "credit_total": {
+          "exact": "0",
+          "decimal": 0.0
+        },
+        "value": {
+          "exact": "1/2",
+          "decimal": 0.5
+        },
+        "prior_weight": {
+          "exact": "1",
+          "decimal": 1.0
+        },
+        "state": "prior_only"
+      },
+      "schedule_components": [
+        [
+          "A"
+        ],
+        [
+          "B"
+        ],
+        [
+          "I"
+        ]
+      ],
+      "opponents": [
+        {
+          "team": "A",
+          "fixtures": 1,
+          "weight": {
+            "exact": "1/2",
+            "decimal": 0.5
+          },
+          "direct_rate_excluding_focal": {
+            "eligible_games": 0,
+            "credit_total": {
+              "exact": "0",
+              "decimal": 0.0
+            },
+            "value": {
+              "exact": "1/2",
+              "decimal": 0.5
+            },
+            "prior_weight": {
+              "exact": "1",
+              "decimal": 1.0
+            },
+            "state": "prior_only"
+          },
+          "second_hop_fixture_count": 0,
+          "second_hop_structural_prior_only": true,
+          "second_hop": [],
+          "second_hop_mean": {
+            "exact": "1/2",
+            "decimal": 0.5
+          }
+        },
+        {
+          "team": "B",
+          "fixtures": 1,
+          "weight": {
+            "exact": "1/2",
+            "decimal": 0.5
+          },
+          "direct_rate_excluding_focal": {
+            "eligible_games": 0,
+            "credit_total": {
+              "exact": "0",
+              "decimal": 0.0
+            },
+            "value": {
+              "exact": "1/2",
+              "decimal": 0.5
+            },
+            "prior_weight": {
+              "exact": "1",
+              "decimal": 1.0
+            },
+            "state": "prior_only"
+          },
+          "second_hop_fixture_count": 0,
+          "second_hop_structural_prior_only": true,
+          "second_hop": [],
+          "second_hop_mean": {
+            "exact": "1/2",
+            "decimal": 0.5
+          }
+        }
+      ],
+      "owp": {
+        "exact": "1/2",
+        "decimal": 0.5
+      },
+      "oowp": {
+        "exact": "1/2",
+        "decimal": 0.5
+      },
+      "sos": {
+        "exact": "1/2",
+        "decimal": 0.5
+      },
+      "rpi_style": null,
+      "direct_prior_only_fixture_weight": {
+        "exact": "1",
+        "decimal": 1.0
+      },
+      "second_hop_prior_only_weight": {
+        "exact": "1",
+        "decimal": 1.0
+      },
+      "state": "available"
+    },
+    "one_game": {
+      "focal": "A",
+      "window": "historical_fixtures",
+      "mode": "final_win",
+      "kappa": {
+        "exact": "2",
+        "decimal": 2.0
+      },
+      "mu": {
+        "exact": "1/2",
+        "decimal": 0.5
+      },
+      "historical_focal_games": 1,
+      "outer_fixture_count": 1,
+      "unique_outer_opponents": 1,
+      "own_rate": {
+        "eligible_games": 1,
+        "credit_total": {
+          "exact": "1",
+          "decimal": 1.0
+        },
+        "value": {
+          "exact": "2/3",
+          "decimal": 0.6666666666666666
+        },
+        "prior_weight": {
+          "exact": "2/3",
+          "decimal": 0.6666666666666666
+        },
+        "state": "observed"
+      },
+      "schedule_components": [
+        [
+          "A",
+          "B"
+        ]
+      ],
+      "opponents": [
+        {
+          "team": "B",
+          "fixtures": 1,
+          "weight": {
+            "exact": "1",
+            "decimal": 1.0
+          },
+          "direct_rate_excluding_focal": {
+            "eligible_games": 0,
+            "credit_total": {
+              "exact": "0",
+              "decimal": 0.0
+            },
+            "value": {
+              "exact": "1/2",
+              "decimal": 0.5
+            },
+            "prior_weight": {
+              "exact": "1",
+              "decimal": 1.0
+            },
+            "state": "prior_only"
+          },
+          "second_hop_fixture_count": 0,
+          "second_hop_structural_prior_only": true,
+          "second_hop": [],
+          "second_hop_mean": {
+            "exact": "1/2",
+            "decimal": 0.5
+          }
+        }
+      ],
+      "owp": {
+        "exact": "1/2",
+        "decimal": 0.5
+      },
+      "oowp": {
+        "exact": "1/2",
+        "decimal": 0.5
+      },
+      "sos": {
+        "exact": "1/2",
+        "decimal": 0.5
+      },
+      "rpi_style": {
+        "exact": "13/24",
+        "decimal": 0.5416666666666666
+      },
+      "direct_prior_only_fixture_weight": {
+        "exact": "1",
+        "decimal": 1.0
+      },
+      "second_hop_prior_only_weight": {
+        "exact": "1",
+        "decimal": 1.0
+      },
+      "state": "available"
+    },
+    "unequal_histories_unsmoothed": {
+      "focal": "I",
+      "window": "historical_fixtures",
+      "mode": "final_win",
+      "kappa": {
+        "exact": "0",
+        "decimal": 0.0
+      },
+      "mu": {
+        "exact": "1/2",
+        "decimal": 0.5
+      },
+      "historical_focal_games": 4,
+      "outer_fixture_count": 4,
+      "unique_outer_opponents": 2,
+      "own_rate": {
+        "eligible_games": 4,
+        "credit_total": {
+          "exact": "4",
+          "decimal": 4.0
+        },
+        "value": {
+          "exact": "1",
+          "decimal": 1.0
+        },
+        "prior_weight": {
+          "exact": "0",
+          "decimal": 0.0
+        },
+        "state": "observed"
+      },
+      "schedule_components": [
+        [
+          "A",
+          "B",
+          "I",
+          "X",
+          "Y"
+        ]
+      ],
+      "opponents": [
+        {
+          "team": "A",
+          "fixtures": 3,
+          "weight": {
+            "exact": "3/4",
+            "decimal": 0.75
+          },
+          "direct_rate_excluding_focal": {
+            "eligible_games": 5,
+            "credit_total": {
+              "exact": "4",
+              "decimal": 4.0
+            },
+            "value": {
+              "exact": "4/5",
+              "decimal": 0.8
+            },
+            "prior_weight": {
+              "exact": "0",
+              "decimal": 0.0
+            },
+            "state": "observed"
+          },
+          "second_hop_fixture_count": 5,
+          "second_hop_structural_prior_only": false,
+          "second_hop": [
+            {
+              "team": "X",
+              "weight": {
+                "exact": "1",
+                "decimal": 1.0
+              },
+              "rate": {
+                "eligible_games": 0,
+                "credit_total": {
+                  "exact": "0",
+                  "decimal": 0.0
+                },
+                "value": null,
+                "prior_weight": null,
+                "state": "unavailable"
+              }
+            }
+          ],
+          "second_hop_mean": null
+        },
+        {
+          "team": "B",
+          "fixtures": 1,
+          "weight": {
+            "exact": "1/4",
+            "decimal": 0.25
+          },
+          "direct_rate_excluding_focal": {
+            "eligible_games": 10,
+            "credit_total": {
+              "exact": "1",
+              "decimal": 1.0
+            },
+            "value": {
+              "exact": "1/10",
+              "decimal": 0.1
+            },
+            "prior_weight": {
+              "exact": "0",
+              "decimal": 0.0
+            },
+            "state": "observed"
+          },
+          "second_hop_fixture_count": 10,
+          "second_hop_structural_prior_only": false,
+          "second_hop": [
+            {
+              "team": "Y",
+              "weight": {
+                "exact": "1",
+                "decimal": 1.0
+              },
+              "rate": {
+                "eligible_games": 0,
+                "credit_total": {
+                  "exact": "0",
+                  "decimal": 0.0
+                },
+                "value": null,
+                "prior_weight": null,
+                "state": "unavailable"
+              }
+            }
+          ],
+          "second_hop_mean": null
+        }
+      ],
+      "owp": {
+        "exact": "5/8",
+        "decimal": 0.625
+      },
+      "oowp": null,
+      "sos": null,
+      "rpi_style": null,
+      "direct_prior_only_fixture_weight": {
+        "exact": "0",
+        "decimal": 0.0
+      },
+      "second_hop_prior_only_weight": {
+        "exact": "0",
+        "decimal": 0.0
+      },
+      "state": "missing_required_component"
+    },
+    "unequal_histories_smoothed": {
+      "focal": "I",
+      "window": "historical_fixtures",
+      "mode": "final_win",
+      "kappa": {
+        "exact": "2",
+        "decimal": 2.0
+      },
+      "mu": {
+        "exact": "1/2",
+        "decimal": 0.5
+      },
+      "historical_focal_games": 4,
+      "outer_fixture_count": 4,
+      "unique_outer_opponents": 2,
+      "own_rate": {
+        "eligible_games": 4,
+        "credit_total": {
+          "exact": "4",
+          "decimal": 4.0
+        },
+        "value": {
+          "exact": "5/6",
+          "decimal": 0.8333333333333334
+        },
+        "prior_weight": {
+          "exact": "1/3",
+          "decimal": 0.3333333333333333
+        },
+        "state": "observed"
+      },
+      "schedule_components": [
+        [
+          "A",
+          "B",
+          "I",
+          "X",
+          "Y"
+        ]
+      ],
+      "opponents": [
+        {
+          "team": "A",
+          "fixtures": 3,
+          "weight": {
+            "exact": "3/4",
+            "decimal": 0.75
+          },
+          "direct_rate_excluding_focal": {
+            "eligible_games": 5,
+            "credit_total": {
+              "exact": "4",
+              "decimal": 4.0
+            },
+            "value": {
+              "exact": "5/7",
+              "decimal": 0.7142857142857143
+            },
+            "prior_weight": {
+              "exact": "2/7",
+              "decimal": 0.2857142857142857
+            },
+            "state": "observed"
+          },
+          "second_hop_fixture_count": 5,
+          "second_hop_structural_prior_only": false,
+          "second_hop": [
+            {
+              "team": "X",
+              "weight": {
+                "exact": "1",
+                "decimal": 1.0
+              },
+              "rate": {
+                "eligible_games": 0,
+                "credit_total": {
+                  "exact": "0",
+                  "decimal": 0.0
+                },
+                "value": {
+                  "exact": "1/2",
+                  "decimal": 0.5
+                },
+                "prior_weight": {
+                  "exact": "1",
+                  "decimal": 1.0
+                },
+                "state": "prior_only"
+              }
+            }
+          ],
+          "second_hop_mean": {
+            "exact": "1/2",
+            "decimal": 0.5
+          }
+        },
+        {
+          "team": "B",
+          "fixtures": 1,
+          "weight": {
+            "exact": "1/4",
+            "decimal": 0.25
+          },
+          "direct_rate_excluding_focal": {
+            "eligible_games": 10,
+            "credit_total": {
+              "exact": "1",
+              "decimal": 1.0
+            },
+            "value": {
+              "exact": "1/6",
+              "decimal": 0.16666666666666666
+            },
+            "prior_weight": {
+              "exact": "1/6",
+              "decimal": 0.16666666666666666
+            },
+            "state": "observed"
+          },
+          "second_hop_fixture_count": 10,
+          "second_hop_structural_prior_only": false,
+          "second_hop": [
+            {
+              "team": "Y",
+              "weight": {
+                "exact": "1",
+                "decimal": 1.0
+              },
+              "rate": {
+                "eligible_games": 0,
+                "credit_total": {
+                  "exact": "0",
+                  "decimal": 0.0
+                },
+                "value": {
+                  "exact": "1/2",
+                  "decimal": 0.5
+                },
+                "prior_weight": {
+                  "exact": "1",
+                  "decimal": 1.0
+                },
+                "state": "prior_only"
+              }
+            }
+          ],
+          "second_hop_mean": {
+            "exact": "1/2",
+            "decimal": 0.5
+          }
+        }
+      ],
+      "owp": {
+        "exact": "97/168",
+        "decimal": 0.5773809523809523
+      },
+      "oowp": {
+        "exact": "1/2",
+        "decimal": 0.5
+      },
+      "sos": {
+        "exact": "139/252",
+        "decimal": 0.5515873015873016
+      },
+      "rpi_style": {
+        "exact": "209/336",
+        "decimal": 0.6220238095238095
+      },
+      "direct_prior_only_fixture_weight": {
+        "exact": "0",
+        "decimal": 0.0
+      },
+      "second_hop_prior_only_weight": {
+        "exact": "1",
+        "decimal": 1.0
+      },
+      "state": "available"
+    },
+    "future_balanced": {
+      "focal": "I",
+      "window": "future_fixture_list",
+      "mode": "final_win",
+      "kappa": {
+        "exact": "2",
+        "decimal": 2.0
+      },
+      "mu": {
+        "exact": "1/2",
+        "decimal": 0.5
+      },
+      "historical_focal_games": 4,
+      "outer_fixture_count": 2,
+      "unique_outer_opponents": 2,
+      "own_rate": {
+        "eligible_games": 4,
+        "credit_total": {
+          "exact": "4",
+          "decimal": 4.0
+        },
+        "value": {
+          "exact": "5/6",
+          "decimal": 0.8333333333333334
+        },
+        "prior_weight": {
+          "exact": "1/3",
+          "decimal": 0.3333333333333333
+        },
+        "state": "observed"
+      },
+      "schedule_components": [
+        [
+          "A",
+          "B",
+          "I",
+          "X",
+          "Y"
+        ]
+      ],
+      "opponents": [
+        {
+          "team": "A",
+          "fixtures": 1,
+          "weight": {
+            "exact": "1/2",
+            "decimal": 0.5
+          },
+          "direct_rate_excluding_focal": {
+            "eligible_games": 5,
+            "credit_total": {
+              "exact": "4",
+              "decimal": 4.0
+            },
+            "value": {
+              "exact": "5/7",
+              "decimal": 0.7142857142857143
+            },
+            "prior_weight": {
+              "exact": "2/7",
+              "decimal": 0.2857142857142857
+            },
+            "state": "observed"
+          },
+          "second_hop_fixture_count": 5,
+          "second_hop_structural_prior_only": false,
+          "second_hop": [
+            {
+              "team": "X",
+              "weight": {
+                "exact": "1",
+                "decimal": 1.0
+              },
+              "rate": {
+                "eligible_games": 0,
+                "credit_total": {
+                  "exact": "0",
+                  "decimal": 0.0
+                },
+                "value": {
+                  "exact": "1/2",
+                  "decimal": 0.5
+                },
+                "prior_weight": {
+                  "exact": "1",
+                  "decimal": 1.0
+                },
+                "state": "prior_only"
+              }
+            }
+          ],
+          "second_hop_mean": {
+            "exact": "1/2",
+            "decimal": 0.5
+          }
+        },
+        {
+          "team": "B",
+          "fixtures": 1,
+          "weight": {
+            "exact": "1/2",
+            "decimal": 0.5
+          },
+          "direct_rate_excluding_focal": {
+            "eligible_games": 10,
+            "credit_total": {
+              "exact": "1",
+              "decimal": 1.0
+            },
+            "value": {
+              "exact": "1/6",
+              "decimal": 0.16666666666666666
+            },
+            "prior_weight": {
+              "exact": "1/6",
+              "decimal": 0.16666666666666666
+            },
+            "state": "observed"
+          },
+          "second_hop_fixture_count": 10,
+          "second_hop_structural_prior_only": false,
+          "second_hop": [
+            {
+              "team": "Y",
+              "weight": {
+                "exact": "1",
+                "decimal": 1.0
+              },
+              "rate": {
+                "eligible_games": 0,
+                "credit_total": {
+                  "exact": "0",
+                  "decimal": 0.0
+                },
+                "value": {
+                  "exact": "1/2",
+                  "decimal": 0.5
+                },
+                "prior_weight": {
+                  "exact": "1",
+                  "decimal": 1.0
+                },
+                "state": "prior_only"
+              }
+            }
+          ],
+          "second_hop_mean": {
+            "exact": "1/2",
+            "decimal": 0.5
+          }
+        }
+      ],
+      "owp": {
+        "exact": "37/84",
+        "decimal": 0.44047619047619047
+      },
+      "oowp": {
+        "exact": "1/2",
+        "decimal": 0.5
+      },
+      "sos": {
+        "exact": "29/63",
+        "decimal": 0.4603174603174603
+      },
+      "rpi_style": null,
+      "direct_prior_only_fixture_weight": {
+        "exact": "0",
+        "decimal": 0.0
+      },
+      "second_hop_prior_only_weight": {
+        "exact": "1",
+        "decimal": 1.0
+      },
+      "state": "available"
+    },
+    "focal_result_flip": {
+      "before": {
+        "focal": "I",
+        "window": "historical_fixtures",
+        "mode": "final_win",
+        "kappa": {
+          "exact": "2",
+          "decimal": 2.0
+        },
+        "mu": {
+          "exact": "1/2",
+          "decimal": 0.5
+        },
+        "historical_focal_games": 3,
+        "outer_fixture_count": 3,
+        "unique_outer_opponents": 2,
+        "own_rate": {
+          "eligible_games": 3,
+          "credit_total": {
+            "exact": "3",
+            "decimal": 3.0
+          },
+          "value": {
+            "exact": "4/5",
+            "decimal": 0.8
+          },
+          "prior_weight": {
+            "exact": "2/5",
+            "decimal": 0.4
+          },
+          "state": "observed"
+        },
+        "schedule_components": [
+          [
+            "A",
+            "B",
+            "C",
+            "D",
+            "I"
+          ]
+        ],
+        "opponents": [
+          {
+            "team": "A",
+            "fixtures": 2,
+            "weight": {
+              "exact": "2/3",
+              "decimal": 0.6666666666666666
+            },
+            "direct_rate_excluding_focal": {
+              "eligible_games": 2,
+              "credit_total": {
+                "exact": "1",
+                "decimal": 1.0
+              },
+              "value": {
+                "exact": "1/2",
+                "decimal": 0.5
+              },
+              "prior_weight": {
+                "exact": "1/2",
+                "decimal": 0.5
+              },
+              "state": "observed"
+            },
+            "second_hop_fixture_count": 2,
+            "second_hop_structural_prior_only": false,
+            "second_hop": [
+              {
+                "team": "B",
+                "weight": {
+                  "exact": "1/2",
+                  "decimal": 0.5
+                },
+                "rate": {
+                  "eligible_games": 2,
+                  "credit_total": {
+                    "exact": "1",
+                    "decimal": 1.0
+                  },
+                  "value": {
+                    "exact": "1/2",
+                    "decimal": 0.5
+                  },
+                  "prior_weight": {
+                    "exact": "1/2",
+                    "decimal": 0.5
+                  },
+                  "state": "observed"
+                }
+              },
+              {
+                "team": "C",
+                "weight": {
+                  "exact": "1/2",
+                  "decimal": 0.5
+                },
+                "rate": {
+                  "eligible_games": 2,
+                  "credit_total": {
+                    "exact": "1",
+                    "decimal": 1.0
+                  },
+                  "value": {
+                    "exact": "1/2",
+                    "decimal": 0.5
+                  },
+                  "prior_weight": {
+                    "exact": "1/2",
+                    "decimal": 0.5
+                  },
+                  "state": "observed"
+                }
+              }
+            ],
+            "second_hop_mean": {
+              "exact": "1/2",
+              "decimal": 0.5
+            }
+          },
+          {
+            "team": "B",
+            "fixtures": 1,
+            "weight": {
+              "exact": "1/3",
+              "decimal": 0.3333333333333333
+            },
+            "direct_rate_excluding_focal": {
+              "eligible_games": 3,
+              "credit_total": {
+                "exact": "1",
+                "decimal": 1.0
+              },
+              "value": {
+                "exact": "2/5",
+                "decimal": 0.4
+              },
+              "prior_weight": {
+                "exact": "2/5",
+                "decimal": 0.4
+              },
+              "state": "observed"
+            },
+            "second_hop_fixture_count": 3,
+            "second_hop_structural_prior_only": false,
+            "second_hop": [
+              {
+                "team": "A",
+                "weight": {
+                  "exact": "1/3",
+                  "decimal": 0.3333333333333333
+                },
+                "rate": {
+                  "eligible_games": 1,
+                  "credit_total": {
+                    "exact": "0",
+                    "decimal": 0.0
+                  },
+                  "value": {
+                    "exact": "1/3",
+                    "decimal": 0.3333333333333333
+                  },
+                  "prior_weight": {
+                    "exact": "2/3",
+                    "decimal": 0.6666666666666666
+                  },
+                  "state": "observed"
+                }
+              },
+              {
+                "team": "C",
+                "weight": {
+                  "exact": "1/3",
+                  "decimal": 0.3333333333333333
+                },
+                "rate": {
+                  "eligible_games": 2,
+                  "credit_total": {
+                    "exact": "2",
+                    "decimal": 2.0
+                  },
+                  "value": {
+                    "exact": "3/4",
+                    "decimal": 0.75
+                  },
+                  "prior_weight": {
+                    "exact": "1/2",
+                    "decimal": 0.5
+                  },
+                  "state": "observed"
+                }
+              },
+              {
+                "team": "D",
+                "weight": {
+                  "exact": "1/3",
+                  "decimal": 0.3333333333333333
+                },
+                "rate": {
+                  "eligible_games": 1,
+                  "credit_total": {
+                    "exact": "0",
+                    "decimal": 0.0
+                  },
+                  "value": {
+                    "exact": "1/3",
+                    "decimal": 0.3333333333333333
+                  },
+                  "prior_weight": {
+                    "exact": "2/3",
+                    "decimal": 0.6666666666666666
+                  },
+                  "state": "observed"
+                }
+              }
+            ],
+            "second_hop_mean": {
+              "exact": "17/36",
+              "decimal": 0.4722222222222222
+            }
+          }
+        ],
+        "owp": {
+          "exact": "7/15",
+          "decimal": 0.4666666666666667
+        },
+        "oowp": {
+          "exact": "53/108",
+          "decimal": 0.49074074074074076
+        },
+        "sos": {
+          "exact": "769/1620",
+          "decimal": 0.47469135802469137
+        },
+        "rpi_style": {
+          "exact": "1201/2160",
+          "decimal": 0.5560185185185185
+        },
+        "direct_prior_only_fixture_weight": {
+          "exact": "0",
+          "decimal": 0.0
+        },
+        "second_hop_prior_only_weight": {
+          "exact": "0",
+          "decimal": 0.0
+        },
+        "state": "available"
+      },
+      "after": {
+        "focal": "I",
+        "window": "historical_fixtures",
+        "mode": "final_win",
+        "kappa": {
+          "exact": "2",
+          "decimal": 2.0
+        },
+        "mu": {
+          "exact": "1/2",
+          "decimal": 0.5
+        },
+        "historical_focal_games": 3,
+        "outer_fixture_count": 3,
+        "unique_outer_opponents": 2,
+        "own_rate": {
+          "eligible_games": 3,
+          "credit_total": {
+            "exact": "0",
+            "decimal": 0.0
+          },
+          "value": {
+            "exact": "1/5",
+            "decimal": 0.2
+          },
+          "prior_weight": {
+            "exact": "2/5",
+            "decimal": 0.4
+          },
+          "state": "observed"
+        },
+        "schedule_components": [
+          [
+            "A",
+            "B",
+            "C",
+            "D",
+            "I"
+          ]
+        ],
+        "opponents": [
+          {
+            "team": "A",
+            "fixtures": 2,
+            "weight": {
+              "exact": "2/3",
+              "decimal": 0.6666666666666666
+            },
+            "direct_rate_excluding_focal": {
+              "eligible_games": 2,
+              "credit_total": {
+                "exact": "1",
+                "decimal": 1.0
+              },
+              "value": {
+                "exact": "1/2",
+                "decimal": 0.5
+              },
+              "prior_weight": {
+                "exact": "1/2",
+                "decimal": 0.5
+              },
+              "state": "observed"
+            },
+            "second_hop_fixture_count": 2,
+            "second_hop_structural_prior_only": false,
+            "second_hop": [
+              {
+                "team": "B",
+                "weight": {
+                  "exact": "1/2",
+                  "decimal": 0.5
+                },
+                "rate": {
+                  "eligible_games": 2,
+                  "credit_total": {
+                    "exact": "1",
+                    "decimal": 1.0
+                  },
+                  "value": {
+                    "exact": "1/2",
+                    "decimal": 0.5
+                  },
+                  "prior_weight": {
+                    "exact": "1/2",
+                    "decimal": 0.5
+                  },
+                  "state": "observed"
+                }
+              },
+              {
+                "team": "C",
+                "weight": {
+                  "exact": "1/2",
+                  "decimal": 0.5
+                },
+                "rate": {
+                  "eligible_games": 2,
+                  "credit_total": {
+                    "exact": "1",
+                    "decimal": 1.0
+                  },
+                  "value": {
+                    "exact": "1/2",
+                    "decimal": 0.5
+                  },
+                  "prior_weight": {
+                    "exact": "1/2",
+                    "decimal": 0.5
+                  },
+                  "state": "observed"
+                }
+              }
+            ],
+            "second_hop_mean": {
+              "exact": "1/2",
+              "decimal": 0.5
+            }
+          },
+          {
+            "team": "B",
+            "fixtures": 1,
+            "weight": {
+              "exact": "1/3",
+              "decimal": 0.3333333333333333
+            },
+            "direct_rate_excluding_focal": {
+              "eligible_games": 3,
+              "credit_total": {
+                "exact": "1",
+                "decimal": 1.0
+              },
+              "value": {
+                "exact": "2/5",
+                "decimal": 0.4
+              },
+              "prior_weight": {
+                "exact": "2/5",
+                "decimal": 0.4
+              },
+              "state": "observed"
+            },
+            "second_hop_fixture_count": 3,
+            "second_hop_structural_prior_only": false,
+            "second_hop": [
+              {
+                "team": "A",
+                "weight": {
+                  "exact": "1/3",
+                  "decimal": 0.3333333333333333
+                },
+                "rate": {
+                  "eligible_games": 1,
+                  "credit_total": {
+                    "exact": "0",
+                    "decimal": 0.0
+                  },
+                  "value": {
+                    "exact": "1/3",
+                    "decimal": 0.3333333333333333
+                  },
+                  "prior_weight": {
+                    "exact": "2/3",
+                    "decimal": 0.6666666666666666
+                  },
+                  "state": "observed"
+                }
+              },
+              {
+                "team": "C",
+                "weight": {
+                  "exact": "1/3",
+                  "decimal": 0.3333333333333333
+                },
+                "rate": {
+                  "eligible_games": 2,
+                  "credit_total": {
+                    "exact": "2",
+                    "decimal": 2.0
+                  },
+                  "value": {
+                    "exact": "3/4",
+                    "decimal": 0.75
+                  },
+                  "prior_weight": {
+                    "exact": "1/2",
+                    "decimal": 0.5
+                  },
+                  "state": "observed"
+                }
+              },
+              {
+                "team": "D",
+                "weight": {
+                  "exact": "1/3",
+                  "decimal": 0.3333333333333333
+                },
+                "rate": {
+                  "eligible_games": 1,
+                  "credit_total": {
+                    "exact": "0",
+                    "decimal": 0.0
+                  },
+                  "value": {
+                    "exact": "1/3",
+                    "decimal": 0.3333333333333333
+                  },
+                  "prior_weight": {
+                    "exact": "2/3",
+                    "decimal": 0.6666666666666666
+                  },
+                  "state": "observed"
+                }
+              }
+            ],
+            "second_hop_mean": {
+              "exact": "17/36",
+              "decimal": 0.4722222222222222
+            }
+          }
+        ],
+        "owp": {
+          "exact": "7/15",
+          "decimal": 0.4666666666666667
+        },
+        "oowp": {
+          "exact": "53/108",
+          "decimal": 0.49074074074074076
+        },
+        "sos": {
+          "exact": "769/1620",
+          "decimal": 0.47469135802469137
+        },
+        "rpi_style": {
+          "exact": "877/2160",
+          "decimal": 0.4060185185185185
+        },
+        "direct_prior_only_fixture_weight": {
+          "exact": "0",
+          "decimal": 0.0
+        },
+        "second_hop_prior_only_weight": {
+          "exact": "0",
+          "decimal": 0.0
+        },
+        "state": "available"
+      },
+      "naive_unexcluded_owp_before": {
+        "exact": "1/3",
+        "decimal": 0.3333333333333333
+      },
+      "naive_unexcluded_owp_after": {
+        "exact": "11/18",
+        "decimal": 0.6111111111111112
+      },
+      "naive_ordinary_two_hop_before": {
+        "exact": "13/24",
+        "decimal": 0.5416666666666666
+      },
+      "naive_ordinary_two_hop_after": {
+        "exact": "41/90",
+        "decimal": 0.45555555555555555
+      }
+    },
+    "disconnected": {
+      "A": {
+        "focal": "A",
+        "window": "historical_fixtures",
+        "mode": "final_win",
+        "kappa": {
+          "exact": "2",
+          "decimal": 2.0
+        },
+        "mu": {
+          "exact": "1/2",
+          "decimal": 0.5
+        },
+        "historical_focal_games": 1,
+        "outer_fixture_count": 1,
+        "unique_outer_opponents": 1,
+        "own_rate": {
+          "eligible_games": 1,
+          "credit_total": {
+            "exact": "1",
+            "decimal": 1.0
+          },
+          "value": {
+            "exact": "2/3",
+            "decimal": 0.6666666666666666
+          },
+          "prior_weight": {
+            "exact": "2/3",
+            "decimal": 0.6666666666666666
+          },
+          "state": "observed"
+        },
+        "schedule_components": [
+          [
+            "A",
+            "B"
+          ],
+          [
+            "C",
+            "D"
+          ]
+        ],
+        "opponents": [
+          {
+            "team": "B",
+            "fixtures": 1,
+            "weight": {
+              "exact": "1",
+              "decimal": 1.0
+            },
+            "direct_rate_excluding_focal": {
+              "eligible_games": 0,
+              "credit_total": {
+                "exact": "0",
+                "decimal": 0.0
+              },
+              "value": {
+                "exact": "1/2",
+                "decimal": 0.5
+              },
+              "prior_weight": {
+                "exact": "1",
+                "decimal": 1.0
+              },
+              "state": "prior_only"
+            },
+            "second_hop_fixture_count": 0,
+            "second_hop_structural_prior_only": true,
+            "second_hop": [],
+            "second_hop_mean": {
+              "exact": "1/2",
+              "decimal": 0.5
+            }
+          }
+        ],
+        "owp": {
+          "exact": "1/2",
+          "decimal": 0.5
+        },
+        "oowp": {
+          "exact": "1/2",
+          "decimal": 0.5
+        },
+        "sos": {
+          "exact": "1/2",
+          "decimal": 0.5
+        },
+        "rpi_style": {
+          "exact": "13/24",
+          "decimal": 0.5416666666666666
+        },
+        "direct_prior_only_fixture_weight": {
+          "exact": "1",
+          "decimal": 1.0
+        },
+        "second_hop_prior_only_weight": {
+          "exact": "1",
+          "decimal": 1.0
+        },
+        "state": "available"
+      },
+      "C": {
+        "focal": "C",
+        "window": "historical_fixtures",
+        "mode": "final_win",
+        "kappa": {
+          "exact": "2",
+          "decimal": 2.0
+        },
+        "mu": {
+          "exact": "1/2",
+          "decimal": 0.5
+        },
+        "historical_focal_games": 1,
+        "outer_fixture_count": 1,
+        "unique_outer_opponents": 1,
+        "own_rate": {
+          "eligible_games": 1,
+          "credit_total": {
+            "exact": "1",
+            "decimal": 1.0
+          },
+          "value": {
+            "exact": "2/3",
+            "decimal": 0.6666666666666666
+          },
+          "prior_weight": {
+            "exact": "2/3",
+            "decimal": 0.6666666666666666
+          },
+          "state": "observed"
+        },
+        "schedule_components": [
+          [
+            "A",
+            "B"
+          ],
+          [
+            "C",
+            "D"
+          ]
+        ],
+        "opponents": [
+          {
+            "team": "D",
+            "fixtures": 1,
+            "weight": {
+              "exact": "1",
+              "decimal": 1.0
+            },
+            "direct_rate_excluding_focal": {
+              "eligible_games": 0,
+              "credit_total": {
+                "exact": "0",
+                "decimal": 0.0
+              },
+              "value": {
+                "exact": "1/2",
+                "decimal": 0.5
+              },
+              "prior_weight": {
+                "exact": "1",
+                "decimal": 1.0
+              },
+              "state": "prior_only"
+            },
+            "second_hop_fixture_count": 0,
+            "second_hop_structural_prior_only": true,
+            "second_hop": [],
+            "second_hop_mean": {
+              "exact": "1/2",
+              "decimal": 0.5
+            }
+          }
+        ],
+        "owp": {
+          "exact": "1/2",
+          "decimal": 0.5
+        },
+        "oowp": {
+          "exact": "1/2",
+          "decimal": 0.5
+        },
+        "sos": {
+          "exact": "1/2",
+          "decimal": 0.5
+        },
+        "rpi_style": {
+          "exact": "13/24",
+          "decimal": 0.5416666666666666
+        },
+        "direct_prior_only_fixture_weight": {
+          "exact": "1",
+          "decimal": 1.0
+        },
+        "second_hop_prior_only_weight": {
+          "exact": "1",
+          "decimal": 1.0
+        },
+        "state": "available"
+      }
+    },
+    "naive_recursion": {
+      "seed": [
+        {
+          "exact": "1",
+          "decimal": 1.0
+        },
+        {
+          "exact": "0",
+          "decimal": 0.0
+        },
+        {
+          "exact": "0",
+          "decimal": 0.0
+        }
+      ],
+      "iterations": 40,
+      "unanchored": [
+        {
+          "exact": "183251937963/549755813888",
+          "decimal": 0.33333333333393966
+        },
+        {
+          "exact": "366503875925/1099511627776",
+          "decimal": 0.33333333333303017
+        },
+        {
+          "exact": "366503875925/1099511627776",
+          "decimal": 0.33333333333303017
+        }
+      ],
+      "unanchored_limit": [
+        {
+          "exact": "1/3",
+          "decimal": 0.3333333333333333
+        },
+        {
+          "exact": "1/3",
+          "decimal": 0.3333333333333333
+        },
+        {
+          "exact": "1/3",
+          "decimal": 0.3333333333333333
+        }
+      ],
+      "anchored_alpha": {
+        "exact": "3/4",
+        "decimal": 0.75
+      },
+      "anchored": [
+        {
+          "exact": "302097271769299065339319457079240713/664613997892457936451903530140172288",
+          "decimal": 0.45454545454545453
+        },
+        {
+          "exact": "362516726123158871112584073060931575/1329227995784915872903807060280344576",
+          "decimal": 0.2727272727272727
+        },
+        {
+          "exact": "362516726123158871112584073060931575/1329227995784915872903807060280344576",
+          "decimal": 0.2727272727272727
+        }
+      ],
+      "anchored_limit": [
+        {
+          "exact": "5/11",
+          "decimal": 0.45454545454545453
+        },
+        {
+          "exact": "3/11",
+          "decimal": 0.2727272727272727
+        },
+        {
+          "exact": "3/11",
+          "decimal": 0.2727272727272727
+        }
+      ],
+      "bipartite_two_node_states": [
+        [
+          {
+            "exact": "1",
+            "decimal": 1.0
+          },
+          {
+            "exact": "0",
+            "decimal": 0.0
+          }
+        ],
+        [
+          {
+            "exact": "0",
+            "decimal": 0.0
+          },
+          {
+            "exact": "1",
+            "decimal": 1.0
+          }
+        ],
+        [
+          {
+            "exact": "1",
+            "decimal": 1.0
+          },
+          {
+            "exact": "0",
+            "decimal": 0.0
+          }
+        ]
+      ]
+    }
+  }
+}

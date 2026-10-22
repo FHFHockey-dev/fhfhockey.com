@@ -1,0 +1,94 @@
+{
+  "status": "stored_in_canonical_live_alias_library_and_read_back",
+  "projectRef": "fyhftlxokyjtpndbkfse",
+  "table": "public.fhfh_player_identity_aliases",
+  "before": {
+    "target": [
+      {
+        "id": 9521,
+        "nhl_player_id": 8476454,
+        "canonical_name": "Ryan Nugent-Hopkins",
+        "verification_status": "verified"
+      }
+    ],
+    "registry_aliases": [],
+    "lineup_aliases": []
+  },
+  "writeReturned": [
+    {
+      "id": "49ecf910-d9fd-469d-856a-73b80a0689d8",
+      "fhfh_player_id": 9521,
+      "nhl_player_id": 8476454,
+      "canonical_name": "Ryan Nugent-Hopkins",
+      "alias": "RNH",
+      "normalized_alias": "rnh",
+      "source": "manual",
+      "verification_status": "verified",
+      "source_provenance": {
+        "scope": "global_identity_only",
+        "alias_kind": "nickname",
+        "confirmation": "RNH → can confidently be stored in the nickname library, mapping to Ryan Nugent-Hopkins.",
+        "confirmed_at": "2026-10-20T23:03:35Z",
+        "confirmed_by": "TJ",
+        "evidence_type": "owner_confirmation",
+        "nhl_player_id": 8476454,
+        "schema_version": 1,
+        "historical_team_membership_asserted": false,
+        "model_confidence_used_as_verification": false
+      },
+      "created_at": "2026-10-20 23:07:11.812724+00"
+    }
+  ],
+  "independentReadback": {
+    "registry_matches": [
+      {
+        "id": "49ecf910-d9fd-469d-856a-73b80a0689d8",
+        "fhfh_player_id": 9521,
+        "nhl_player_id": 8476454,
+        "canonical_name": "Ryan Nugent-Hopkins",
+        "alias": "RNH",
+        "normalized_alias": "rnh",
+        "source": "manual",
+        "verification_status": "verified",
+        "identity_verification_status": "verified",
+        "source_provenance": {
+          "scope": "global_identity_only",
+          "alias_kind": "nickname",
+          "confirmation": "RNH → can confidently be stored in the nickname library, mapping to Ryan Nugent-Hopkins.",
+          "confirmed_at": "2026-10-20T23:03:35Z",
+          "confirmed_by": "TJ",
+          "evidence_type": "owner_confirmation",
+          "nhl_player_id": 8476454,
+          "schema_version": 1,
+          "historical_team_membership_asserted": false,
+          "model_confidence_used_as_verification": false
+        },
+        "created_at": "2026-10-20T23:07:11.812724+00:00"
+      }
+    ],
+    "lineup_matches": []
+  },
+  "customTriggers": [
+    {
+      "table_name": "fhfh_player_identity_aliases",
+      "trigger_name": "set_fhfh_player_identity_aliases_updated_at",
+      "definition": "CREATE TRIGGER set_fhfh_player_identity_aliases_updated_at BEFORE UPDATE ON public.fhfh_player_identity_aliases FOR EACH ROW EXECUTE FUNCTION set_fhfh_player_identity_updated_at()",
+      "function_name": "set_fhfh_player_identity_updated_at"
+    }
+  ],
+  "sql": {
+    "before": "WITH target AS (\n SELECT id, nhl_player_id, canonical_name, verification_status\n FROM public.fhfh_player_identities WHERE nhl_player_id = 8476454 ORDER BY id LIMIT 5\n), registry_aliases AS (\n SELECT id, fhfh_player_id, alias, normalized_alias, source, verification_status\n FROM public.fhfh_player_identity_aliases\n WHERE lower(regexp_replace(alias, '[.[:space:]]', '', 'g')) = 'rnh'\n    OR lower(regexp_replace(normalized_alias, '[.[:space:]]', '', 'g')) = 'rnh'\n ORDER BY fhfh_player_id, id LIMIT 40\n), lineup_aliases AS (\n SELECT id, alias, normalized_alias, player_id, player_name, team_id, source\n FROM public.lineup_player_name_aliases\n WHERE lower(regexp_replace(alias, '[.[:space:]]', '', 'g')) = 'rnh'\n    OR lower(regexp_replace(normalized_alias, '[.[:space:]]', '', 'g')) = 'rnh'\n ORDER BY player_id, id LIMIT 20\n)\nSELECT (SELECT coalesce(json_agg(t ORDER BY t.id), '[]'::json) FROM target t) AS target,\n (SELECT coalesce(json_agg(a ORDER BY a.fhfh_player_id, a.id), '[]'::json) FROM registry_aliases a) AS registry_aliases,\n (SELECT coalesce(json_agg(a ORDER BY a.player_id, a.id), '[]'::json) FROM lineup_aliases a) AS lineup_aliases;",
+    "triggers": "SELECT c.relname AS table_name, t.tgname AS trigger_name, pg_get_triggerdef(t.oid) AS definition,\n p.proname AS function_name\nFROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid\nJOIN pg_namespace n ON n.oid=c.relnamespace JOIN pg_proc p ON p.oid=t.tgfoid\nWHERE n.nspname='public' AND c.relname IN ('fhfh_player_identity_aliases','lineup_player_name_aliases')\n AND NOT t.tgisinternal\nORDER BY c.relname,t.tgname LIMIT 10;",
+    "write": "BEGIN;\nSET LOCAL lock_timeout = '1s';\nSET LOCAL statement_timeout = '5s';\nLOCK TABLE public.fhfh_player_identity_aliases, public.lineup_player_name_aliases IN SHARE ROW EXCLUSIVE MODE;\nDO $owner_nickname_guard$\nDECLARE target_id bigint;\nBEGIN\n SELECT id INTO STRICT target_id\n FROM public.fhfh_player_identities\n WHERE id = 9521 AND nhl_player_id = 8476454\n   AND canonical_name = 'Ryan Nugent-Hopkins' AND verification_status = 'verified'\n FOR SHARE;\n IF EXISTS (\n   SELECT 1 FROM public.fhfh_player_identity_aliases\n   WHERE lower(regexp_replace(alias, '[.[:space:]]', '', 'g')) = 'rnh'\n      OR lower(regexp_replace(normalized_alias, '[.[:space:]]', '', 'g')) = 'rnh'\n ) OR EXISTS (\n   SELECT 1 FROM public.lineup_player_name_aliases\n   WHERE lower(regexp_replace(alias, '[.[:space:]]', '', 'g')) = 'rnh'\n      OR lower(regexp_replace(normalized_alias, '[.[:space:]]', '', 'g')) = 'rnh'\n ) THEN\n   RAISE EXCEPTION 'RNH alias appeared; stop without overwrite and inspect existing mapping';\n END IF;\nEND;\n$owner_nickname_guard$;\nINSERT INTO public.fhfh_player_identity_aliases\n (fhfh_player_id, alias, normalized_alias, source, verification_status, source_provenance)\nVALUES\n (9521, 'RNH', public.immutable_unaccent(lower(btrim('RNH'))), 'manual', 'verified',\n jsonb_build_object(\n   'schema_version', 1,\n   'evidence_type', 'owner_confirmation',\n   'alias_kind', 'nickname',\n   'confirmed_by', 'TJ',\n   'confirmed_at', '2026-10-20T23:03:35Z',\n   'confirmation', 'RNH → can confidently be stored in the nickname library, mapping to Ryan Nugent-Hopkins.',\n   'nhl_player_id', 8476454,\n   'scope', 'global_identity_only',\n   'historical_team_membership_asserted', false,\n   'model_confidence_used_as_verification', false\n ));\nCOMMIT;\nSELECT a.id, a.fhfh_player_id, i.nhl_player_id, i.canonical_name, a.alias,\n a.normalized_alias, a.source, a.verification_status, a.source_provenance, a.created_at\nFROM public.fhfh_player_identity_aliases a\nJOIN public.fhfh_player_identities i ON i.id = a.fhfh_player_id\nWHERE a.fhfh_player_id = 9521 AND a.normalized_alias = 'rnh'\nORDER BY a.id LIMIT 5;",
+    "readback": "WITH registry_matches AS (\n SELECT a.id, a.fhfh_player_id, i.nhl_player_id, i.canonical_name, a.alias, a.normalized_alias,\n  a.source, a.verification_status, i.verification_status AS identity_verification_status,\n  a.source_provenance, a.created_at\n FROM public.fhfh_player_identity_aliases a\n JOIN public.fhfh_player_identities i ON i.id = a.fhfh_player_id\n WHERE lower(regexp_replace(a.alias, '[.[:space:]]', '', 'g')) = 'rnh'\n    OR lower(regexp_replace(a.normalized_alias, '[.[:space:]]', '', 'g')) = 'rnh'\n ORDER BY a.id LIMIT 40\n), lineup_matches AS (\n SELECT id, alias, normalized_alias, player_id, team_id, source\n FROM public.lineup_player_name_aliases\n WHERE lower(regexp_replace(alias, '[.[:space:]]', '', 'g')) = 'rnh'\n    OR lower(regexp_replace(normalized_alias, '[.[:space:]]', '', 'g')) = 'rnh'\n ORDER BY id LIMIT 20\n)\nSELECT (SELECT coalesce(json_agg(r ORDER BY r.id), '[]'::json) FROM registry_matches r) AS registry_matches,\n (SELECT coalesce(json_agg(a ORDER BY a.id), '[]'::json) FROM lineup_matches a) AS lineup_matches;"
+  },
+  "newRowsInserted": 1,
+  "existingRowsOverwritten": 0,
+  "unresolvedOccurrenceWrites": 0,
+  "replayJobWrites": 0,
+  "membershipWrites": 0,
+  "newPaidModelCalls": 0,
+  "credentialsOrSecurityChanges": 0,
+  "appCodeChanges": 0,
+  "scope": "Owner-confirmed identity nickname only; no historical team assertion or automatic resolution."
+}

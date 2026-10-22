@@ -95,6 +95,7 @@ vi.mock("fs/promises", () => ({
 
 vi.mock("lib/cron/nhlOffSeason", () => ({
   loadNhlSeasonWindow: loadNhlSeasonWindowMock,
+  NHL_SEASONAL_GAME_DATA: "nhl_seasonal_game_data",
 }));
 
 vi.mock("utils/adminOnlyMiddleware", () => ({
@@ -1271,7 +1272,7 @@ ${JSON.stringify(jobs)}
       expect(res.body.counts).toMatchObject({ jobsContinuedLast: 1, jobsFailingLast: 0, jobsUnknownLast: 0,
         auditFailures: 0, auditUnknown: 0, auditContinued: 2, unscheduledRuns: 0 });
       const briefing = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits[0];
-      expect(briefing.status).toBe("success");
+      expect(briefing.status).toBe("continued");
       expect(briefing.reason).toContain("In progress / continued");
       expect(briefing.reason).toContain("2 continued call(s) today");
       expect(briefing.missingObservationWarnings.join(" ")).not.toContain("Continuation incomplete");
@@ -1403,6 +1404,36 @@ ${JSON.stringify(jobs)}
     const ctpiAudit = (rowsAffected: number | null, response: Record<string, unknown>) => ({ data: [{
       job_name: "update-team-ctpi-daily", run_time: "2026-03-20T12:01:00.000Z", status: "success", rows_affected: rowsAffected,
       details: { method: "GET", url: "/api/v1/db/update-team-ctpi-daily", statusCode: 200, durationMs: 1000, response } }], error: null });
+
+    it("derives new game-data routes from canonical metadata and covers their older receipts", async () => {
+      loadNhlSeasonWindowMock.mockResolvedValueOnce({ state: "in_season", today: "2026-03-20", seasonId: 20252026, activeFrom: "2025-09-20", activeUntil: "2026-06-20" });
+      readFileMock.mockResolvedValue(ctpiSchedule.replaceAll("update-team-ctpi-daily", "new-seasonal-writer"));
+      cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+      const old = ctpiAudit(0, { success: true }).data[0];
+      old.job_name = "new-seasonal-writer";
+      old.details.url = "/api/v1/db/new-seasonal-writer";
+      cronJobAuditSelectMock.mockResolvedValue({ data: [old, { ...old,
+        run_time: "2026-03-20T11:00:00.000Z", rows_affected: 1,
+        details: { ...old.details, cronClassification: "nhl_seasonal_game_data" },
+      }], error: null });
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+      expect(res.body.counts.warnExpectedWork).toBe(1);
+      expect(res.body.warnings.expectedWorkJobs).toEqual(["new-seasonal-writer"]);
+    });
+
+    it("respects an explicit non-game-data classification over the legacy snapshot", async () => {
+      loadNhlSeasonWindowMock.mockResolvedValueOnce({ state: "in_season", today: "2026-03-20", seasonId: 20252026, activeFrom: "2025-09-20", activeUntil: "2026-06-20" });
+      readFileMock.mockResolvedValue(ctpiSchedule);
+      cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+      const audit = ctpiAudit(0, { success: true });
+      cronJobAuditSelectMock.mockResolvedValue({ ...audit,
+        data: audit.data.map((row) => ({ ...row, details: { ...row.details, cronClassification: null } })),
+      });
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+      expect(res.body.counts.warnExpectedWork).toBe(0);
+    });
 
     it("warns, without failing, when an in-season game-data run reports 0 rows", async () => {
       loadNhlSeasonWindowMock.mockResolvedValueOnce({ state: "in_season", today: "2026-03-20", seasonId: 20252026, activeFrom: "2025-09-20", activeUntil: "2026-06-20" });

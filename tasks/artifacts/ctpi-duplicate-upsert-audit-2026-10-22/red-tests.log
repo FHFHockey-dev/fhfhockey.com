@@ -1,0 +1,317 @@
+
+> web@0.1.0 test
+> vitest --run __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-ctpi-fix-20261022/web
+
+stderr | __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts > update-team-ctpi-daily outcome > omits teams before their first source game instead of upserting duplicate blank identities
+update-team-ctpi-daily error {
+  message: [32m'ON CONFLICT DO UPDATE command cannot affect row a second time'[39m
+}
+
+stderr | __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts > update-team-ctpi-daily outcome > excludes invalid source team identities before league normalization
+update-team-ctpi-daily error {
+  message: [32m'ON CONFLICT DO UPDATE command cannot affect row a second time'[39m
+}
+
+ ❯ __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts (8 tests | 6 failed) 16ms
+   ✓ update-team-ctpi-daily outcome > reports an in-season run with no source rows as a skip with a warning 3ms
+   × update-team-ctpi-daily outcome > keeps a run that writes rows as a plain success 5ms
+     → expected { …(6) } to match object { …(2) }
+(4 matching properties omitted from actual)
+   × update-team-ctpi-daily outcome > omits teams before their first source game instead of upserting duplicate blank identities 2ms
+     → expected 500 to be 200 // Object.is equality
+   × update-team-ctpi-daily outcome > excludes a single empty history from league normalization and never emits its blank row 3ms
+     → expected [ Array(3) ] to deeply equal [ Array(2) ]
+   × update-team-ctpi-daily outcome > excludes invalid source team identities before league normalization 1ms
+     → expected 500 to be 200 // Object.is equality
+   ✓ update-team-ctpi-daily outcome > keeps current-date team identities and source counts when all teams have history 0ms
+   × update-team-ctpi-daily outcome > rejects duplicate destination identities across batches before the first write 1ms
+     → expected 200 to be 500 // Object.is equality
+   × update-team-ctpi-daily outcome > rejects a blank destination identity from the calculator before any write 0ms
+     → expected 200 to be 500 // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts > update-team-ctpi-daily outcome > keeps a run that writes rows as a plain success
+AssertionError: expected { …(6) } to match object { …(2) }
+(4 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[2m    "message": "CTPI daily processed",[22m
+[32m-   "rowsUpserted": 11,[39m
+[31m+   "rowsUpserted": 12,[39m
+[2m  }[22m
+
+ ❯ __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts:107:22
+    105| 
+    106|     expect(res.statusCode).toBe(200);
+    107|     expect(res.body).toMatchObject({ message: "CTPI daily processed", …
+       |                      ^
+    108|     expect(res.body.outcome).toBeUndefined();
+    109|     expect(mocks.upsert).toHaveBeenCalledTimes(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts > update-team-ctpi-daily outcome > omits teams before their first source game instead of upserting duplicate blank identities
+AssertionError: expected 500 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+ ❯ __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts:118:28
+    116|     const res = await invoke();
+    117| 
+    118|     expect(res.statusCode).toBe(200);
+       |                            ^
+    119|     expect(writtenRows()).toHaveLength(21);
+    120|     expect(writtenRows().some(row => row.date === "2026-10-07")).toBe(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts > update-team-ctpi-daily outcome > excludes a single empty history from league normalization and never emits its blank row
+AssertionError: expected [ Array(3) ] to deeply equal [ Array(2) ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[2m    {[22m
+[2m      "computed_at": "2026-10-18T14:00:00.000Z",[22m
+[32m-     "ctpi_0_to_100": 52.625,[39m
+[32m-     "ctpi_raw": 0.175,[39m
+[31m+     "ctpi_0_to_100": 53.24263875715562,[39m
+[31m+     "ctpi_raw": 0.2161759171437077,[39m
+[2m      "date": "2026-10-07",[22m
+[32m-     "defense": -0,[39m
+[31m+     "defense": -0.7071067811865475,[39m
+[2m      "goaltending": 0,[22m
+[32m-     "luck": 0,[39m
+[32m-     "offense": 0.5,[39m
+[31m+     "luck": 0.7071067811865474,[39m
+[31m+     "offense": 1.0217064953743349,[39m
+[2m      "payload": {[22m
+[32m-       "ctpi_0_to_100": 52.625,[39m
+[32m-       "ctpi_raw": 0.175,[39m
+[32m-       "defense": -0,[39m
+[31m+       "ctpi_0_to_100": 53.24263875715562,[39m
+[31m+       "ctpi_raw": 0.2161759171437077,[39m
+[31m+       "defense": -0.7071067811865475,[39m
+[2m        "formulaVersion": "ctpi-formula-v1",[22m
+[2m        "goaltending": 0,[22m
+[2m        "inputVersion": "ctpi-one-game-input-v2",[22m
+[32m-       "luck": 0,[39m
+[32m-       "offense": 0.5,[39m
+[31m+       "luck": 0.7071067811865474,[39m
+[31m+       "offense": 1.0217064953743349,[39m
+[2m        "publicationStatus": "legacy_unapproved",[22m
+[2m        "recentGameCount": 1,[22m
+[2m        "sourceGameCount": 1,[22m
+[2m        "specialTeams": 0,[22m
+[2m        "team": "TOR",[22m
+[2m        "z": {[22m
+[32m-         "ca": 0,[39m
+[32m-         "gf": 0,[39m
+[31m+         "ca": 0.7071067811865474,[39m
+[31m+         "gf": 0.7071067811865475,[39m
+[2m          "gsax_last10": 0,[22m
+[2m          "gsax_season": 0,[22m
+[32m-         "hdca": 0,[39m
+[32m-         "hdcf": 0,[39m
+[32m-         "pdo": 0,[39m
+[31m+         "hdca": 0.7071067811865476,[39m
+[31m+         "hdcf": 0.7071067811865476,[39m
+[31m+         "pdo": 0.7071067811865474,[39m
+[2m          "pk_xga": 0,[22m
+[2m          "pp_xgf": 0,[22m
+[32m-         "xga": 0,[39m
+[32m-         "xgf": 1,[39m
+[31m+         "xga": 0.7071067811865475,[39m
+[31m+         "xgf": 1.336306209562122,[39m
+[2m        },[22m
+[2m      },[22m
+[2m      "season_id": 20262027,[22m
+[2m      "special_teams": 0,[22m
+[2m      "team": "TOR",[22m
+[2m    },[22m
+[2m    {[22m
+[2m      "computed_at": "2026-10-18T14:00:00.000Z",[22m
+[32m-     "ctpi_0_to_100": 47.375,[39m
+[32m-     "ctpi_raw": -0.175,[39m
+[31m+     "ctpi_0_to_100": 49.03327419703493,[39m
+[31m+     "ctpi_raw": -0.06444838686433794,[39m
+[2m      "date": "2026-10-07",[22m
+[32m-     "defense": -0,[39m
+[31m+     "defense": -0.7071067811865475,[39m
+[2m      "goaltending": 0,[22m
+[32m-     "luck": 0,[39m
+[32m-     "offense": -0.5,[39m
+[31m+     "luck": 0.7071067811865474,[39m
+[31m+     "offense": 0.2199227696370616,[39m
+[2m      "payload": {[22m
+[32m-       "ctpi_0_to_100": 47.375,[39m
+[32m-       "ctpi_raw": -0.175,[39m
+[32m-       "defense": -0,[39m
+[31m+       "ctpi_0_to_100": 49.03327419703493,[39m
+[31m+       "ctpi_raw": -0.06444838686433794,[39m
+[31m+       "defense": -0.7071067811865475,[39m
+[2m        "formulaVersion": "ctpi-formula-v1",[22m
+[2m        "goaltending": 0,[22m
+[2m        "inputVersion": "ctpi-one-game-input-v2",[22m
+[32m-       "luck": 0,[39m
+[32m-       "offense": -0.5,[39m
+[31m+       "luck": 0.7071067811865474,[39m
+[31m+       "offense": 0.2199227696370616,[39m
+[2m        "publicationStatus": "legacy_unapproved",[22m
+[2m        "recentGameCount": 1,[22m
+[2m        "sourceGameCount": 1,[22m
+[2m        "specialTeams": 0,[22m
+[2m        "team": "MTL",[22m
+[2m        "z": {[22m
+[32m-         "ca": 0,[39m
+[32m-         "gf": 0,[39m
+[31m+         "ca": 0.7071067811865474,[39m
+[31m+         "gf": 0.7071067811865475,[39m
+[2m          "gsax_last10": 0,[22m
+[2m          "gsax_season": 0,[22m
+[32m-         "hdca": 0,[39m
+[32m-         "hdcf": 0,[39m
+[32m-         "pdo": 0,[39m
+[31m+         "hdca": 0.7071067811865476,[39m
+[31m+         "hdcf": 0.7071067811865476,[39m
+[31m+         "pdo": 0.7071067811865474,[39m
+[2m          "pk_xga": 0,[22m
+[2m          "pp_xgf": 0,[22m
+[32m-         "xga": 0,[39m
+[32m-         "xgf": -1,[39m
+[31m+         "xga": 0.7071067811865475,[39m
+[31m+         "xgf": -0.26726124191242434,[39m
+[2m        },[22m
+[2m      },[22m
+[2m      "season_id": 20262027,[22m
+[2m      "special_teams": 0,[22m
+[2m      "team": "MTL",[22m
+[31m+   },[39m
+[31m+   {[39m
+[31m+     "computed_at": "2026-10-18T14:00:00.000Z",[39m
+[31m+     "ctpi_0_to_100": 47.724087045809455,[39m
+[31m+     "ctpi_raw": -0.15172753027936978,[39m
+[31m+     "date": "2026-10-07",[39m
+[31m+     "defense": 1.4142135623730951,[39m
+[31m+     "goaltending": 0,[39m
+[31m+     "luck": -1.4142135623730951,[39m
+[31m+     "offense": -1.2416292650113965,[39m
+[31m+     "payload": {[39m
+[31m+       "ctpi_0_to_100": 47.724087045809455,[39m
+[31m+       "ctpi_raw": -0.15172753027936978,[39m
+[31m+       "defense": 1.4142135623730951,[39m
+[31m+       "formulaVersion": "ctpi-formula-v1",[39m
+[31m+       "goaltending": 0,[39m
+[31m+       "inputVersion": "ctpi-one-game-input-v2",[39m
+[31m+       "luck": -1.4142135623730951,[39m
+[31m+       "offense": -1.2416292650113965,[39m
+[31m+       "publicationStatus": "legacy_unapproved",[39m
+[31m+       "recentGameCount": 0,[39m
+[31m+       "sourceGameCount": 0,[39m
+[31m+       "specialTeams": 0,[39m
+[31m+       "team": "",[39m
+[31m+       "z": {[39m
+[31m+         "ca": -1.4142135623730951,[39m
+[31m+         "gf": -1.414213562373095,[39m
+[31m+         "gsax_last10": 0,[39m
+[31m+         "gsax_season": 0,[39m
+[31m+         "hdca": -1.4142135623730951,[39m
+[31m+         "hdcf": -1.4142135623730951,[39m
+[31m+         "pdo": -1.4142135623730951,[39m
+[31m+         "pk_xga": 0,[39m
+[31m+         "pp_xgf": 0,[39m
+[31m+         "xga": -1.4142135623730951,[39m
+[31m+         "xgf": -1.0690449676496976,[39m
+[31m+       },[39m
+[31m+     },[39m
+[31m+     "season_id": 20262027,[39m
+[31m+     "special_teams": 0,[39m
+[31m+     "team": "",[39m
+[2m    },[22m
+[2m  ][22m
+
+ ❯ __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts:137:68
+    135| 
+    136|     expect(res.statusCode).toBe(200);
+    137|     expect(writtenRows().filter(row => row.date === "2026-10-07")).toE…
+       |                                                                    ^
+    138|     expect(writtenRows().every(row => row.team.length > 0)).toBe(true);
+    139|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts > update-team-ctpi-daily outcome > excludes invalid source team identities before league normalization
+AssertionError: expected 500 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+ ❯ __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts:151:28
+    149|     const res = await invoke({ start: "2026-10-18" });
+    150| 
+    151|     expect(res.statusCode).toBe(200);
+       |                            ^
+    152|     expect(writtenRows()).toEqual(expected);
+    153|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts > update-team-ctpi-daily outcome > rejects duplicate destination identities across batches before the first write
+AssertionError: expected 200 to be 500 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 500[39m
+[31m+ 200[39m
+
+ ❯ __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts:175:28
+    173|     const res = await invoke({ start: "2026-10-18" });
+    174| 
+    175|     expect(res.statusCode).toBe(500);
+       |                            ^
+    176|     expect(res.body.error).toContain("Duplicate CTPI destination ident…
+    177|     expect(mocks.upsert).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts > update-team-ctpi-daily outcome > rejects a blank destination identity from the calculator before any write
+AssertionError: expected 200 to be 500 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 500[39m
+[31m+ 200[39m
+
+ ❯ __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts:188:28
+    186|     const res = await invoke({ start: "2026-10-18" });
+    187| 
+    188|     expect(res.statusCode).toBe(500);
+       |                            ^
+    189|     expect(res.body.error).toContain("Invalid CTPI destination identit…
+    190|     expect(mocks.upsert).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 2 passed (8)
+   Start at  09:21:27
+   Duration  153ms (transform 46ms, setup 12ms, collect 36ms, tests 16ms, environment 0ms, prepare 37ms)
+

@@ -1,0 +1,11 @@
+{
+  "captured_at": "2026-10-22T13:03:28.246731+00:00",
+  "owned": {
+    "web/pages/api/v1/db/run-rolling-forge-pipeline.ts": "fb3bab85f30f5f54eaeeef44308d4b2a21b5ba1b2ffaf8fbc15841edd6d763c3",
+    "web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts": "db28d9339a8268dba92d1eec8e38e8aeafda786e5f8dbe85e9d3f8748382f2dd",
+    "web/lib/rollingForgePipelineRunState.ts": "16ffb690accaf32e5d81c66748e115e371b43203b90eef6f0ce14378089c7fe0",
+    "web/lib/projections/projectionPipelineState.ts": "9255d28cb6492795bd7e98f1df609b7a92a9f363d1d00ba85589732056f15b15",
+    "web/lib/projections/projectionPipelineState.test.ts": "6b4051eb22ff93d2a5957a264fc5e353b0c17af1202065acc8b066f48449dbaa"
+  },
+  "previous_candidate_archive_sha256": "6cb9bd758692c6163cae88a46249b7dfeda03a8ad87187442ae18c00700dc75e"
+}

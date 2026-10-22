@@ -1,6 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
+  fetchRequestedTeamPowerHistory,
+  fetchGamePredictionFeatureInputs,
+  SOS_ADJUSTED_FORM_VERSION,
+  TEAM_POWER_RATING_UNITS,
+  type TeamPowerRow,
   buildFeatureSnapshotInsert,
   buildGamePredictionFeatureSnapshotPayload,
   buildGoalieBlendFeatures,
@@ -9,6 +14,12 @@ import {
   type GamePredictionFeatureInputs,
   type NstTeamGamelogRow,
 } from "./featureBuilder";
+import {
+  BASELINE_FEATURE_KEYS,
+  BASELINE_MODEL_VERSION,
+  buildBaselineFeatureVector,
+  predictBaselineModelRawHomeWinProbability,
+} from "./baselineModel";
 import { ESPN_MARKET_ODDS_SOURCE_NAME } from "./espnOdds";
 import { getFeatureSourceByTable } from "./featureSources";
 import { buildGamePredictionSourceProvenanceRows } from "lib/predictions/sourceProvenance";
@@ -467,7 +478,179 @@ describe("game prediction feature sources", () => {
   });
 });
 
+function neutralPowerRows(): TeamPowerRow[] {
+  return createInputs().teamPowerRows.map((row) => ({
+    ...row, off_rating: 100, def_rating: 100, goalie_rating: 100, special_rating: 100,
+  }));
+}
+
+function powerHistoryClient(rows: TeamPowerRow[]) {
+  const calls: Array<{ team: string; before: string; limit: number }> = [];
+  const client = { from: vi.fn(() => {
+    let team = "";
+    let before = "";
+    const query = {
+      select: () => query,
+      eq: (_key: string, value: string) => { team = value; return query; },
+      lt: (_key: string, value: string) => { before = value; return query; },
+      order: () => query,
+      limit: async (limit: number) => {
+        calls.push({ team, before, limit });
+        return { data: rows.filter((row) => row.team_abbreviation === team && row.date < before)
+          .sort((a, b) => b.date.localeCompare(a.date)).slice(0, limit), error: null };
+      },
+    };
+    return query;
+  }) };
+  return { client: client as unknown as Parameters<typeof fetchRequestedTeamPowerHistory>[0], calls };
+}
+
 describe("game prediction feature builder", () => {
+  it("pins legacy neutral50 compatibility despite producer neutral100 and preserves interior cancellation", () => {
+    const payload = buildGamePredictionFeatureSnapshotPayload(createInputs({ teamPowerRows: neutralPowerRows() }));
+    expect(TEAM_POWER_RATING_UNITS).toBe("power_ratings_center100_scale15");
+    expect(payload.home.opponentAdjustedForm?.version).toBe(SOS_ADJUSTED_FORM_VERSION);
+    expect(payload.home.scheduleStrength?.ratingProvenance[0]).toMatchObject({ calculationVersion: null, sourceThroughDate: null });
+    expect(payload.home.opponentAdjustedForm?.adjustedLast10GoalDifferentialPerGame).toBe(2.5);
+    expect(payload.away.opponentAdjustedForm?.adjustedLast10GoalDifferentialPerGame).toBe(-1);
+    expect(payload.home.opponentAdjustedForm?.adjustedLast10XgfPct).toBeCloseTo(0.61);
+    expect(payload.matchup.homeMinusAwayAdjustedRecent10XgfPct).toBeCloseTo(0.16);
+    expect(payload.matchup.homeMinusAwayAdjustedRecent10GoalDifferentialPerGame).toBe(3.5);
+  });
+
+  it("characterizes loss of home-away cancellation when both neutral100 xGF shares clip", () => {
+    const rows = [
+      createNstTeamGamelogRow({ teamAbbreviation: "BOS", date: "2026-01-09", gf: 1, ga: 1, xgf: 98, xga: 2, sf: 30, sa: 30, points: 1 }),
+      createNstTeamGamelogRow({ teamAbbreviation: "MTL", date: "2026-01-06", gf: 1, ga: 1, xgf: 95, xga: 5, sf: 30, sa: 30, points: 1 }),
+    ];
+    const payload = buildGamePredictionFeatureSnapshotPayload(createInputs({ teamPowerRows: neutralPowerRows(), nstTeamGamelogRows: rows }));
+    expect(payload.home.opponentAdjustedForm?.rawLast5XgfPct).toBe(0.98);
+    expect(payload.away.opponentAdjustedForm?.rawLast5XgfPct).toBe(0.95);
+    expect(payload.home.opponentAdjustedForm?.adjustedLast5XgfPct).toBe(1);
+    expect(payload.away.opponentAdjustedForm?.adjustedLast5XgfPct).toBe(1);
+    expect(payload.matchup.homeMinusAwayAdjustedRecent5XgfPct).toBe(0);
+    expect(payload.matchup.homeMinusAwayRecent5XgfPct).toBeCloseTo(0.03);
+    // Deterministic sensitivity fixture, never a selected/deployed model artifact.
+    const recentered = { ...payload, matchup: { ...payload.matchup,
+      homeMinusAwayAdjustedRecent10XgfPct: 0.03,
+    } };
+    const model = { featureCount: BASELINE_FEATURE_KEYS.length, bias: 0,
+      weights: BASELINE_FEATURE_KEYS.map((key) => key === "homeMinusAwayAdjustedRecent10XgfPct" ? 1 : 0),
+    };
+    const infer = (input: typeof payload, includeDefaultExcludedFeatureKeys: boolean) =>
+      predictBaselineModelRawHomeWinProbability(model, buildBaselineFeatureVector(input, { includeDefaultExcludedFeatureKeys }));
+    expect(BASELINE_MODEL_VERSION).toBe("v6_roster_ctpi_sos_threshold_52");
+    expect(infer(payload, false)).toBe(0.5);
+    expect(infer(recentered, false)).toBe(0.5);
+    expect(infer(payload, true)).toBe(0.5);
+    expect(infer(recentered, true)).toBeCloseTo(0.5074994375506203, 12);
+
+  });
+
+  it("retains fixed opponent slots and explicit missing coverage instead of a convenient last five", () => {
+    const inputs = createInputs();
+    const games = Array.from({ length: 6 }, (_, index) => ({
+      ...inputs.priorGames[0], id: 100 + index, date: `2026-01-0${9 - index}`,
+      awayTeamId: index === 0 ? 4 : 3,
+    }));
+    const oldTor = { ...neutralPowerRows()[0], team_abbreviation: "TOR", date: "2026-01-01" };
+    const payload = buildGamePredictionFeatureSnapshotPayload(createInputs({ priorGames: games, teamPowerRows: [oldTor] }));
+    expect(payload.home.scheduleStrength).toMatchObject({ requestedOpponentGames: 6, pastOpponentGames: 5, missingSnapshotGameIds: [100],
+      last5OpponentCompositeRating: null, last10OpponentCompositeRating: null });
+    expect(payload.home.opponentAdjustedForm?.adjustedLast5GoalDifferentialPerGame).toBeNull();
+    expect(payload.missingFeatures).toContain("home.schedule_strength_coverage");
+    const complete = buildGamePredictionFeatureSnapshotPayload(createInputs({ priorGames: [...games, games[0]], teamPowerRows: [oldTor, { ...oldTor, team_abbreviation: "OTT" }] }));
+    expect(complete.home.scheduleStrength).toMatchObject({ requestedOpponentGames: 6, pastOpponentGames: 6, missingSnapshotGameIds: [], last5OpponentCompositeRating: 100 });
+  });
+
+  it("rejects ambiguous latest snapshots and incomplete composite ratings without falling back to older values", () => {
+    const inputs = createInputs();
+    const tor = inputs.teamPowerRows.find((row) => row.team_abbreviation === "TOR" && row.date === "2026-01-08")!;
+    const duplicate = buildGamePredictionFeatureSnapshotPayload(createInputs({ teamPowerRows: [...inputs.teamPowerRows, { ...tor, off_rating: 200 }] }));
+    expect(duplicate.home.scheduleStrength).toMatchObject({ ambiguousSnapshotGameIds: [inputs.priorGames[0].id], last5OpponentCompositeRating: null });
+    const incomplete = buildGamePredictionFeatureSnapshotPayload(createInputs({ teamPowerRows: inputs.teamPowerRows.map((row) => row === tor ? { ...row, goalie_rating: null } : row) }));
+    expect(incomplete.home.scheduleStrength).toMatchObject({ incompleteRatingGameIds: [inputs.priorGames[0].id], last10OpponentCompositeRating: null });
+    const boundary = buildGamePredictionFeatureSnapshotPayload(createInputs({ teamPowerRows: [{ ...tor, date: "2026-01-09" }, { ...tor, date: "2026-01-10" }] }));
+    expect(boundary.home.scheduleStrength).toMatchObject({ missingSnapshotGameIds: [inputs.priorGames[0].id] });
+  });
+
+  it("loads requested old opponent snapshots beyond 100 unrelated recent rows with strict cutoffs", async () => {
+    const oldTor = { ...neutralPowerRows()[0], team_abbreviation: "TOR", date: "2025-10-01" };
+    const rows = [...Array.from({ length: 120 }, (_, index) => ({ ...oldTor, team_abbreviation: `OTHER${index}`, date: "2026-01-09" })),
+      oldTor, { ...oldTor, date: "2026-01-06", off_rating: 300 }];
+    const { client, calls } = powerHistoryClient(rows);
+    const result = await fetchRequestedTeamPowerHistory(client, [
+      { teamAbbreviation: "TOR", beforeDate: "2026-01-06" },
+      { teamAbbreviation: "OTT", beforeDate: "2026-01-06" },
+      { teamAbbreviation: "TOR", beforeDate: "2026-01-06" },
+    ]);
+    expect(result.data).toEqual([oldTor]);
+    expect(calls).toEqual([{ team: "TOR", before: "2026-01-06", limit: 2 }, { team: "OTT", before: "2026-01-06", limit: 2 }]);
+  });
+
+  it("requests the complete current pair and ten historical opponents per team", async () => {
+    const inputs = createInputs();
+    const opponents = Array.from({ length: 20 }, (_, index) => ({ id: index + 3, abbreviation: `OPP${index}`, name: `Opponent ${index}` }));
+    const games = opponents.map((opponent, index) => ({ ...inputs.priorGames[0], id: 500 + index,
+      date: `2026-01-${String(10 - (index % 10)).padStart(2, "0")}`,
+      homeTeamId: index < 10 ? 1 : 2, awayTeamId: opponent.id }));
+    // Exact duplicate and future rows must not consume an opponent slot.
+    games.push(games[0], { ...games[0], id: 999, date: "2026-02-01" });
+    const teamRows = [inputs.homeTeam, inputs.awayTeam, ...opponents];
+    const powerRows = teamRows.map((team) => ({ ...neutralPowerRows()[0], team_abbreviation: team.abbreviation, date: "2025-12-01", calculation_version: "team-power-v2-final-source-observed-pdo", source_through_date: "2025-11-30" }));
+    const power = powerHistoryClient(powerRows);
+    const tables: Record<string, unknown[]> = { teams: teamRows, games };
+    const client = { from(table: string) {
+      if (table === "team_power_ratings_daily") return power.client.from(table);
+      let data = tables[table] ?? [];
+      const query = {
+        select: () => query,
+        eq: () => query, lt: () => query, lte: () => query, gte: () => query,
+        in: (key: string, values: unknown[]) => {
+          if (table === "teams") data = data.filter((row) => values.includes((row as Record<string, unknown>)[key]));
+          return query;
+        },
+        or: () => query, order: () => query, limit: () => query,
+        single: async () => ({ data: { ...inputs.game, date: "2026-01-11" }, error: null }),
+        maybeSingle: async () => ({ data: null, error: null }),
+        then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data, error: null }).then(resolve),
+      };
+      return query;
+    } } as unknown as Parameters<typeof fetchGamePredictionFeatureInputs>[0];
+    const loaded = await fetchGamePredictionFeatureInputs(client, inputs.game.id);
+    expect(power.calls).toHaveLength(22);
+    expect(power.calls).toContainEqual({ team: "OPP0", before: "2026-01-10", limit: 2 });
+    expect(power.calls).toContainEqual({ team: "OPP19", before: "2026-01-01", limit: 2 });
+    expect(loaded.teamPowerRows).toHaveLength(22);
+    const payload = buildGamePredictionFeatureSnapshotPayload(loaded);
+    expect(payload.home.scheduleStrength).toMatchObject({ requestedOpponentGames: 10, pastOpponentGames: 10, last10OpponentCompositeRating: 100 });
+    expect(payload.away.scheduleStrength).toMatchObject({ requestedOpponentGames: 10, pastOpponentGames: 10, last10OpponentCompositeRating: 100 });
+    expect(payload.home.scheduleStrength?.ratingProvenance[0]).toEqual({ gameId: 500, snapshotDate: "2025-12-01", calculationVersion: "team-power-v2-final-source-observed-pdo", sourceThroughDate: "2025-11-30" });
+  });
+
+  it("fails closed on duplicate latest dates and bounds the identity/cutoff query budget", async () => {
+    const row = { ...neutralPowerRows()[0], date: "2026-01-01" };
+    const { client } = powerHistoryClient([row, { ...row, off_rating: 200 }]);
+    await expect(fetchRequestedTeamPowerHistory(client, [{ teamAbbreviation: row.team_abbreviation, beforeDate: "2026-01-06" }])).rejects.toThrow("Ambiguous team power snapshot");
+    await expect(fetchRequestedTeamPowerHistory(client, Array.from({ length: 23 }, (_, index) => ({ teamAbbreviation: `TEAM${index}`, beforeDate: "2026-01-06" })))).rejects.toThrow("exceeds 22");
+  });
+
+  it.each([
+    [null, 0.3, 24, 4, null, 28],
+    [2.5, null, null, 4, null, null],
+    [null, null, 24, null, null, null],
+    [0, 0, 0, 0, 0, 0],
+    [2.5, 0.3, 24, 4, 2.8, 28],
+  ])("preserves modeled-head completeness for goals %s/%s and shots %s/%s", (goalsEs, goalsPp, shotsEs, shotsPp, goals, shots) => {
+    const payload = buildGamePredictionFeatureSnapshotPayload(createInputs({ forgeTeamProjectionRows: [{
+      run_id: "fixture", game_id: 2025020001, team_id: 1, horizon_games: 1,
+      proj_goals_es: goalsEs, proj_goals_pp: goalsPp, proj_shots_es: shotsEs, proj_shots_pp: shotsPp,
+      updated_at: "2026-01-10T15:00:00+00:00",
+    }] }));
+    expect(payload.home.forgeProjection).toMatchObject({ projectedGoals: goals, projectedShots: shots });
+    expect(payload.matchup.homeMinusAwayForgeProjectedGoals).toBeNull();
+  });
+
   it("uses a granular games-played curve that retains roster context", () => {
     expect(rosterFormBlendWeights(0)).toMatchObject({
       rosterPriorWeight: 0.8,

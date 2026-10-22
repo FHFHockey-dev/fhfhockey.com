@@ -1,0 +1,19 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts __tests__/pages/api/v1/transactions/ownership-trends.test.ts lib/dashboard/playerOwnership.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-e79jo9g0/isolation/snapshot/web
+
+(node:77741) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/api/v1/transactions/ownership-trends.test.ts (33 tests) 17ms
+(node:77741) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/dashboard/playerOwnership.test.ts (8 tests) 7ms
+
+ Test Files  2 passed (2)
+      Tests  41 passed (41)
+   Start at  09:23:42
+   Duration  805ms (transform 66ms, setup 14ms, collect 63ms, tests 25ms, environment 480ms, prepare 69ms)
+

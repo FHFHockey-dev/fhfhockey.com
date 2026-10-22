@@ -1,0 +1,339 @@
+{
+  "as_of": "2026-10-22T13:27:32+00:00",
+  "head": "716896be8325a64f5cbd3ece9a1fdab48c50733f",
+  "scope": "P07 local RSO detailed admission/retention trace only. Overlapping paths are deliberate; declaration execution is distinct from wrapper/source inspection. No entire-file certification.",
+  "executed_receipt": "P07-PROBES.json",
+  "executed_sources": [
+    {
+      "path": "web/lib/projections/evidenceTime.ts",
+      "declarations": [
+        "timestampMicros",
+        "acceptedNewsSupersedes"
+      ],
+      "sha256": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00",
+      "evidence_level": "behavior tested",
+      "coverage": "Only named declarations and synthetic cases in P07-PROBES.json; whole module/import graph not executed."
+    },
+    {
+      "path": "web/lib/player-forecasts/sourceSnapshot.ts",
+      "declarations": [
+        "canonicalize",
+        "playerForecastSourcePayloadHash"
+      ],
+      "sha256": "7ec78dcefc5dd0d64de52ae6e03172594cf2c8c9232b1d20a0c34e8833de1c82",
+      "evidence_level": "behavior tested",
+      "coverage": "Only named declarations and synthetic cases in P07-PROBES.json; whole module/import graph not executed."
+    },
+    {
+      "path": "web/lib/projections/issuedContext.ts",
+      "declarations": [
+        "forgeScheduleRevision",
+        "forgeRosterRevision"
+      ],
+      "sha256": "8d2aeb9d1c01f9513ee18a6301ef17dbfa49ea2100c321939de7d35f9ebabb9d",
+      "evidence_level": "behavior tested",
+      "coverage": "Only named declarations and synthetic cases in P07-PROBES.json; whole module/import graph not executed."
+    },
+    {
+      "path": "web/lib/projections/calibrationEligibility.ts",
+      "declarations": [
+        "FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT"
+      ],
+      "sha256": "9b93cc5cf9a80b0c695bd54f6bd6a6e232bd90170b8efdedd1e7106e3aa6e852",
+      "evidence_level": "behavior tested",
+      "coverage": "Only named declarations and synthetic cases in P07-PROBES.json; whole module/import graph not executed."
+    },
+    {
+      "path": "web/lib/player-forecasts/contributions.ts",
+      "declarations": [
+        "CONTRIBUTION_RESOLVER_POLICY_VERSION",
+        "CURRENT_SEASON_SOG_CONTRIBUTION_VERSION",
+        "forecastCalendarPolicy",
+        "validForecastCalendarPolicy",
+        "calendarLeadDay",
+        "validTime",
+        "milliseconds",
+        "DAY_MS",
+        "utcDay",
+        "assessSource",
+        "participationProbability",
+        "participationFor",
+        "resolveContribution"
+      ],
+      "sha256": "b3c20c166d97440341ff35d0c236c0772067a178df1df3cf699e6a00941f43a1",
+      "evidence_level": "behavior tested",
+      "coverage": "Only named declarations and synthetic cases in P07-PROBES.json; whole module/import graph not executed."
+    },
+    {
+      "path": "web/lib/projections/starterBoardScoring.ts",
+      "declarations": [
+        "BOARD_CATEGORIES",
+        "integrateBoardParticipation",
+        "scopedEvidence",
+        "assertionKeys",
+        "skaterParticipationFromEvidence",
+        "boardSkaterForecast",
+        "goalieConfirmationFromEvidence",
+        "boardGoalieForecast",
+        "boardSkaterStatsFromProjection",
+        "completeBoardSkaterStatsFromProjection"
+      ],
+      "sha256": "c34fcb08fa23d6f05c26d8864f77dc3efdccb749b5527d66c0920e4043d9e535",
+      "evidence_level": "behavior tested",
+      "coverage": "Only named declarations and synthetic cases in P07-PROBES.json; whole module/import graph not executed."
+    },
+    {
+      "path": "web/lib/projections/consumerRevisionAdmission.ts",
+      "declarations": [
+        "numberOrNull",
+        "validCapturedTime",
+        "publicPlanningForecasts"
+      ],
+      "sha256": "303a0c9896f6277e8ad8f5f018a7220a61d92e586f4e0610506e782e00ea3f4a",
+      "evidence_level": "behavior tested",
+      "coverage": "Only named declarations and synthetic cases in P07-PROBES.json; whole module/import graph not executed."
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+      "declarations": [
+        "forecastAllows"
+      ],
+      "sha256": "e7260eb53bb984191724eb0014c406c91713029a5c2f01cf52eaad4810a70cac",
+      "evidence_level": "behavior tested",
+      "coverage": "Only named declarations and synthetic cases in P07-PROBES.json; whole module/import graph not executed."
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planning.test.ts",
+      "declarations": [
+        "membershipCreatedAt",
+        "rosterRevision",
+        "player",
+        "rows",
+        "issuedContext",
+        "revision"
+      ],
+      "sha256": "30ec57586d80e83ce0602f90a2c0ab89e93934b7f06681f7885f822a7bc88748",
+      "evidence_level": "behavior tested",
+      "coverage": "Only named declarations and synthetic cases in P07-PROBES.json; whole module/import graph not executed."
+    }
+  ],
+  "source_inspections": [
+    {
+      "path": "web/lib/player-forecasts/planningContributions.ts",
+      "sha256": "d04bef7eee21b7672d78242134fe3f2ef8c11da2f16df7f3279943f22c8e8b08",
+      "observed_at": "2026-10-22T13:27:32+00:00",
+      "ranges": [
+        [
+          1,
+          105
+        ],
+        [
+          150,
+          246
+        ]
+      ],
+      "functions": [
+        "detailed source construction",
+        "participation permission propagation",
+        "resolver invocation"
+      ],
+      "evidence_level": "source inspected",
+      "check": "Row-level original.allowedUses copied to every detailed target and participation; target-specific policy cannot stop at upstream literal."
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningTypes.ts",
+      "sha256": "9362696dbe129b45ac8c5e204972396cbd2ed362aa41122017ded95ee0207294",
+      "observed_at": "2026-10-22T13:27:32+00:00",
+      "ranges": [
+        [
+          58,
+          108
+        ]
+      ],
+      "functions": [
+        "GameForecast"
+      ],
+      "evidence_level": "source inspected",
+      "check": "Raw permission field is row-level; resolved contribution map supports per-target permissions."
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planningDataTransport.ts",
+      "sha256": "c71139a8919d6b77a34911913285656141e54157ae2e3724010e5ab1e363c040",
+      "observed_at": "2026-10-22T13:27:32+00:00",
+      "ranges": [
+        [
+          18,
+          70
+        ]
+      ],
+      "functions": [
+        "planning transport forecast shapes"
+      ],
+      "evidence_level": "source inspected",
+      "check": "Existing raw and resolved use permissions survive wire shapes; proposed receipt/revocation not designed or tested."
+    },
+    {
+      "path": "web/lib/player-forecasts/nativeContributionAdmission.ts",
+      "sha256": "533dedd6625688fbd93b1fdf0f97e0378cb28a2b0c94d2dd306e913c7c1d3f63",
+      "observed_at": "2026-10-22T13:27:32+00:00",
+      "ranges": [
+        [
+          1,
+          100
+        ]
+      ],
+      "functions": [
+        "native baseline admission"
+      ],
+      "evidence_level": "source inspected",
+      "check": "Separate approved baseline bundle and original-source validation cannot authorize detailed FORGE by substitution."
+    },
+    {
+      "path": "web/lib/projections/gameRevisions.ts",
+      "sha256": "2b16ffb05973d007798e46329720579bf12b25c409daaf750d2cca8cf0841e95",
+      "observed_at": "2026-10-22T13:27:32+00:00",
+      "ranges": [
+        [
+          150,
+          198
+        ]
+      ],
+      "functions": [
+        "issued payload construction"
+      ],
+      "evidence_level": "source inspected",
+      "check": "modelMode/codeVersion and captured provenance present; no typed target/use approval receipt in inspected envelope. Publication RPC not reviewed."
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planning.ts",
+      "sha256": "a3cba77737afee79fdea0a971f37350b613daca1f36f52f8c7e6132b74a4ff84",
+      "observed_at": "2026-10-22T13:27:32+00:00",
+      "ranges": [
+        [
+          125,
+          265
+        ]
+      ],
+      "functions": [
+        "loadPlanningData",
+        "admission call",
+        "manifest construction"
+      ],
+      "evidence_level": "source inspected",
+      "check": "Shared admission is used; cache/manifest and saved propagation require coherent policy identity. Loader not executed."
+    },
+    {
+      "path": "web/lib/in-season/workspaceSchema.ts",
+      "sha256": "cc312bf6cb48722f0ddcbde0c287e5306e442579fefc93e23e45e56a09bf6b79",
+      "observed_at": "2026-10-22T13:27:32+00:00",
+      "ranges": [
+        [
+          40,
+          101
+        ]
+      ],
+      "functions": [
+        "allowedUses",
+        "contributionSource",
+        "contributionParticipation",
+        "resolvedContribution",
+        "forecast"
+      ],
+      "evidence_level": "source inspected",
+      "check": "Strict schemas retain source/participation allowedUses and row permissions. New receipt/target map needs compatible retention; schema parsing not executed here."
+    },
+    {
+      "path": "web/lib/projections/consumerRevisionAdmission.ts",
+      "sha256": "303a0c9896f6277e8ad8f5f018a7220a61d92e586f4e0610506e782e00ea3f4a",
+      "observed_at": "2026-10-22T13:27:32+00:00",
+      "ranges": [
+        [
+          38,
+          127
+        ],
+        [
+          148,
+          206
+        ],
+        [
+          210,
+          242
+        ]
+      ],
+      "functions": [
+        "publicPlanningForecasts",
+        "admitConsumerGameRevisions"
+      ],
+      "evidence_level": "source inspected",
+      "check": "Pure admission exercised separately; wrapper accepted-news failure/staleness source-inspected only."
+    },
+    {
+      "path": "web/lib/projections/starterBoardScoring.ts",
+      "sha256": "c34fcb08fa23d6f05c26d8864f77dc3efdccb749b5527d66c0920e4043d9e535",
+      "observed_at": "2026-10-22T13:27:32+00:00",
+      "ranges": [
+        [
+          173,
+          202
+        ],
+        [
+          239,
+          245
+        ]
+      ],
+      "functions": [
+        "boardGoalieForecast",
+        "starter board scoring"
+      ],
+      "evidence_level": "source inspected",
+      "check": "Start-only/zero-relief participation math executed in probes; separate board scoring policy source-inspected only and outside RSO-only change."
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+      "sha256": "e7260eb53bb984191724eb0014c406c91713029a5c2f01cf52eaad4810a70cac",
+      "observed_at": "2026-10-22T13:27:32+00:00",
+      "ranges": [
+        [
+          99,
+          101
+        ],
+        [
+          122,
+          122
+        ],
+        [
+          249,
+          249
+        ],
+        [
+          308,
+          311
+        ]
+      ],
+      "functions": [
+        "forecastAllows",
+        "assignment/totals/comparison consumers"
+      ],
+      "evidence_level": "source inspected",
+      "check": "Helper executed; consumer call sites source-inspected. Complete plan not executed."
+    }
+  ],
+  "policy_authority": {
+    "path": "tasks/tasks-prd-roster-schedule-optimizer.md",
+    "line": 162,
+    "sha256": "ced28e5f557e3d17cd3a0adb56164cac0f0f79ad6494d72bf3fea0ad942b49f8",
+    "observed_at": "2026-10-22T13:27:32+00:00"
+  },
+  "boundaries": [
+    "No full adapter, full-plan, schema parse, RPC, DB, browser, production or paid execution",
+    "No formula correctness/calibration claim",
+    "No current deployed mode/coverage/unauthorized recommendation claim",
+    "No application edits; existing Starter Board policy unchanged"
+  ],
+  "pending_action": {
+    "action": "bind detailed forecast target/use policy",
+    "target": "RSO-FE-02c application packet",
+    "status": "pending owner policy decision; implementer UNASSIGNED",
+    "reason": "Canonical decision matrix requires owner-selected retained component scope before implementation binding; three options remain unselected in inspected authority."
+  }
+}

@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from "react";
 import supabase from "lib/supabase";
+import { seasonDateWindow } from "components/PlayerStats/playerStatsContract";
+import {
+  aggregateNstTeamCounts,
+  aggregateWgoTeamGames,
+  formatFractionPercent,
+  type WgoTeamGameRow
+} from "lib/stats/percentUnits";
 import styles from "./AdvancedL10Metrics.module.scss";
 
+// All shares and percentages below are fractions (0-1), built as ratios of
+// summed counts from one-game-per-date rows; null means unavailable.
 interface L10Metrics {
   record: string;
   points: number;
@@ -9,20 +18,24 @@ interface L10Metrics {
   goalsFor: number;
   goalsAgainst: number;
   goalDifferential: number;
-  shotsFor: number;
-  shotsAgainst: number;
-  shotDifferential: number;
-  powerPlayPct: number;
-  penaltyKillPct: number;
-  faceoffWinPct: number;
-  corsiFor: number;
-  expectedGoalsFor: number;
-  highDangerChancesFor: number;
-  shootingPct: number;
-  savePct: number;
-  pdo: number;
+  shotsFor: number | null;
+  shotsAgainst: number | null;
+  shotDifferential: number | null;
+  powerPlayPct: number | null;
+  penaltyKillPct: number | null;
+  faceoffWinPct: number | null;
+  corsiFor: number | null;
+  expectedGoalsFor: number | null;
+  highDangerChancesFor: number | null;
+  shootingPct: number | null;
+  savePct: number | null;
+  pdo: number | null;
   homeRecord: string;
   roadRecord: string;
+  teamGames: number | null;
+  teamThroughDate: string | null;
+  advancedGames: number | null;
+  advancedThroughDate: string | null;
 }
 
 interface TrendData {
@@ -37,12 +50,32 @@ interface AdvancedL10MetricsProps {
   teamId: string;
   teamAbbrev: string;
   seasonId: string;
+  regularSeasonStartDate?: string | null;
+  regularSeasonEndDate?: string | null;
 }
+
+const compareTrend = (
+  metric: string,
+  current: number | null,
+  previous: number | null,
+  scale: number
+): TrendData | null => {
+  if (current === null || previous === null) return null;
+  return {
+    metric,
+    current: current * scale,
+    previous: previous * scale,
+    trend: current > previous ? "up" : current < previous ? "down" : "stable",
+    isGood: true
+  };
+};
 
 export function AdvancedL10Metrics({
   teamId,
   teamAbbrev,
-  seasonId
+  seasonId,
+  regularSeasonStartDate,
+  regularSeasonEndDate
 }: AdvancedL10MetricsProps) {
   const [l10Metrics, setL10Metrics] = useState<L10Metrics | null>(null);
   const [trendData, setTrendData] = useState<TrendData[]>([]);
@@ -55,6 +88,15 @@ export function AdvancedL10Metrics({
     const fetchL10Metrics = async () => {
       try {
         setLoading(true);
+
+        // Regular-season dates when known; otherwise the season id's window.
+        const window = seasonDateWindow(
+          seasonId,
+          regularSeasonStartDate && regularSeasonEndDate
+            ? { startDate: regularSeasonStartDate, endDate: regularSeasonEndDate }
+            : null
+        );
+        if (!window) throw new Error(`Invalid season id: ${seasonId}`);
 
         // Fetch standings details for L10 record
         const { data: standingsData, error: standingsError } = await supabase
@@ -82,94 +124,67 @@ export function AdvancedL10Metrics({
 
         if (standingsError) throw standingsError;
 
-        // Fetch recent WGO team stats for detailed metrics
+        // Last ten WGO team game rows (one game date per row)
         const { data: wgoData, error: wgoError } = await supabase
           .from("wgo_team_stats")
           .select(
             `
             date,
+            games_played,
             shots_for_per_game,
             shots_against_per_game,
-            power_play_pct,
-            penalty_kill_pct,
-            faceoff_win_pct,
-            games_played
+            power_play_goals_for,
+            pp_opportunities,
+            pp_goals_against,
+            times_shorthanded,
+            faceoffs_won,
+            faceoffs_lost
           `
           )
           .eq("team_id", parseInt(teamId))
           .eq("season_id", parseInt(seasonId))
+          .gte("date", window.start)
+          .lte("date", window.end)
+          .or("games_played.neq.0,games_played.is.null")
           .order("date", { ascending: false })
-          .limit(15); // Get extra for trend calculation
+          .limit(10);
 
         if (wgoError) throw wgoError;
 
-        // Fetch recent advanced stats
+        // Last ten NST 5v5 rows (regular season, one date per row, counts)
         const { data: advancedData, error: advancedError } = await supabase
           .from("nst_team_5v5")
           .select(
             `
             date,
-            cf_pct,
-            xgf_pct,
-            hdcf_pct,
-            sh_pct,
-            sv_pct,
-            pdo,
-            gp
+            gp,
+            cf,
+            ca,
+            xgf,
+            xga,
+            hdcf,
+            hdca,
+            gf,
+            ga,
+            sf,
+            sa
           `
           )
           .eq("team_abbreviation", teamAbbrev)
+          .gte("date", window.start)
+          .lte("date", window.end)
+          .or("gp.neq.0,gp.is.null")
           .order("date", { ascending: false })
-          .limit(15);
+          .limit(10);
 
         if (advancedError) throw advancedError;
 
-        if (standingsData?.[0] && wgoData && advancedData) {
+        if (standingsData?.[0]) {
           const standings = standingsData[0];
-
-          // Calculate L10 averages from recent games
-          const l10Games = wgoData.slice(0, 10);
-          const l5Games = wgoData.slice(0, 5);
-
-          let totalShotsFor = 0;
-          let totalShotsAgainst = 0;
-          let totalPowerPlay = 0;
-          let totalPenaltyKill = 0;
-          let totalFaceoff = 0;
-          let validGames = 0;
-
-          l10Games.forEach((game) => {
-            if (game.games_played && game.games_played > 0) {
-              totalShotsFor += game.shots_for_per_game || 0;
-              totalShotsAgainst += game.shots_against_per_game || 0;
-              totalPowerPlay += game.power_play_pct || 0;
-              totalPenaltyKill += game.penalty_kill_pct || 0;
-              totalFaceoff += game.faceoff_win_pct || 0;
-              validGames++;
-            }
-          });
-
-          // Calculate advanced metrics averages
-          const l10Advanced = advancedData.slice(0, 10);
-          let totalCorsi = 0;
-          let totalXG = 0;
-          let totalHDCF = 0;
-          let totalShPct = 0;
-          let totalSvPct = 0;
-          let totalPDO = 0;
-          let validAdvanced = 0;
-
-          l10Advanced.forEach((game) => {
-            if (game.gp && game.gp > 0) {
-              totalCorsi += game.cf_pct || 0;
-              totalXG += game.xgf_pct || 0;
-              totalHDCF += game.hdcf_pct || 0;
-              totalShPct += game.sh_pct || 0;
-              totalSvPct += game.sv_pct || 0;
-              totalPDO += game.pdo || 0;
-              validAdvanced++;
-            }
-          });
+          const teamGames = (wgoData ?? []) as WgoTeamGameRow[];
+          const advancedGames = advancedData ?? [];
+          const l10Team = aggregateWgoTeamGames(teamGames);
+          const l10Advanced = aggregateNstTeamCounts(advancedGames);
 
           const l10Points =
             (standings.l10_wins || 0) * 2 + (standings.l10_ot_losses || 0);
@@ -186,111 +201,50 @@ export function AdvancedL10Metrics({
             goalsFor: standings.l10_goals_for || 0,
             goalsAgainst: standings.l10_goals_against || 0,
             goalDifferential: standings.l10_goal_differential || 0,
-            shotsFor: validGames > 0 ? totalShotsFor / validGames : 0,
-            shotsAgainst: validGames > 0 ? totalShotsAgainst / validGames : 0,
-            shotDifferential:
-              validGames > 0
-                ? (totalShotsFor - totalShotsAgainst) / validGames
-                : 0,
-            powerPlayPct: validGames > 0 ? totalPowerPlay / validGames : 0,
-            penaltyKillPct: validGames > 0 ? totalPenaltyKill / validGames : 0,
-            faceoffWinPct: validGames > 0 ? totalFaceoff / validGames : 0,
-            corsiFor: validAdvanced > 0 ? totalCorsi / validAdvanced : 0,
-            expectedGoalsFor: validAdvanced > 0 ? totalXG / validAdvanced : 0,
-            highDangerChancesFor:
-              validAdvanced > 0 ? totalHDCF / validAdvanced : 0,
-            shootingPct: validAdvanced > 0 ? totalShPct / validAdvanced : 0,
-            savePct: validAdvanced > 0 ? totalSvPct / validAdvanced : 0,
-            pdo: validAdvanced > 0 ? totalPDO / validAdvanced : 0,
+            shotsFor: l10Team.shotsFor,
+            shotsAgainst: l10Team.shotsAgainst,
+            shotDifferential: l10Team.shotDifferential,
+            powerPlayPct: l10Team.powerPlayPct,
+            penaltyKillPct: l10Team.penaltyKillPct,
+            faceoffWinPct: l10Team.faceoffWinPct,
+            corsiFor: l10Advanced.cfPct,
+            expectedGoalsFor: l10Advanced.xgfPct,
+            highDangerChancesFor: l10Advanced.hdcfPct,
+            shootingPct: l10Advanced.shootingPct,
+            savePct: l10Advanced.savePct,
+            pdo: l10Advanced.pdo,
             homeRecord: `${standings.home_wins || 0}-${standings.home_losses || 0}-${standings.home_ot_losses || 0}`,
-            roadRecord: `${standings.road_wins || 0}-${standings.road_losses || 0}-${standings.road_ot_losses || 0}`
+            roadRecord: `${standings.road_wins || 0}-${standings.road_losses || 0}-${standings.road_ot_losses || 0}`,
+            teamGames: l10Team.games,
+            teamThroughDate: teamGames[0]?.date ?? null,
+            advancedGames: l10Advanced.games,
+            advancedThroughDate: advancedGames[0]?.date ?? null
           };
 
           setL10Metrics(metrics);
 
-          // Calculate trend data (L5 vs L10)
-          if (l5Games.length >= 5) {
-            let l5ShotsFor = 0,
-              l5PowerPlay = 0,
-              l5PenaltyKill = 0,
-              l5Faceoff = 0;
-            let l5Advanced = advancedData.slice(0, 5);
-            let l5Corsi = 0,
-              l5XG = 0,
-              l5ShPct = 0,
-              l5SvPct = 0;
+          // L5 vs L10, from the same rows and the same ratio-of-sums contract
+          const l5Team = aggregateWgoTeamGames(teamGames.slice(0, 5));
+          const l5Advanced = aggregateNstTeamCounts(advancedGames.slice(0, 5));
+          const trends = [
+            l5Team.games !== null && l5Team.games >= 5
+              ? compareTrend("Shots For/Game", l5Team.shotsFor, l10Team.shotsFor, 1)
+              : null,
+            l5Team.games !== null && l5Team.games >= 5
+              ? compareTrend("Power Play %", l5Team.powerPlayPct, l10Team.powerPlayPct, 100)
+              : null,
+            l5Team.games !== null && l5Team.games >= 5
+              ? compareTrend("Penalty Kill %", l5Team.penaltyKillPct, l10Team.penaltyKillPct, 100)
+              : null,
+            l5Advanced.games !== null && l5Advanced.games >= 5
+              ? compareTrend("Corsi For %", l5Advanced.cfPct, l10Advanced.cfPct, 100)
+              : null
+          ].filter((trend): trend is TrendData => trend !== null);
 
-            l5Games.forEach((game) => {
-              if (game.games_played && game.games_played > 0) {
-                l5ShotsFor += game.shots_for_per_game || 0;
-                l5PowerPlay += game.power_play_pct || 0;
-                l5PenaltyKill += game.penalty_kill_pct || 0;
-                l5Faceoff += game.faceoff_win_pct || 0;
-              }
-            });
-
-            l5Advanced.forEach((game) => {
-              if (game.gp && game.gp > 0) {
-                l5Corsi += game.cf_pct || 0;
-                l5XG += game.xgf_pct || 0;
-                l5ShPct += game.sh_pct || 0;
-                l5SvPct += game.sv_pct || 0;
-              }
-            });
-
-            const trends: TrendData[] = [
-              {
-                metric: "Shots For/Game",
-                current: l5ShotsFor / 5,
-                previous: metrics.shotsFor,
-                trend:
-                  l5ShotsFor / 5 > metrics.shotsFor
-                    ? "up"
-                    : l5ShotsFor / 5 < metrics.shotsFor
-                      ? "down"
-                      : "stable",
-                isGood: true
-              },
-              {
-                metric: "Power Play %",
-                current: (l5PowerPlay / 5) * 100,
-                previous: metrics.powerPlayPct * 100,
-                trend:
-                  l5PowerPlay / 5 > metrics.powerPlayPct
-                    ? "up"
-                    : l5PowerPlay / 5 < metrics.powerPlayPct
-                      ? "down"
-                      : "stable",
-                isGood: true
-              },
-              {
-                metric: "Penalty Kill %",
-                current: (l5PenaltyKill / 5) * 100,
-                previous: metrics.penaltyKillPct * 100,
-                trend:
-                  l5PenaltyKill / 5 > metrics.penaltyKillPct
-                    ? "up"
-                    : l5PenaltyKill / 5 < metrics.penaltyKillPct
-                      ? "down"
-                      : "stable",
-                isGood: true
-              },
-              {
-                metric: "Corsi For %",
-                current: (l5Corsi / 5) * 100,
-                previous: metrics.corsiFor * 100,
-                trend:
-                  l5Corsi / 5 > metrics.corsiFor
-                    ? "up"
-                    : l5Corsi / 5 < metrics.corsiFor
-                      ? "down"
-                      : "stable",
-                isGood: true
-              }
-            ];
-
-            setTrendData(trends);
-          }
+          setTrendData(trends);
+        } else {
+          setL10Metrics(null);
+          setTrendData([]);
         }
       } catch (error) {
         console.error("Error fetching L10 metrics:", error);
@@ -302,21 +256,24 @@ export function AdvancedL10Metrics({
     if (teamId && teamAbbrev && seasonId) {
       fetchL10Metrics();
     }
-  }, [teamId, teamAbbrev, seasonId]);
+  }, [teamId, teamAbbrev, seasonId, regularSeasonStartDate, regularSeasonEndDate]);
 
-  const formatPercentage = (value: number) => {
-    return `${(value * 100).toFixed(1)}%`;
-  };
+  const formatPercentage = (value: number | null) =>
+    formatFractionPercent(value);
 
-  const formatDecimal = (value: number, decimals: number = 1) => {
-    return value.toFixed(decimals);
-  };
+  const formatDecimal = (value: number | null, decimals: number = 1) =>
+    value === null ? "—" : value.toFixed(decimals);
 
+  const formatSigned = (value: number | null, decimals: number = 1) =>
+    value === null ? "—" : `${value >= 0 ? "+" : ""}${value.toFixed(decimals)}`;
+
+  // Thresholds use the same fraction unit as the displayed value.
   const getValueClass = (
-    value: number,
+    value: number | null,
     thresholds: { good: number; poor: number },
     higherIsBetter: boolean = true
   ) => {
+    if (value === null) return "";
     if (higherIsBetter) {
       if (value >= thresholds.good) return styles.excellent;
       if (value <= thresholds.poor) return styles.poor;
@@ -327,6 +284,13 @@ export function AdvancedL10Metrics({
       return styles.average;
     }
   };
+
+  const sampleNote = (games: number | null, throughDate: string | null) =>
+    games === null
+      ? "Incomplete game sample"
+      : games > 0
+      ? `Last ${games} game${games === 1 ? "" : "s"} through ${throughDate}`
+      : "No games in sample";
 
   const getTrendIcon = (trend: "up" | "down" | "stable", isGood: boolean) => {
     if (trend === "stable") return "→";
@@ -411,6 +375,9 @@ export function AdvancedL10Metrics({
 
           <div className={styles.metricGroup}>
             <h5>Shot Metrics</h5>
+            <p className={styles.sampleNote}>
+              {sampleNote(l10Metrics.teamGames, l10Metrics.teamThroughDate)}
+            </p>
             <div className={styles.metricData}>
               <div className={styles.metricRow}>
                 <span className={styles.metricLabel}>Shots For/GP</span>
@@ -427,10 +394,9 @@ export function AdvancedL10Metrics({
               <div className={styles.metricRow}>
                 <span className={styles.metricLabel}>Shot Diff/GP</span>
                 <span
-                  className={`${styles.metricValue} ${l10Metrics.shotDifferential >= 0 ? styles.positive : styles.negative}`}
+                  className={`${styles.metricValue} ${l10Metrics.shotDifferential === null ? "" : l10Metrics.shotDifferential >= 0 ? styles.positive : styles.negative}`}
                 >
-                  {l10Metrics.shotDifferential >= 0 ? "+" : ""}
-                  {formatDecimal(l10Metrics.shotDifferential)}
+                  {formatSigned(l10Metrics.shotDifferential)}
                 </span>
               </div>
             </div>
@@ -438,6 +404,9 @@ export function AdvancedL10Metrics({
 
           <div className={styles.metricGroup}>
             <h5>Special Teams</h5>
+            <p className={styles.sampleNote}>
+              {sampleNote(l10Metrics.teamGames, l10Metrics.teamThroughDate)}
+            </p>
             <div className={styles.metricData}>
               <div className={styles.metricRow}>
                 <span className={styles.metricLabel}>Power Play</span>
@@ -468,6 +437,10 @@ export function AdvancedL10Metrics({
 
           <div className={styles.metricGroup}>
             <h5>Advanced Stats</h5>
+            <p className={styles.sampleNote}>
+              5v5 ·{" "}
+              {sampleNote(l10Metrics.advancedGames, l10Metrics.advancedThroughDate)}
+            </p>
             <div className={styles.metricData}>
               <div className={styles.metricRow}>
                 <span className={styles.metricLabel}>Corsi For %</span>

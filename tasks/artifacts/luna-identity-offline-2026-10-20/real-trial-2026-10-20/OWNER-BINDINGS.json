@@ -1,0 +1,29 @@
+{
+  "cohort": "owner_adjudicated_development_not_holdout",
+  "labels": [
+    {
+      "span": {
+        "start": 0,
+        "end": 9,
+        "text": "Podkolzin"
+      },
+      "canonicalId": "nhl:8481617",
+      "fullName": "Vasily Podkolzin",
+      "registryId": 10190
+    },
+    {
+      "span": {
+        "start": 20,
+        "end": 23,
+        "text": "RNH"
+      },
+      "canonicalId": "nhl:8476454",
+      "fullName": "Ryan Nugent-Hopkins",
+      "registryId": 9521
+    }
+  ],
+  "provenance": "TJ supplied names/replacement direction; approved export supplies canonical IDs. No independent holdout adjudication.",
+  "priorSlotStateVerified": false,
+  "sourceTimePositionVerified": false,
+  "labelsExcludedFromPreparedInput": true
+}

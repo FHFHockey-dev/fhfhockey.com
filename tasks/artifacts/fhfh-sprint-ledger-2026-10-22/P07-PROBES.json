@@ -1,0 +1,218 @@
+{
+  "as_of": "2026-10-22T13:16:29.859Z",
+  "node": "v22.11.0",
+  "method": "Selected exact current TypeScript declarations in isolated VM contexts; real pure identity, admission, participation math, permission resolver and planner helper. Existing fictional test fixture. No service or full application imports.",
+  "results": [
+    {
+      "id": "P07-1",
+      "description": "No target/use approval receipt in synthetic issued fixture; admission still grants all three uses",
+      "observed": {
+        "fixtureProvenanceKeys": [
+          "rolling_player_history_contract",
+          "external_fantasy_input_contract",
+          "private",
+          "capturedReads",
+          "issuedContexts"
+        ],
+        "stats": {
+          "SAVES_GOALIE": 15,
+          "GOALS_AGAINST_GOALIE": null,
+          "WINS_GOALIE": null,
+          "SHUTOUTS_GOALIE": null,
+          "SHOTS_AGAINST_GOALIE": null
+        },
+        "allowedUses": {
+          "assignment": true,
+          "totals": true,
+          "comparison": true,
+          "conditionalTieBreak": false
+        },
+        "consumerTotals": true,
+        "consumerComparison": true
+      },
+      "assertions": "matched current behavior"
+    },
+    {
+      "id": "P07-2",
+      "description": "Changing actual modelMode/codeVersion fields to an unreviewed synthetic candidate does not narrow permission",
+      "observed": {
+        "inputMode": "candidate",
+        "inputCodeVersion": "synthetic-unreviewed-candidate",
+        "hits": 3,
+        "appearanceProbability": 1,
+        "allowedUses": {
+          "assignment": true,
+          "totals": true,
+          "comparison": true,
+          "conditionalTieBreak": false
+        }
+      },
+      "assertions": "matched current behavior"
+    },
+    {
+      "id": "P07-3",
+      "description": "Existing external-fantasy input-contract guard still rejects a missing contract",
+      "observed": {
+        "admitted": 0
+      },
+      "assertions": "matched current behavior"
+    },
+    {
+      "id": "P07-4",
+      "description": "Existing schedule identity and future-publication guards still reject invalid fixtures",
+      "observed": {
+        "wrongSchedule": 0,
+        "futurePublication": 0
+      },
+      "assertions": "matched current behavior"
+    },
+    {
+      "id": "P07-5",
+      "description": "Adapter all-use grant survives actual pure contribution resolver",
+      "observed": {
+        "mean": 15,
+        "allowedUses": {
+          "assignment": true,
+          "totals": true,
+          "comparison": true,
+          "conditionalTieBreak": false
+        },
+        "exclusions": []
+      },
+      "assertions": "matched current behavior"
+    },
+    {
+      "id": "P07-6",
+      "description": "Resolver control: assignment-only denies totals/comparison without erasing known mean",
+      "observed": {
+        "mean": 15,
+        "allowedUses": {
+          "assignment": true,
+          "totals": false,
+          "comparison": false,
+          "conditionalTieBreak": false
+        },
+        "exclusions": [
+          "use_not_approved"
+        ]
+      },
+      "assertions": "matched current behavior"
+    },
+    {
+      "id": "P07-7",
+      "description": "Resolver control: absent permission denies every quality use",
+      "observed": {
+        "mean": 15,
+        "allowedUses": {
+          "assignment": false,
+          "totals": false,
+          "comparison": false,
+          "conditionalTieBreak": false
+        },
+        "exclusions": [
+          "use_not_approved"
+        ]
+      },
+      "assertions": "matched current behavior"
+    }
+  ],
+  "source_pins": {
+    "web/lib/projections/evidenceTime.ts": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00",
+    "web/lib/player-forecasts/sourceSnapshot.ts": "7ec78dcefc5dd0d64de52ae6e03172594cf2c8c9232b1d20a0c34e8833de1c82",
+    "web/lib/projections/issuedContext.ts": "8d2aeb9d1c01f9513ee18a6301ef17dbfa49ea2100c321939de7d35f9ebabb9d",
+    "web/lib/projections/calibrationEligibility.ts": "9b93cc5cf9a80b0c695bd54f6bd6a6e232bd90170b8efdedd1e7106e3aa6e852",
+    "web/lib/player-forecasts/contributions.ts": "b3c20c166d97440341ff35d0c236c0772067a178df1df3cf699e6a00941f43a1",
+    "web/lib/projections/starterBoardScoring.ts": "c34fcb08fa23d6f05c26d8864f77dc3efdccb749b5527d66c0920e4043d9e535",
+    "web/lib/projections/consumerRevisionAdmission.ts": "303a0c9896f6277e8ad8f5f018a7220a61d92e586f4e0610506e782e00ea3f4a",
+    "web/lib/rosterScheduleOptimizer/planning.ts": "e7260eb53bb984191724eb0014c406c91713029a5c2f01cf52eaad4810a70cac",
+    "web/lib/rosterScheduleData/planning.test.ts": "30ec57586d80e83ce0602f90a2c0ab89e93934b7f06681f7885f822a7bc88748"
+  },
+  "executed_declarations": [
+    {
+      "path": "web/lib/projections/evidenceTime.ts",
+      "declarations": [
+        "timestampMicros",
+        "acceptedNewsSupersedes"
+      ]
+    },
+    {
+      "path": "web/lib/player-forecasts/sourceSnapshot.ts",
+      "declarations": [
+        "canonicalize",
+        "playerForecastSourcePayloadHash"
+      ]
+    },
+    {
+      "path": "web/lib/projections/issuedContext.ts",
+      "declarations": [
+        "forgeScheduleRevision",
+        "forgeRosterRevision"
+      ]
+    },
+    {
+      "path": "web/lib/projections/calibrationEligibility.ts",
+      "declarations": [
+        "FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT"
+      ]
+    },
+    {
+      "path": "web/lib/player-forecasts/contributions.ts",
+      "declarations": [
+        "CONTRIBUTION_RESOLVER_POLICY_VERSION",
+        "CURRENT_SEASON_SOG_CONTRIBUTION_VERSION",
+        "forecastCalendarPolicy",
+        "validForecastCalendarPolicy",
+        "calendarLeadDay",
+        "validTime",
+        "milliseconds",
+        "DAY_MS",
+        "utcDay",
+        "assessSource",
+        "participationProbability",
+        "participationFor",
+        "resolveContribution"
+      ]
+    },
+    {
+      "path": "web/lib/projections/starterBoardScoring.ts",
+      "declarations": [
+        "BOARD_CATEGORIES",
+        "integrateBoardParticipation",
+        "scopedEvidence",
+        "assertionKeys",
+        "skaterParticipationFromEvidence",
+        "boardSkaterForecast",
+        "goalieConfirmationFromEvidence",
+        "boardGoalieForecast",
+        "boardSkaterStatsFromProjection",
+        "completeBoardSkaterStatsFromProjection"
+      ]
+    },
+    {
+      "path": "web/lib/projections/consumerRevisionAdmission.ts",
+      "declarations": [
+        "numberOrNull",
+        "validCapturedTime",
+        "publicPlanningForecasts"
+      ]
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+      "declarations": [
+        "forecastAllows"
+      ]
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planning.test.ts",
+      "declarations": [
+        "membershipCreatedAt",
+        "rosterRevision",
+        "player",
+        "rows",
+        "issuedContext",
+        "revision"
+      ]
+    }
+  ],
+  "limitations": "Demonstrates local boundary cannot distinguish target-use/model approval scopes. Does not prove deployed unauthorized recommendations, a bypass of an existing recognized receipt, model inaccuracy, or a full-plan outcome. Synthetic resolver inputs mirror inspected adapter fields; full adapter/UI/DB/RPC not executed."
+}

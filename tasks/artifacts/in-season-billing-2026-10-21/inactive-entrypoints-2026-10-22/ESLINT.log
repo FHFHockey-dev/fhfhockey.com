@@ -1,0 +1,6 @@
+
+/Users/tim/Code/fhfhockey.com/web/components/account/InSeasonPanel.tsx
+  132:45  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+✖ 1 problem (1 error, 0 warnings)
+

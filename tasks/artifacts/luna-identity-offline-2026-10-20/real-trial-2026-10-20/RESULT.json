@@ -1,0 +1,263 @@
+{
+  "status": "paid_step_blocked_retrieval_gate",
+  "providerRequests": 0,
+  "newModelCostUsd": 0,
+  "reserveAdmittedNanoUsd": 0,
+  "wireRequestSealed": false,
+  "requestId": null,
+  "providerUsage": null,
+  "rawModelProposals": null,
+  "sourceHashUtf8": "860b1c32b2f653225eb2a88463efdb984b91244ae58b8d9d6a300a049a0cc2ee",
+  "sourceFileHash": "a12f0646e8f640f6eb0ebe5026ee4be31c519257e3fb9731ab586b2214053add",
+  "directoryHash": "1e95394b5e380e815f16bbc9c7b2c84d8a36ce8144d807556b0179c64f517e30",
+  "preparedInputHash": "659d8691bd47af25800a182c7ee3e0c599eb16a3ca0cd17996c76092101ff031",
+  "exportedDistinctPlayers": 2,
+  "exportedRelatedRows": 5,
+  "canonicalRowCounts": {
+    "players": 2,
+    "registryLinks": 2
+  },
+  "relatedRowCounts": {
+    "registryAliases": 2,
+    "lineupAliases": 1,
+    "memberships": 2
+  },
+  "capReached": false,
+  "directoryCompleteness": {
+    "status": "partial",
+    "scope": "Podkolzin/Nugent-Hopkins/RNH candidate evidence; not a league directory",
+    "omittedRecords": null
+  },
+  "source": {
+    "id": "S06",
+    "text": "Podkolzin will take RNH’s spot on the first unit powerplay… via Babcock.",
+    "originalPostId": "2104971594632454155",
+    "authorId": "@JasonGregor",
+    "url": "https://x.com/JasonGregor/status/2104971594632454155",
+    "publishedAt": "2026-09-29T16:28:31.000Z",
+    "receivedAt": "2026-09-29T17:00:52.374726+00:00",
+    "provenance": {
+      "kind": "approved_local",
+      "label": "Retained S06 observation; owner-exposed development example",
+      "lineageKey": "original-post:2104971594632454155"
+    }
+  },
+  "callerResult": {
+    "mode": "offline_proposal_only",
+    "canPublish": false,
+    "canWriteAliases": false,
+    "canChangeStatus": false,
+    "requiresHumanReview": true,
+    "version": "local-alias-identity-review-v1",
+    "status": "evaluated",
+    "reason": null,
+    "sourceHash": "f04ca301aad1ed251b1c36ef77be739398a15be68c8e722f20b6fe4fa042400e",
+    "directoryHash": "1e95394b5e380e815f16bbc9c7b2c84d8a36ce8144d807556b0179c64f517e30",
+    "lineageKey": "original-post:2104971594632454155",
+    "occurrences": [
+      {
+        "id": "local-occurrence:1e1647440e5f57328d6495f0",
+        "span": {
+          "start": 0,
+          "end": 9,
+          "text": "Podkolzin"
+        },
+        "origin": "existing_alias_occurrence",
+        "baselineCandidateIds": [
+          "nhl:8481617"
+        ],
+        "baselineSelectedId": "nhl:8481617",
+        "candidateIds": [
+          "nhl:8481617"
+        ],
+        "deterministicSelectedId": "nhl:8481617",
+        "modelCandidateIds": [],
+        "candidateTruncated": false,
+        "activeMembership": "known",
+        "modelProposal": null
+      },
+      {
+        "id": "local-occurrence:fe9ab1a33c591651eac514b1",
+        "span": {
+          "start": 20,
+          "end": 23,
+          "text": "RNH"
+        },
+        "origin": "existing_alias_occurrence",
+        "baselineCandidateIds": [
+          "nhl:8481617"
+        ],
+        "baselineSelectedId": null,
+        "candidateIds": [],
+        "deterministicSelectedId": null,
+        "modelCandidateIds": [],
+        "candidateTruncated": false,
+        "activeMembership": "unknown",
+        "modelProposal": null
+      }
+    ],
+    "holds": [],
+    "notes": [],
+    "modelMode": "not_run",
+    "modelStatus": "disabled",
+    "modelReason": null,
+    "attempts": 0,
+    "requestHashes": []
+  },
+  "comparisons": [
+    {
+      "id": "local-occurrence:1e1647440e5f57328d6495f0",
+      "span": {
+        "start": 0,
+        "end": 9,
+        "text": "Podkolzin"
+      },
+      "origin": "existing_alias_occurrence",
+      "baselineCandidateIds": [
+        "nhl:8481617"
+      ],
+      "baselineSelectedId": "nhl:8481617",
+      "candidateIds": [
+        "nhl:8481617"
+      ],
+      "deterministicSelectedId": "nhl:8481617",
+      "modelCandidateIds": [],
+      "candidateTruncated": false,
+      "activeMembership": "known",
+      "modelProposal": null,
+      "ownerDevelopmentLabel": {
+        "span": {
+          "start": 0,
+          "end": 9,
+          "text": "Podkolzin"
+        },
+        "canonicalId": "nhl:8481617",
+        "fullName": "Vasily Podkolzin",
+        "registryId": 10190
+      },
+      "baselineContainsExpected": true,
+      "deterministicRetrievalContainsExpected": true,
+      "boundedWideningContainsExpected": true
+    },
+    {
+      "id": "local-occurrence:fe9ab1a33c591651eac514b1",
+      "span": {
+        "start": 20,
+        "end": 23,
+        "text": "RNH"
+      },
+      "origin": "existing_alias_occurrence",
+      "baselineCandidateIds": [
+        "nhl:8481617"
+      ],
+      "baselineSelectedId": null,
+      "candidateIds": [],
+      "deterministicSelectedId": null,
+      "modelCandidateIds": [],
+      "candidateTruncated": false,
+      "activeMembership": "unknown",
+      "modelProposal": null,
+      "ownerDevelopmentLabel": {
+        "span": {
+          "start": 20,
+          "end": 23,
+          "text": "RNH"
+        },
+        "canonicalId": "nhl:8476454",
+        "fullName": "Ryan Nugent-Hopkins",
+        "registryId": 9521
+      },
+      "baselineContainsExpected": false,
+      "deterministicRetrievalContainsExpected": false,
+      "boundedWideningContainsExpected": false
+    }
+  ],
+  "widened": [
+    {
+      "span": {
+        "start": 0,
+        "end": 9,
+        "text": "Podkolzin"
+      },
+      "candidateSet": {
+        "candidates": [
+          {
+            "row": {
+              "canonicalId": "nhl:8481617",
+              "nhlPlayerId": 8481617,
+              "registryId": 10190,
+              "fullName": "Vasily Podkolzin",
+              "lastName": "Podkolzin",
+              "unicodeKey": "vasily podkolzin",
+              "searchKey": "vasily podkolzin",
+              "positions": [
+                "R"
+              ],
+              "aliases": [],
+              "memberships": [
+                {
+                  "teamId": 22,
+                  "provenance": "rosters created_at/ended_at, season 20262027; existing source-time review semantics",
+                  "startsAt": "2026-09-19T00:57:30.050085+00:00",
+                  "endsAt": null
+                }
+              ]
+            },
+            "basis": "surname",
+            "nameDistance": 0,
+            "teamEvidence": "unknown",
+            "positionEvidence": "unknown",
+            "activeTeamIds": [
+              22
+            ],
+            "eligibleAliasTexts": []
+          }
+        ],
+        "pass": 1,
+        "totalCandidates": 1,
+        "omittedCount": 0,
+        "truncated": false,
+        "exactStatus": "matched",
+        "quality": "exact",
+        "directoryHash": "1e95394b5e380e815f16bbc9c7b2c84d8a36ce8144d807556b0179c64f517e30",
+        "completeness": {
+          "status": "partial",
+          "scope": "Podkolzin/Nugent-Hopkins/RNH candidate evidence; not a league directory",
+          "omittedRecords": null
+        }
+      }
+    },
+    {
+      "span": {
+        "start": 20,
+        "end": 23,
+        "text": "RNH"
+      },
+      "candidateSet": {
+        "candidates": [],
+        "pass": 1,
+        "totalCandidates": 0,
+        "omittedCount": 0,
+        "truncated": false,
+        "exactStatus": "missing_player",
+        "quality": "missing",
+        "directoryHash": "1e95394b5e380e815f16bbc9c7b2c84d8a36ce8144d807556b0179c64f517e30",
+        "completeness": {
+          "status": "partial",
+          "scope": "Podkolzin/Nugent-Hopkins/RNH candidate evidence; not a league directory",
+          "omittedRecords": null
+        }
+      }
+    }
+  ],
+  "invalidRnhMatchRejection": "identity_not_in_occurrence_candidates",
+  "stopReason": "RNH expected ID is absent from both initial and bounded widened occurrence candidates; no paid dispatch permitted by sealed preflight policy.",
+  "evidenceLimits": [
+    "No RNH alias was returned from either alias table within the approved search.",
+    "All returned alias records are undated; none is promoted to a dated global alias.",
+    "Both roster intervals include source time under existing created_at/ended_at/is_current semantics; not independently audited trade history.",
+    "No team or position hint occurs in S06. Team 22 is not injected into occurrence hints from the roster or owner memory.",
+    "The snapshot is candidate-scoped and partial. No full-league ambiguity or accuracy claim.",
+    "No real model response, usage, latency, accuracy, certainty inflation or subject-binding metric is available."
+  ]
+}

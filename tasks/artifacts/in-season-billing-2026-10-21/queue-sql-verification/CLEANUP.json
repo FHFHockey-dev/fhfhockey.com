@@ -1,0 +1,12 @@
+{
+  "stoppedAt": "2026-10-21T19:58:16.472138+00:00",
+  "pgCtlStatusExit": 3,
+  "pgCtlStatus": "pg_ctl: no server running",
+  "tcpConnection": "ECONNREFUSED",
+  "host": "127.0.0.1",
+  "port": 65447,
+  "postmasterPidFileExists": false,
+  "rootMode": "0o700",
+  "sourceHashesUnchanged": true,
+  "dataRetained": true
+}

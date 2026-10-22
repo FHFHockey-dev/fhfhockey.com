@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import supabase from "lib/supabase";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 
@@ -51,14 +51,31 @@ export function useShotData(
   filters: ShotDataFilters = {
     eventTypes: ["goal", "shot-on-goal"],
     gameTypes: [GAME_TYPES.REGULAR_SEASON]
-  }
+  },
+  // Defer the play-by-play reads until the Shot Map is actually shown.
+  enabled = true
 ) {
   const [shotData, setShotData] = useState<ShotData[]>([]);
   const [opponentShotData, setOpponentShotData] = useState<ShotData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
+  const loadedKey = useRef<string | null>(null);
+  const filterKey = JSON.stringify({
+    eventTypes: filters.eventTypes,
+    gameTypes: filters.gameTypes
+  });
+  const requestKey = JSON.stringify([teamId, season, filterKey]);
 
   useEffect(() => {
+    let active = true;
+    const requestFilters: ShotDataFilters = JSON.parse(filterKey);
+    setError(null);
+    // Keep already-loaded data when the tab is hidden and shown again.
+    if (!enabled || loadedKey.current === requestKey) {
+      setIsLoading(false);
+      return;
+    }
+
     console.log("useShotData called with teamId:", teamId, "season:", season);
     if (!teamId || !season) {
       setIsLoading(false);
@@ -75,12 +92,13 @@ export function useShotData(
 
         // Initialize game type filter condition
         const gameTypeFilters =
-          filters.gameTypes?.map((gameType) => {
+          requestFilters.gameTypes?.map((gameType) => {
             const seasonStart = season!.substring(0, 4);
             return `id.like.${seasonStart}${gameType}%`;
           }) || [];
 
         const games = await fetchAllSupabasePages<any>(({ from, to }) => {
+          if (!active) return Promise.resolve({ data: [], error: null });
           let gamesQuery = supabase
             .from("pbp_games")
             .select("id, hometeamid, awayteamid")
@@ -92,6 +110,7 @@ export function useShotData(
 
           return gamesQuery.range(from, to) as any;
         }, { pageSize: PAGE_SIZE });
+        if (!active) return;
 
         console.log("Fetched games for team", teamId, ":", games.length);
 
@@ -107,6 +126,7 @@ export function useShotData(
         if (allGames.length === 0) {
           setShotData([]);
           setOpponentShotData([]);
+          loadedKey.current = requestKey;
           setIsLoading(false);
           return;
         }
@@ -137,6 +157,7 @@ export function useShotData(
         // Process each chunk of game IDs
         for (const gameIdChunk of gameIdChunks) {
           const events = await fetchAllSupabasePages<any>(({ from, to }) => {
+            if (!active) return Promise.resolve({ data: [], error: null });
             let eventsQuery = supabase
               .from("pbp_plays")
               .select(
@@ -147,12 +168,13 @@ export function useShotData(
             // Don't filter out shots without coordinates initially
             // We'll normalize them later in the processing step
 
-            if (filters.eventTypes && filters.eventTypes.length > 0) {
-              eventsQuery = eventsQuery.in("typedesckey", filters.eventTypes);
+            if (requestFilters.eventTypes && requestFilters.eventTypes.length > 0) {
+              eventsQuery = eventsQuery.in("typedesckey", requestFilters.eventTypes);
             }
 
             return eventsQuery.range(from, to) as any;
           }, { pageSize: PAGE_SIZE });
+          if (!active) return;
 
           if (events.length > 0) {
             console.log("All events count:", events.length);
@@ -235,16 +257,24 @@ export function useShotData(
 
         setShotData(allShots);
         setOpponentShotData(allOpponentShots);
+        loadedKey.current = requestKey;
       } catch (err) {
+        if (!active) return;
         setError(err instanceof Error ? err : new Error(String(err)));
         console.error("Error fetching shot data:", err);
       } finally {
-        setIsLoading(false);
+        if (active) setIsLoading(false);
       }
     }
 
     fetchTeamShotData();
-  }, [teamId, season, filters.eventTypes, filters.gameTypes]);
+    return () => { active = false; };
+  }, [teamId, season, filterKey, requestKey, enabled]);
 
-  return { shotData, opponentShotData, isLoading, error };
+  return {
+    shotData: loadedKey.current === requestKey ? shotData : [],
+    opponentShotData: loadedKey.current === requestKey ? opponentShotData : [],
+    isLoading,
+    error
+  };
 }

@@ -8,7 +8,7 @@ import {
   hasBenchmarkAnnotationKind,
   type BenchmarkAnnotation,
 } from "lib/cron/benchmarkNotes";
-import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withCronJobAudit, cronClassificationFromAuditDetails } from "lib/cron/withCronJobAudit";
 import {
   buildSlowJobWarning,
   SLOW_JOB_DENOTATION,
@@ -20,7 +20,7 @@ import { extractAuditTimingRecord } from "lib/cron/cronReportTiming";
 import { readReportMetrics, repositoryExecutionLimitMs, isNearRepositoryLimit, reportedRuntimeBudgetMs } from "lib/cron/reportMetrics";
 import { buildSqlCronTimingObservation } from "lib/cron/sqlTiming";
 import { readCronScheduleMarkdown } from "lib/cron/cronInventory";
-import { loadNhlSeasonWindow, type NhlSeasonWindow } from "lib/cron/nhlOffSeason";
+import { loadNhlSeasonWindow, NHL_SEASONAL_GAME_DATA, type NhlSeasonWindow } from "lib/cron/nhlOffSeason";
 import adminOnly from "utils/adminOnlyMiddleware";
 import {
   assessYahooLifecycleHealth,
@@ -60,9 +60,10 @@ const KILLED_AT_LIMIT_WARNING =
 const EXPECTED_WORK_WARNING =
   "In-season game-data run reported 0 rows affected; it may be silently writing nothing.";
 
-// Routes wrapped in withNhlOffSeasonSkip: they pause between seasons, so during
-// the season a 0-row run is unexpected.
-const GAME_DATA_ROUTES = new Set([
+// Frozen pre-classification compatibility snapshot (2026-10-20). Do not add new
+// routes here: current routes derive eligibility from canonical audit metadata.
+// Retain old zero-output coverage until pre-classification receipts age out.
+const PRE_CLASSIFICATION_GAME_DATA_ROUTES = new Set([
   "/api/Teams/nst-team-stats",
   "/api/v1/db/build-projection-derived-v2",
   "/api/v1/db/calculate-wigo-stats",
@@ -479,10 +480,15 @@ function skippedOperationWarning(row: AuditRow): string | null {
 
 function expectedWorkWarning(
   row: Omit<AuditRow, "expectedWorkWarning">,
-  seasonWindow: NhlSeasonWindow
+  seasonWindow: NhlSeasonWindow,
+  gameDataRoutes: ReadonlySet<string>
 ): string | null {
+  const classification = cronClassificationFromAuditDetails(row.details);
+  const isGameData = classification === undefined
+    ? gameDataRoutes.has(row.parsed.routePath ?? "") || PRE_CLASSIFICATION_GAME_DATA_ROUTES.has(row.parsed.routePath ?? "")
+    : classification === NHL_SEASONAL_GAME_DATA;
   if (seasonWindow.state !== "in_season" || row.status !== "success" ||
-      !GAME_DATA_ROUTES.has(row.parsed.routePath ?? "")) return null;
+      !isGameData) return null;
   const response = row.parsed.response;
   if (response && typeof response === "object" && !Array.isArray(response) &&
       (response as Record<string, unknown>).reason === "nhl_off_season") return null;
@@ -1667,6 +1673,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   const seasonWindow = await seasonWindowPromise;
+  const gameDataRoutes = new Set(audits.flatMap((row) => {
+    if (cronClassificationFromAuditDetails(row.details) !== NHL_SEASONAL_GAME_DATA) return [];
+    const route = parseAuditDetails(row.details).routePath;
+    return route ? [route] : [];
+  }));
   const toAuditRow = (row: any): AuditRow => {
     const auditRow = {
       id: `audit:${reportRowIdentity(row)}`,
@@ -1680,7 +1691,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       detailsMessage: extractDetailsMessage(row.details),
       parsed: parseAuditDetails(row.details),
     };
-    return { ...auditRow, expectedWorkWarning: expectedWorkWarning(auditRow, seasonWindow) };
+    return { ...auditRow, expectedWorkWarning: expectedWorkWarning(auditRow, seasonWindow, gameDataRoutes) };
   };
   const auditRows = audits.map(toAuditRow);
   // Historical receipts explain failures only; never add them to recent health,
@@ -2123,9 +2134,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         key: job.jobKey,
         label: job.route ?? job.displayName,
         jobName: job.displayName,
-        // The email has no continued label; the note says "In progress / continued".
-        status: job.lastStatus === "missing" ? "unknown"
-          : job.lastStatus === "continued" ? "success" : job.lastStatus,
+        status: job.lastStatus === "missing" ? "unknown" : job.lastStatus,
         runTime: job.lastRunDisplay,
         runTimeDisplay: job.lastRunDisplay,
         method: job.method === "UNKNOWN" ? null : job.method,
@@ -2149,7 +2158,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         optimizationDenotation: job.optimizationDenotation,
         benchmarkAnnotations: job.benchmarkAnnotations,
         missingObservationWarnings: job.missingObservationWarnings,
-      }) satisfies RunDigest
+      }) satisfies Omit<RunDigest, "status"> & { status: ReportStatus | "continued" }
   );
 
   const WARN_SLOW: SlowJobWarning[] = jobSummaries

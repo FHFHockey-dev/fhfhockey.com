@@ -1,0 +1,15 @@
+{
+  "ledgerSha256": "e8418735afaeff893177e550df6774600c6c6fec4f49c2b01c183712cdc064f2",
+  "attempt": [
+    "identity-s06-shadow-v1-0",
+    "settled",
+    231844800,
+    342650,
+    null
+  ],
+  "aggregateExposureNanoUsd": 262519843,
+  "capNanoUsd": 520000000,
+  "blocked": "unknown billed outcome",
+  "baselineFingerprintAfter": "3dc641c1be6fd951a97edf05c6871dbee7beb5aaa2a829b723f37eda75c78245",
+  "originalRowsUnchanged": true
+}

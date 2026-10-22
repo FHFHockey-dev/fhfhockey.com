@@ -1,0 +1,55 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/auditEdgecases.test.ts -t coverage includes
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-claude-audit-20261022/snapshot/web
+
+(node:89305) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/auditEdgecases.test.ts > coverage includes dressed roster players who lack every prediction and naive history
+COVERAGE_UNIVERSE_OBSERVED [{"source":"bridge_exact","player_class":"skater","n":1,"dressed":1,"covered":1,"coverage":1,"phantoms":0,"heads":{"goals":{"n":1,"mae":0,"bias":0},"assists":{"n":1,"mae":0,"bias":0},"pp_points":{"n":1,"mae":0,"bias":0},"shots":{"n":1,"mae":0,"bias":0},"hits":{"n":1,"mae":0,"bias":0},"blocks":{"n":1,"mae":0,"bias":0}},"fantasyPoints":{"n":1,"mae":0,"bias":0},"decile10":{"n":1,"expected":1,"actual":1,"ratio":1},"reliability":{},"b2b":{"heads":{"goals":{"n":0,"mae":null,"bias":null},"assists":{"n":0,"mae":null,"bias":null},"pp_points":{"n":0,"mae":null,"bias":null},"shots":{"n":0,"mae":null,"bias":null},"hits":{"n":0,"mae":null,"bias":null},"blocks":{"n":0,"mae":null,"bias":null}},"fantasyPoints":{"n":0,"mae":null,"bias":null}}}]
+
+ ❯ lib/auditEdgecases.test.ts (6 tests | 1 failed | 5 skipped) 5ms
+   ↓ independent audit reproductions > keeps a complete exact-game forecast when tomorrow's newer row has null learned heads
+   ↓ independent audit reproductions > does not produce season percentages from unpaired missing count columns
+   ↓ independent audit reproductions > keeps a missing weighted actual stat unknown in the recorded Yahoo lineup
+   ↓ independent audit reproductions > does not mark an absent player DNP just because one unrelated actual row arrived
+   ↓ independent audit reproductions > recognizes an expired in-flight lease after a late durable checkpoint
+   × coverage includes dressed roster players who lack every prediction and naive history 5ms
+     → expected { source: 'bridge_exact', …(11) } to match object { dressed: 2, covered: 1, …(1) }
+(24 matching properties omitted from actual)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/auditEdgecases.test.ts > coverage includes dressed roster players who lack every prediction and naive history
+AssertionError: expected { source: 'bridge_exact', …(11) } to match object { dressed: 2, covered: 1, …(1) }
+(24 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "coverage": 0.5,[39m
+[31m+   "coverage": 1,[39m
+[2m    "covered": 1,[22m
+[32m-   "dressed": 2,[39m
+[31m+   "dressed": 1,[39m
+[2m  }[22m
+
+ ❯ lib/auditEdgecases.test.ts:52:19
+     50|  const score=scoreLedger(settleLedgerRows(rows,{skaters:[actual(11),ac…
+     51|  console.log("COVERAGE_UNIVERSE_OBSERVED",JSON.stringify(score));
+     52|  expect(score[0]).toMatchObject({dressed:2,covered:1,coverage:0.5});
+       |                   ^
+     53| });
+     54| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 skipped (6)
+   Start at  20:23:18
+   Duration  504ms (transform 245ms, setup 9ms, collect 284ms, tests 5ms, environment 124ms, prepare 26ms)
+

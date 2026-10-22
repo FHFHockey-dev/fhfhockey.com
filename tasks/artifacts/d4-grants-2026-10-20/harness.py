@@ -1,12 +1,15 @@
 """D4 isolated replay: fresh Unix-socket Homebrew PostgreSQL 17 cluster ONLY.
 
-Replays the canonical migration chain (ledger order) with no platform auto-grants, snapshots
-effective ACLs, applies the D4 migration(s), snapshots again, and runs the D4 SQL tests.
+Replays the canonical migration chain with D4 at orders 89–90, then the later migrations,
+with no platform auto-grants. Snapshots effective ACLs and runs the D4 SQL tests.
 Never connects over TCP and never reads hosted credentials. Usage:
 
     python3 -I harness.py <run-id> [<d4-migration-file> ...]   (no files: replay + ACL snapshot only)
+    Append --check for hash/order validation only, without creating files or a cluster.
+    D4_NEGATIVE=1 skips only 89–90; expected test failures yield passed=false and exit 1.
 """
 from pathlib import Path
+import hashlib
 import json
 import os
 import re
@@ -19,20 +22,52 @@ import time
 
 base = Path(__file__).resolve().parent
 repo = base.parents[2]
-run_id = sys.argv[1]
+args = sys.argv[1:]
+check_only = bool(args and args[-1] == '--check')
+if check_only:
+    args = args[:-1]
+assert args, 'provide a new run id and optionally the exact D4 migration pair'
+run_id = args[0]
 assert re.fullmatch(r'v[1-9][0-9]*', run_id), 'run id must look like v1'
-d4_files = sys.argv[2:]
+d4_files = args[1:]
 out_dir = base / f'run-{run_id}'
 assert not out_dir.exists(), 'preserve prior receipts; use a new run id'
 lock = Path('/private/tmp/fhfh-heavy.lock')
 binary = Path('/opt/homebrew/opt/postgresql@17/bin')
-ledger = json.loads((repo / 'tasks/TASKS/repository-audit-remediation/migration-authority.json').read_text())
-chain = [repo / row['path'] for row in sorted(ledger['migrations'], key=lambda r: r['order'])]
+ledger_path = repo / 'tasks/TASKS/repository-audit-remediation/migration-authority.json'
+ledger_bytes = ledger_path.read_bytes()
+ledger = json.loads(ledger_bytes)
+rows = sorted(ledger['migrations'], key=lambda r: r['order'])
+assert [r['order'] for r in rows] == list(range(1, len(rows) + 1)), 'ledger orders must be contiguous'
+chain = [repo / row['path'] for row in rows]
+assert len(set(chain)) == len(chain), 'ledger paths must be unique'
+assert all(p.resolve().parent == repo / 'supabase/migrations' for p in chain), 'canonical migrations only'
+expected_d4 = ['20261020224500_data_api_explicit_default_privileges.sql',
+               '20261020224600_data_api_reviewed_object_grants.sql']
+assert not d4_files or d4_files == expected_d4, 'provide exactly D4 defaults then reviewed grants'
+assert [p.name for p in chain[88:90]] == expected_d4, 'D4 must occupy canonical orders 89–90'
 d4_paths = [repo / 'supabase/migrations' / name for name in d4_files]
-for p in d4_paths:
-    assert p in chain, f'{p.name} must be in the ledger'
-before_chain = [p for p in chain if p not in d4_paths]
-assert chain[len(before_chain):] == d4_paths, 'D4 migrations must be the ledger tail'
+before_chain = chain[:88] if d4_paths else chain
+after_chain = chain[90:] if d4_paths else []
+assert before_chain + d4_paths + after_chain == chain, 'prefix + D4 + suffix must match ledger order'
+negative = os.environ.get('D4_NEGATIVE') == '1'
+assert not negative or d4_paths, 'negative control requires the exact D4 pair'
+tests = ['data_api_grants.sql', 'data_api_grants_defaults.sql',
+         'data_api_grants_rso_isolation.sql', 'data_api_grants_claude.sql']
+# Pin the exact bytes before starting a cluster, including concurrent working-tree tests.
+sources = {p: p.read_bytes() for p in chain + [base / 'bootstrap.sql', base / 'pgtap-shim.sql',
+           base / 'harness.py'] + [repo / 'supabase/tests' / n for n in tests + ['in_season_access_workspace.sql']]}
+sources[ledger_path] = ledger_bytes
+source_hashes = {str(p.relative_to(repo)): hashlib.sha256(data).hexdigest() for p, data in sources.items()}
+for row in rows:
+    assert source_hashes[row['path']] == row['sha256'], f"authority hash mismatch: {row['path']}"
+replay_order = [r['order'] for r in rows if not negative or r['order'] not in (89, 90)]
+if check_only:
+    print(json.dumps({'chainFiles': len(chain), 'firstPassOrder': replay_order,
+                      'd4Orders': [89, 90] if d4_paths else [],
+                      'suffixOrders': [r['order'] for r in rows[90:]] if d4_paths else [],
+                      'sourceSha256': source_hashes}, indent=2))
+    raise SystemExit(0)
 
 # Extensions the canonical baseline creates that Homebrew PG17 does not ship; bootstrap.sql
 # supplies the schema-level stand-ins the chain references.
@@ -91,13 +126,19 @@ env = {'PATH': '/usr/bin:/bin', 'LC_ALL': 'C', 'TMPDIR': str(cluster), 'PGCONNEC
 psql = [str(binary / 'psql'), '-X', '-w', '-q', '-h', str(cluster / 'socket'), '-p', port,
         '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1']
 receipt = {'runId': run_id, 'postgres': None, 'clusterSocketOnly': True, 'chainFiles': len(chain),
-           'd4Files': d4_files, 'steps': [], 'tests': {}, 'passed': False}
+           'd4Files': d4_files, 'negativeControl': negative, 'sourceSha256': source_hashes,
+           'firstPassOrder': [], 'steps': [], 'tests': {}, 'passed': False}
 running = locked = False
 out_dir.mkdir()
 log = open(out_dir / 'log.txt', 'w')
+deadline = time.monotonic() + 300
 
 
-def run(args, *, stdin=None, timeout=600, check=True):
+def run(args, *, stdin=None, timeout=60, check=True, cleanup=False):
+    if not cleanup:
+        timeout = min(timeout, deadline - time.monotonic())
+        if timeout <= 0:
+            raise TimeoutError('D4 replay exceeded its 300-second budget')
     started = time.time()
     result = subprocess.run(args, env=env, text=True, input=stdin, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, timeout=timeout)
@@ -109,32 +150,13 @@ def run(args, *, stdin=None, timeout=600, check=True):
 
 
 def apply_file(path, sql=None):
-    if sql is None:
-        run(psql + ['-f', str(path)])
-    else:
-        run(psql + ['-f', '-'], stdin=sql)
+    run(psql + ['-f', '-'], stdin=sources[path].decode() if sql is None else sql)
     receipt['steps'].append(str(path.relative_to(repo)) if path.is_relative_to(repo) else str(path))
 
 
-try:
-    for _ in range(360):
-        try:
-            lock.mkdir()
-            locked = True
-            break
-        except FileExistsError:
-            time.sleep(10)
-    assert locked, 'heavy lock still held after 60 minutes'
-    run([str(binary / 'initdb'), '-D', str(cluster / 'data'), '-U', 'postgres', '-A', 'trust',
-         '--no-locale', '-E', 'UTF8'])
-    run([str(binary / 'pg_ctl'), '-D', str(cluster / 'data'), '-l', str(cluster / 'server.log'),
-         '-o', f"-F -k {cluster / 'socket'} -c listen_addresses='' -p {port}", '-w', '-t', '20', 'start'])
-    running = True
-    receipt['postgres'] = run(psql + ['-tAc', 'SHOW server_version']).stdout.strip()
-    apply_file(base / 'bootstrap.sql')
-
-    for path in before_chain:
-        sql = path.read_text()
+def replay(paths):
+    for path in paths:
+        sql = sources[path].decode()
         if path.name.startswith('20260716112908_'):
             pattern = r'^(CREATE EXTENSION IF NOT EXISTS "?(%s)"? .*)$' % '|'.join(UNAVAILABLE_EXTENSIONS)
             sql, stripped = re.subn(pattern, r'-- D4 harness: unavailable locally: \1', sql, flags=re.M)
@@ -147,17 +169,31 @@ try:
             run(psql + ['-c', PRE_SQL[path.name]])
             receipt.setdefault('preSql', []).append(path.name)
         apply_file(path, sql)
+        receipt['firstPassOrder'].append(chain.index(path) + 1)
+
+
+try:
+    # Do not wait on or remove another worker's lock.
+    lock.mkdir()
+    locked = True
+    run([str(binary / 'initdb'), '-D', str(cluster / 'data'), '-U', 'postgres', '-A', 'trust',
+         '--no-locale', '-E', 'UTF8'])
+    running = True  # Even a failed startup must go through the owned-cluster shutdown check.
+    run([str(binary / 'pg_ctl'), '-D', str(cluster / 'data'), '-l', str(cluster / 'server.log'),
+         '-o', f"-F -k {cluster / 'socket'} -c listen_addresses='' -p {port}", '-w', '-t', '20', 'start'])
+    receipt['postgres'] = run(psql + ['-tAc', 'SHOW server_version']).stdout.strip()
+    apply_file(base / 'bootstrap.sql')
+    replay(before_chain)
     (out_dir / 'acl-before.csv').write_text(run(psql + ['-c', ACL_SNAPSHOT]).stdout)
     if not d4_paths:
+        assert receipt['firstPassOrder'] == replay_order, 'first pass diverged from ledger order'
         receipt['passed'] = True
         raise SystemExit
 
-    # Negative control: D4_NEGATIVE=1 runs the tests without the D4 migrations; the D4
-    # assertions must then fail (receipt passed=false is the expected outcome).
-    negative = os.environ.get('D4_NEGATIVE') == '1'
-    receipt['negativeControl'] = negative
-    for path in ([] if negative else d4_paths):
-        apply_file(path)
+    replay([] if negative else d4_paths)
+    (out_dir / 'acl-after-d4.csv').write_text(run(psql + ['-c', ACL_SNAPSHOT]).stdout)
+    replay(after_chain)
+    assert receipt['firstPassOrder'] == replay_order, 'first pass diverged from ledger order'
     (out_dir / 'acl-after.csv').write_text(run(psql + ['-c', ACL_SNAPSHOT]).stdout)
     # Re-applying must be harmless (grants/revokes are idempotent).
     for path in ([] if negative else d4_paths):
@@ -168,48 +204,23 @@ try:
 
     apply_file(base / 'pgtap-shim.sql')
 
-    # Codex's matrix (data_api_grants.sql) predates the caller audit. A failure there is a
-    # reviewed deviation only when data_api_grants_claude.sql pins the opposite answer.
-    def service_matrix(text, pattern):
-        return {m.group(1): set(re.findall(r"'([A-Z]+)'", m.group(2))) for m in re.finditer(pattern, text)}
-    codex_ops = service_matrix((repo / 'supabase/tests/data_api_grants.sql').read_text(),
-                               r"\('(public\.[a-z_]+)',ARRAY\[([^]]*)\]")
-    claude_ops = service_matrix((repo / 'supabase/tests/data_api_grants_claude.sql').read_text(),
-                                r"\('(public\.[a-z_]+)', ARRAY\[([^]]*)\]")
-    fixed = {'service_role EXECUTE public.promote_player_forecast_model_atomic(text,uuid,uuid,text,jsonb,timestamptz)',
-             'service_role sequence SELECT'}
-
-    def reviewed_deviation(line):
-        text = re.sub(r'^not ok \d+ - ', '', line)
-        if text in fixed:
-            return True
-        m = re.fullmatch(r'service_role ([A-Z]+) (public\.[a-z_]+) matches reviewed allow/deny matrix', text)
-        return bool(m) and m.group(2) in claude_ops and \
-            (m.group(1) in codex_ops[m.group(2)]) != (m.group(1) in claude_ops[m.group(2)])
-    tests = ['data_api_grants.sql', 'data_api_grants_defaults.sql',
-             'data_api_grants_rso_isolation.sql', 'data_api_grants_claude.sql']
     all_ok = True
     for name in tests:
-        result = run(psql + ['-tA', '-f', str(repo / 'supabase/tests' / name)], check=False)
+        result = run(psql + ['-tA', '-f', '-'], stdin=sources[repo / 'supabase/tests' / name].decode(), check=False)
         lines = result.stdout.splitlines()
         oks = [l for l in lines if re.match(r'^ok \d+', l)]
         bad = [l for l in lines if re.match(r'^not ok \d+', l)]
         plan = [l for l in lines if re.match(r'^1\.\.\d+$', l)]
-        complete = result.returncode == 0 and bool(plan) and int(plan[-1][3:]) == len(oks) + len(bad)
-        if name == 'data_api_grants.sql':
-            unexpected = [l for l in bad if not reviewed_deviation(l)]
-            receipt['tests'][name + ':reviewedDeviations'] = len(bad) - len(unexpected)
-            good = complete and not unexpected
-            bad = unexpected
-        else:
-            good = complete and not bad
+        complete = result.returncode == 0 and len(plan) == 1 and int(plan[0][3:]) == len(oks) + len(bad)
+        good = complete and not bad and not any(l.startswith('Bail out!') for l in lines)
         all_ok &= good
-        receipt['tests'][name] = {'exit': result.returncode, 'ok': len(oks), 'notOk': bad[:50],
+        receipt['tests'][name] = {'exit': result.returncode, 'ok': len(oks), 'notOk': bad,
+                                  'notOkCount': len(bad), 'complete': complete,
                                   'plan': plan[-1] if plan else None, 'passed': good}
         (out_dir / f'{name}.tap').write_text(result.stdout)
-    # Pre-existing raise-on-failure fixtures; recorded but not part of the D4 gate.
+    # Pre-existing raise-on-failure fixture remains part of the overall gate.
     for name in ['in_season_access_workspace.sql']:
-        result = run(psql + ['-f', str(repo / 'supabase/tests' / name)], check=False)
+        result = run(psql + ['-f', '-'], stdin=sources[repo / 'supabase/tests' / name].decode(), check=False)
         receipt['tests'][name] = {'exit': result.returncode, 'tail': result.stdout[-600:]}
         all_ok &= result.returncode == 0
     receipt['passed'] = all_ok and receipt['idempotentReapply']
@@ -218,13 +229,30 @@ except SystemExit:
 except Exception as error:  # keep the receipt honest
     receipt['error'] = str(error)[-4000:]
 finally:
-    if running:
-        run([str(binary / 'pg_ctl'), '-D', str(cluster / 'data'), '-m', 'fast', '-w', 'stop'], check=False)
+    stopped = not running
+    try:
+        if running:
+            stop = run([str(binary / 'pg_ctl'), '-D', str(cluster / 'data'), '-m', 'fast', '-w', '-t', '20', 'stop'],
+                       timeout=30, check=False, cleanup=True)
+            stopped = stop.returncode == 0
+            if not stopped:
+                status = run([str(binary / 'pg_ctl'), '-D', str(cluster / 'data'), 'status'],
+                             timeout=10, check=False, cleanup=True)
+                stopped = status.returncode == 3
+    except Exception as error:
+        receipt['cleanupError'] = str(error)[-1000:]
+    receipt['clusterStopped'] = stopped
     if (cluster / 'server.log').exists():
         shutil.copy(cluster / 'server.log', out_dir / 'server.log')
-    shutil.rmtree(cluster, ignore_errors=True)
-    if locked:
+    if stopped:
+        shutil.rmtree(cluster)
+    else:
+        receipt['passed'] = False
+        receipt['retainedCluster'] = str(cluster)
+    receipt['clusterRemoved'] = not cluster.exists()
+    if locked and stopped:
         lock.rmdir()
     log.close()
     (out_dir / 'receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
     print(json.dumps({k: receipt[k] for k in ('runId', 'postgres', 'passed', 'tests')} | {'error': receipt.get('error')}, indent=1))
+sys.exit(0 if receipt['passed'] else 1)

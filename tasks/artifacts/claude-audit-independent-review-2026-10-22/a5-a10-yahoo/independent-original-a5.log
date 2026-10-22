@@ -1,0 +1,19 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/auditEdgecases.test.ts -t missing weighted actual stat
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-czo1qy0n/isolation/snapshot/web
+
+(node:51020) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/auditEdgecases.test.ts > independent audit reproductions > keeps a missing weighted actual stat unknown in the recorded Yahoo lineup
+PAST_POINTS_OBSERVED [{"date":"2026-10-20","source":"yahoo","entries":[{"playerId":"p1","name":"Synthetic player","position":"C","slotId":"C1","points":null}]}]
+
+ ✓ lib/auditEdgecases.test.ts (6 tests | 5 skipped) 1ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 5 skipped (6)
+   Start at  08:15:56
+   Duration  500ms (transform 247ms, setup 9ms, collect 284ms, tests 1ms, environment 123ms, prepare 26ms)
+

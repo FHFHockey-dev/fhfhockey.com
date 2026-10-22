@@ -30,7 +30,9 @@ import {
   readRollingForgeRunState,
   readRollingForgeStageFailedAttempts,
   readRollingForgeStageKills,
-  recordRollingForgeStageKill
+  recordRollingForgeStageKill,
+  NST_PERSISTENCE_UNCONFIRMED,
+  RollingForgeStageReviewRequiredError
 } from "lib/rollingForgePipelineRunState";
 
 import updateGamesHandler from "./update-games";
@@ -64,6 +66,7 @@ type StepResult = {
   reason?: string;
   // Set when a source shortfall was downgraded so the stage still completes.
   degraded?: "nst_source_unavailable";
+  requiresReview?: "nst_persistence_unconfirmed";
 };
 
 type StageResult = {
@@ -95,7 +98,8 @@ type TerminationReceipt = {
     | "stage_in_progress_elsewhere"
     | "state_error"
     | "retry_on_next_invocation"
-    | "attempts_exhausted";
+    | "attempts_exhausted"
+    | "manual_review_required";
   rollingResumeFrom?: number | null;
   detail?: string;
 };
@@ -157,7 +161,7 @@ type ResponseBody = {
 
 type RouteHandler = (req: any, res: any) => Promise<void>;
 
-type TerminalStopCode = "attempts_exhausted" | "stage_killed";
+type TerminalStopCode = "attempts_exhausted" | "stage_killed" | "nst_persistence_unconfirmed";
 
 function getParam(req: NextApiRequest, key: string): string | null {
   const value = req.query[key];
@@ -412,8 +416,8 @@ function isPartialResume(statusCode: number, body: unknown) {
  * NST step resume: the consumer side of the pipeline <-> update-nst-gamelog
  * contract (tasks/artifacts/cross-platform/2026-10-21-claude-to-codex-pipeline-
  * nst-contract.md with its ~01:00Z amendment, accepted by Codex in
- * 2026-10-20-codex-to-claude-pipeline-nst-contract.md). INACTIVE until Codex
- * ships it; enable only after review. With it enabled:
+ * 2026-10-20-codex-to-claude-pipeline-nst-contract.md). The delivered producer
+ * acknowledges progress before returning its continuation:
  * - 200 with success true finishes the step (operationStatus
  *   "skipped_no_completed_games" is the expected no-work skip); WGO follows.
  * - 207, operationStatus "continuation_required", resume.required true and
@@ -426,7 +430,6 @@ function isPartialResume(statusCode: number, body: unknown) {
  * one `cursor`, a positive integer past the cursor sent, kept in the
  * forward-only cursor_game_id. Any other query is uncertain and fails the step.
  */
-const nstStepResume = { enabled: false };
 // Terminal audit headroom kept back from the NST step's deadline.
 const NST_DEADLINE_HEADROOM_MS = 20_000;
 // vercel.json maxDuration: an explicit run never gets longer than this.
@@ -439,19 +442,23 @@ type NstOutcome =
 
 function readNstOutcome(step: StepResult, sentCursor: number | null): NstOutcome {
   const body = step.summary as Record<string, any> | null;
-  const record = body && typeof body === "object" ? body : null;
-  if (step.statusCode === 200 && record?.success !== false && !record?.error) {
+  const record = body && typeof body === "object" && !Array.isArray(body) ? body : null;
+  if (step.statusCode === 200 && record?.success === true && !record.error && !record.resume?.required
+    && (record.operationStatus == null || ["completed", "skipped_no_completed_games"].includes(record.operationStatus))) {
     return { kind: "finished", skipped: record?.operationStatus === "skipped_no_completed_games" };
   }
   if (step.statusCode !== 207 || record?.operationStatus !== "continuation_required") {
     return { kind: "blocked", reason: "NST did not finish or return a continuation; the stage stops here." };
   }
+  if (record.error || record.success !== false || record.nstProgress?.auditPersistence !== "confirmed") {
+    return { kind: "blocked", reason: "NST continuation has no confirmed progress acknowledgement." };
+  }
   const query = record.resume?.required === true ? record.resume.request?.query : null;
   if (!query || typeof query !== "object" || Array.isArray(query)) {
     return { kind: "blocked", reason: "NST continuation has no replayable resume.request.query." };
   }
-  const { cursor: rawCursor, deadlineAt: _replayDeadline, ...scope } = query as Record<string, unknown>;
-  const { cursor: _sentCursor, deadlineAt: _sentDeadline, ...sentScope } = step.query;
+  const { cursor: rawCursor, ...scope } = query as Record<string, unknown>;
+  const { cursor: _sentCursor, ...sentScope } = step.query;
   const sameScope =
     Object.keys(scope).length === Object.keys(sentScope).length &&
     Object.entries(sentScope).every(([key, value]) => scope[key] === value);
@@ -690,7 +697,7 @@ async function runStage(args: {
       });
       break;
     case "upstream_skater_sources": {
-      const nstCursor = nstStepResume.enabled ? (args.nstResumeCursor ?? null) : null;
+      const nstCursor = args.nstResumeCursor ?? null;
       const nst = await invokeRouteStep({
         id: "update-nst-gamelog",
         route: "/api/v1/db/update-nst-gamelog",
@@ -698,9 +705,8 @@ async function runStage(args: {
         query: {
           runMode: "incremental",
           startDate: args.sourceStartDate,
-          // The implicit run names its one completed date; explicit windows
-          // pass through as before.
-          ...(args.useDurableProjectionBacklog ? { endDate: args.sourceEndDate } : {}),
+          // Freeze the source aperture for scheduled and explicit requests.
+          endDate: args.sourceEndDate,
           ...(nstCursor != null ? { cursor: String(nstCursor) } : {}),
           ...(args.sourceDeadlineAtMs != null
             ? { deadlineAt: String(args.sourceDeadlineAtMs - NST_DEADLINE_HEADROOM_MS) }
@@ -708,6 +714,14 @@ async function runStage(args: {
         }
       });
       steps.push(nst);
+      const nstBody = nst.summary as Record<string, any> | null;
+      if (nstBody?.auditPersistence === "not_confirmed" || nstBody?.writePersistence === "not_confirmed"
+        || nstBody?.nstProgress?.auditPersistence === "not_confirmed") {
+        nst.status = "failed";
+        nst.requiresReview = NST_PERSISTENCE_UNCONFIRMED;
+        nst.reason = "NST persistence is unconfirmed; inspect the source/audit receipt before retrying.";
+        break;
+      }
       if (nst.status === "failed" && isNstSourceShortfall(nst)) {
         const message = (nst.summary as Record<string, any>).message;
         nst.status = "skipped";
@@ -715,7 +729,7 @@ async function runStage(args: {
         nst.reason = `NST source unavailable; this run continues on WGO without the day's NST counts. Backfill the date once NST returns.${
           typeof message === "string" && message ? ` NST: ${message.slice(0, 200)}` : ""}`;
       }
-      if (nstStepResume.enabled && !nst.degraded) {
+      if (!nst.degraded) {
         const outcome = readNstOutcome(nst, nstCursor);
         if (outcome.kind === "continuation") {
           // WGO waits until NST finishes.
@@ -1212,9 +1226,19 @@ async function runResumablePipeline(args: {
       );
       continue;
     }
+    if (state?.status === "failed" && state.lastError === NST_PERSISTENCE_UNCONFIRMED) {
+      stageResults.push(notRunStage(stage, "failed", "NST persistence is unconfirmed; manual review is required before retrying.", true));
+      termination = {
+        state: "stopped_on_blocking_failure", resumeRequired: false, nextStartDate: null,
+        runKey, nextStageId: stage.id, reason: "manual_review_required"
+      };
+      terminalStopCode = NST_PERSISTENCE_UNCONFIRMED;
+      continue;
+    }
     const failedAttempts = readRollingForgeStageFailedAttempts(state);
     if (
       state?.status === "failed" &&
+      failedAttempts > 0 &&
       (!stage.blocking || failedAttempts >= MAX_BLOCKING_STAGE_ATTEMPTS)
     ) {
       stageResults.push(
@@ -1265,14 +1289,17 @@ async function runResumablePipeline(args: {
     // died (the function was killed). Its progress is stored, so the stage is
     // taken again, but every dead invocation is counted and the run stops
     // once there have been too many.
-    if (isRollingForgeStageLeaseDead(state)) {
+    // NST cannot replay an abandoned invocation without reviewing its writes.
+    // Its acquisition guard below handles the fresh state without mutating it.
+    if (stage.id !== "upstream_skater_sources" && isRollingForgeStageLeaseDead(state)) {
       let kills: number;
       try {
         kills = await recordRollingForgeStageKill({
           supabase,
           scopeKey: runKey,
           stageId: stage.id,
-          runDate: date
+          runDate: date,
+          expiredLeaseOwner: state?.leaseOwner ?? null
         });
       } catch (error) {
         termination = continuation("state_error", stage.id, state?.cursorGameId ?? null, errorMessage(error));
@@ -1339,6 +1366,14 @@ async function runResumablePipeline(args: {
       });
     } catch (error) {
       const message = errorMessage(error);
+      if (error instanceof RollingForgeStageReviewRequiredError) {
+        stageResults.push(notRunStage(stage, "failed", message, true));
+        termination = { state: "stopped_on_blocking_failure", resumeRequired: false,
+          nextStartDate: null, runKey, nextStageId: stage.id,
+          reason: "manual_review_required", detail: message };
+        terminalStopCode = NST_PERSISTENCE_UNCONFIRMED;
+        continue;
+      }
       termination = continuation(
         /LEASE_HELD|REVISION_MISMATCH|CONCURRENT_CHANGE/.test(message)
           ? "stage_in_progress_elsewhere"
@@ -1437,23 +1472,32 @@ async function runResumablePipeline(args: {
         );
       } else if (result.status === "failed") {
         const attempt = failedAttempts + 1;
+        const reviewCode = result.steps.find(step => step.requiresReview)?.requiresReview;
+        // The known uncertainty remains terminal even if saving its hold fails.
+        // The already-acquired running row also blocks a later NST takeover.
+        if (reviewCode) {
+          termination = { state: "stopped_on_blocking_failure", resumeRequired: false,
+            nextStartDate: null, runKey, nextStageId: stage.id, reason: "manual_review_required" };
+          terminalStopCode = reviewCode;
+        }
         await finishRollingForgeStage({
           supabase,
           lease: activeLease,
           outcome: "failed",
-          attempt
+          attempt,
+          failureCode: reviewCode
         });
         if (stage.blocking) {
-          const willRetry = attempt < MAX_BLOCKING_STAGE_ATTEMPTS;
+          const willRetry = !reviewCode && attempt < MAX_BLOCKING_STAGE_ATTEMPTS;
           termination = {
             state: "stopped_on_blocking_failure",
             resumeRequired: willRetry,
             nextStartDate: null,
             runKey,
             nextStageId: stage.id,
-            reason: willRetry ? "retry_on_next_invocation" : "attempts_exhausted"
+            reason: reviewCode ? "manual_review_required" : willRetry ? "retry_on_next_invocation" : "attempts_exhausted"
           };
-          if (!willRetry) terminalStopCode = "attempts_exhausted";
+          if (!willRetry) terminalStopCode = reviewCode ?? "attempts_exhausted";
         }
       } else {
         await finishRollingForgeStage({ supabase, lease: activeLease, outcome: "complete" });
@@ -1487,8 +1531,7 @@ async function runResumablePipeline(args: {
 export const __testables = {
   listGameIdsInRange,
   invokeRouteStep,
-  runStage,
-  nstStepResume
+  runStage
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) {
@@ -1628,21 +1671,26 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
       stageResults.push(result);
 
       if (
-        stopOnFailure &&
+        result.steps.some(step => step.requiresReview) || (stopOnFailure &&
         stage.blocking &&
-        (result.status === "failed" || result.status === "partial")
+        (result.status === "failed" || result.status === "partial"))
       ) {
         blocked = true;
       }
     }
 
+    const manualReviewStage = stageResults.find(stage => stage.steps.some(step => step.requiresReview));
+    if (manualReviewStage) terminalStopCode = NST_PERSISTENCE_UNCONFIRMED;
     const failedBlocking = stageResults.some(
       (stage) => stage.blocking && stage.status === "failed"
     );
     const partialBlocking = stageResults.find(
       (stage) => stage.blocking && stage.status === "partial"
     );
-    termination = failedBlocking
+    termination = manualReviewStage
+      ? { state: "stopped_on_blocking_failure", resumeRequired: false, nextStartDate: null,
+          nextStageId: manualReviewStage.id, reason: "manual_review_required" }
+      : failedBlocking
       ? {
           state: "stopped_on_blocking_failure",
           resumeRequired: true,

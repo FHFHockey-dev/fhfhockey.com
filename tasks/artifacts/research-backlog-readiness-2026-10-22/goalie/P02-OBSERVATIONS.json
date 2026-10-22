@@ -1,0 +1,101 @@
+{
+  "runtime": "v22.11.0",
+  "existingCompiler": "5.7.3",
+  "findings": {
+    "N1": {
+      "pooledSavePct": 0.925,
+      "appearances": 2,
+      "limit": "Appearance identity is not start identity."
+    },
+    "D1": {
+      "mixed": {
+        "savePct": 0,
+        "qsRate": 0.3333333333333333,
+        "qualityStarts": 1,
+        "saves": 0,
+        "shotsAgainst": 0
+      },
+      "classifiedStarts": 2,
+      "qualityStarts": 1,
+      "fractionOverClassifiedStarts": 0.5,
+      "missingClassification": {
+        "savePct": 0,
+        "qsRate": 0,
+        "qualityStarts": 0,
+        "saves": 0,
+        "shotsAgainst": 0
+      },
+      "limit": "No provider QS classification threshold is inferred."
+    },
+    "D2": {
+      "contextualSavePct": 0.675,
+      "sharedSummarySavePct": 0.9,
+      "coverage": "Only one of two appearances has complete paired SV primitives."
+    },
+    "D3": {
+      "actual": 4.5,
+      "totalGoalsAgainst": 4,
+      "totalSeconds": 4200,
+      "exposureBasedGaa": 3.4285714285714284,
+      "limit": "Synthetic seconds are known. Current page select omits exposure; no provider-unit assumption or application formula change."
+    },
+    "D4": {
+      "goalieStats": [
+        {
+          "goalie_id": 999001,
+          "fullName": "Synthetic missing",
+          "current_team_abbreviation": "",
+          "wins": 0,
+          "save_pct": 0,
+          "goals_against_avg": 0,
+          "quality_starts_pct": 0,
+          "games_played": 10,
+          "image_url": "",
+          "sweater_number": null,
+          "season_id": "20262027"
+        },
+        {
+          "goalie_id": 999002,
+          "fullName": "Synthetic observed",
+          "current_team_abbreviation": "",
+          "wins": 0,
+          "save_pct": 0.92,
+          "goals_against_avg": 2,
+          "quality_starts_pct": 0.6,
+          "games_played": 10,
+          "image_url": "",
+          "sweater_number": null,
+          "season_id": "20262027"
+        }
+      ],
+      "goalieLeadersGAA": [
+        {
+          "goalie_id": 999001,
+          "fullName": "Synthetic missing",
+          "current_team_abbreviation": "",
+          "wins": 0,
+          "save_pct": 0,
+          "goals_against_avg": 0,
+          "quality_starts_pct": 0,
+          "games_played": 10,
+          "image_url": "",
+          "sweater_number": null,
+          "season_id": "20262027"
+        },
+        {
+          "goalie_id": 999002,
+          "fullName": "Synthetic observed",
+          "current_team_abbreviation": "",
+          "wins": 0,
+          "save_pct": 0.92,
+          "goals_against_avg": 2,
+          "quality_starts_pct": 0.6,
+          "games_played": 10,
+          "image_url": "",
+          "sweater_number": null,
+          "season_id": "20262027"
+        }
+      ]
+    }
+  }
+}

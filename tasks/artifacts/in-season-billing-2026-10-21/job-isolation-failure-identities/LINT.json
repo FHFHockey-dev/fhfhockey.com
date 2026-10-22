@@ -1,0 +1,5 @@
+{
+  "command": "npx eslint lib/in-season/monthlyExecutor.ts lib/in-season/monthlyLifecycle.ts lib/in-season/monthlyStripe.ts lib/in-season/monthlyIntegration.test.ts lib/in-season/monthlyLifecycle.test.ts lib/in-season/monthlyStripe.test.ts",
+  "exitCode": 0,
+  "warnings": 0
+}

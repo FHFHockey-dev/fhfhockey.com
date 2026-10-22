@@ -1,0 +1,12 @@
+{
+  "status": "prepared_single_owner_confirmed_alias_insert",
+  "projectRef": "fyhftlxokyjtpndbkfse",
+  "destination": "public.fhfh_player_identity_aliases",
+  "canonicalRegistryId": 9521,
+  "nhlPlayerId": 8476454,
+  "alias": "RNH",
+  "sql": "BEGIN;\nSET LOCAL lock_timeout = '1s';\nSET LOCAL statement_timeout = '5s';\nLOCK TABLE public.fhfh_player_identity_aliases, public.lineup_player_name_aliases IN SHARE ROW EXCLUSIVE MODE;\nDO $owner_nickname_guard$\nDECLARE target_id bigint;\nBEGIN\n SELECT id INTO STRICT target_id\n FROM public.fhfh_player_identities\n WHERE id = 9521 AND nhl_player_id = 8476454\n   AND canonical_name = 'Ryan Nugent-Hopkins' AND verification_status = 'verified'\n FOR SHARE;\n IF EXISTS (\n   SELECT 1 FROM public.fhfh_player_identity_aliases\n   WHERE lower(regexp_replace(alias, '[.[:space:]]', '', 'g')) = 'rnh'\n      OR lower(regexp_replace(normalized_alias, '[.[:space:]]', '', 'g')) = 'rnh'\n ) OR EXISTS (\n   SELECT 1 FROM public.lineup_player_name_aliases\n   WHERE lower(regexp_replace(alias, '[.[:space:]]', '', 'g')) = 'rnh'\n      OR lower(regexp_replace(normalized_alias, '[.[:space:]]', '', 'g')) = 'rnh'\n ) THEN\n   RAISE EXCEPTION 'RNH alias appeared; stop without overwrite and inspect existing mapping';\n END IF;\nEND;\n$owner_nickname_guard$;\nINSERT INTO public.fhfh_player_identity_aliases\n (fhfh_player_id, alias, normalized_alias, source, verification_status, source_provenance)\nVALUES\n (9521, 'RNH', public.immutable_unaccent(lower(btrim('RNH'))), 'manual', 'verified',\n jsonb_build_object(\n   'schema_version', 1,\n   'evidence_type', 'owner_confirmation',\n   'alias_kind', 'nickname',\n   'confirmed_by', 'TJ',\n   'confirmed_at', '2026-10-20T23:03:35Z',\n   'confirmation', 'RNH → can confidently be stored in the nickname library, mapping to Ryan Nugent-Hopkins.',\n   'nhl_player_id', 8476454,\n   'scope', 'global_identity_only',\n   'historical_team_membership_asserted', false,\n   'model_confidence_used_as_verification', false\n ));\nCOMMIT;\nSELECT a.id, a.fhfh_player_id, i.nhl_player_id, i.canonical_name, a.alias,\n a.normalized_alias, a.source, a.verification_status, a.source_provenance, a.created_at\nFROM public.fhfh_player_identity_aliases a\nJOIN public.fhfh_player_identities i ON i.id = a.fhfh_player_id\nWHERE a.fhfh_player_id = 9521 AND a.normalized_alias = 'rnh'\nORDER BY a.id LIMIT 5;",
+  "conflictsObserved": 0,
+  "normalization": "Existing registry immutable_unaccent(lower(btrim(alias))) pattern",
+  "unrelatedOccurrenceOrReplayWrites": 0
+}

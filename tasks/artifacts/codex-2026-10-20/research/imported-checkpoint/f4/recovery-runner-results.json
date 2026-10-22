@@ -1,0 +1,1246 @@
+{
+  "node": "v22.11.0",
+  "passed": true,
+  "actualRunnerInvocations": 2,
+  "resultB": {
+    "runId": "created-run-1",
+    "gamesProcessed": 1,
+    "playerRowsUpserted": 2,
+    "teamRowsUpserted": 2,
+    "goalieRowsUpserted": 2,
+    "timedOut": false,
+    "resume": {
+      "resumed": true,
+      "invocations": 2,
+      "completedGames": 1,
+      "totalGames": 1,
+      "pendingGames": 0
+    }
+  },
+  "resultA": {
+    "error": {
+      "code": "RUN_LEASE_LOST",
+      "message": "Projection run created-run-1 is no longer held by this invocation."
+    }
+  },
+  "beforeLate": {
+    "status": "succeeded",
+    "completed": [
+      2026020010
+    ],
+    "players": [
+      {
+        "id": 1,
+        "goals": 0.9
+      },
+      {
+        "id": 2,
+        "goals": 0.9
+      }
+    ],
+    "teams": [
+      {
+        "id": 10,
+        "goals": 0.9
+      },
+      {
+        "id": 20,
+        "goals": 0.9
+      }
+    ],
+    "goalies": [
+      {
+        "id": 101,
+        "saves": 0.9
+      },
+      {
+        "id": 102,
+        "saves": 0.9
+      }
+    ],
+    "playerSidecarRows": 2,
+    "gameSidecarRows": 1
+  },
+  "afterLate": {
+    "status": "succeeded",
+    "completed": [
+      2026020010
+    ],
+    "players": [
+      {
+        "id": 1,
+        "goals": 0.1
+      },
+      {
+        "id": 2,
+        "goals": 0.9
+      }
+    ],
+    "teams": [
+      {
+        "id": 10,
+        "goals": 0.1
+      },
+      {
+        "id": 20,
+        "goals": 0.9
+      }
+    ],
+    "goalies": [
+      {
+        "id": 101,
+        "saves": 0.9
+      },
+      {
+        "id": 102,
+        "saves": 0.9
+      }
+    ],
+    "playerSidecarRows": 2,
+    "gameSidecarRows": 1
+  },
+  "stageTrace": [
+    {
+      "invocation": 1,
+      "event": "skater_enter",
+      "now": 1792461600000,
+      "runId": "created-run-1",
+      "value": 0.1
+    },
+    {
+      "invocation": 2,
+      "event": "skater_enter",
+      "now": 1792461662000,
+      "runId": "created-run-1",
+      "value": 0.9
+    },
+    {
+      "invocation": 1,
+      "event": "skater_timeout",
+      "now": 1792461662000,
+      "playerRowsUpserted": 1,
+      "teamRowsUpserted": 1
+    }
+  ],
+  "sourceFilesUnchanged": true,
+  "actualSourceHashes": {
+    "/workspace/shared/fhfhockey.com/web/lib/projections/run-forge-projections.ts": "ff8b2e979c0208264d18c8a8862194f3ef00ce481865cad9f3129592d340f7d3",
+    "/workspace/shared/fhfhockey.com/web/lib/projections/stages/persistence-stage.ts": "f4cac82181d4f6d6fac90a5d6c1b0224aa5f03b5f873f88101e1b302e8079924",
+    "/workspace/shared/fhfhockey.com/web/lib/projections/queries/run-lifecycle-queries.ts": "3e06fb08562c0f892f77cfb2339c2bee88958d7850c4093d0f3949ca5e3fbaf4"
+  },
+  "fakeComputationalStages": [
+    "preflight",
+    "goalie",
+    "skater"
+  ],
+  "events": [
+    {
+      "phase": "dispatch",
+      "table": "forge_runs",
+      "operation": "select",
+      "filters": [
+        {
+          "column": "as_of_date",
+          "kind": "eq",
+          "value": "2026-10-20"
+        },
+        {
+          "column": "status",
+          "kind": "eq",
+          "value": "running"
+        }
+      ],
+      "conflict": null,
+      "rows": [],
+      "patch": {}
+    },
+    {
+      "phase": "commit",
+      "table": "forge_runs",
+      "operation": "select",
+      "matched": 0,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "forge_runs",
+      "operation": "insert",
+      "filters": [],
+      "conflict": null,
+      "rows": [
+        {
+          "as_of_date": "2026-10-20",
+          "status": "running",
+          "git_sha": null,
+          "metrics": {
+            "resume": {
+              "version": "forge-run-resume-v1",
+              "scope_key": "h1:full",
+              "lease_owner": "owner-UUID",
+              "lease_expires_at": "2026-10-20T02:01:01.000Z",
+              "completed_game_ids": [],
+              "invocations": 1
+            }
+          }
+        }
+      ],
+      "patch": {}
+    },
+    {
+      "phase": "commit",
+      "table": "forge_runs",
+      "operation": "insert",
+      "matched": 1,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "forge_player_projections",
+      "operation": "upsert",
+      "filters": [],
+      "conflict": "run_id,game_id,player_id,horizon_games",
+      "rows": [
+        {
+          "run_id": "created-run-1",
+          "game_id": 2026020010,
+          "player_id": 1,
+          "horizon_games": 1,
+          "proj_goals_es": 0.1
+        }
+      ],
+      "patch": {}
+    },
+    {
+      "phase": "dispatch",
+      "table": "forge_runs",
+      "operation": "select",
+      "filters": [
+        {
+          "column": "as_of_date",
+          "kind": "eq",
+          "value": "2026-10-20"
+        },
+        {
+          "column": "status",
+          "kind": "eq",
+          "value": "running"
+        }
+      ],
+      "conflict": null,
+      "rows": [],
+      "patch": {}
+    },
+    {
+      "phase": "commit",
+      "table": "forge_runs",
+      "operation": "select",
+      "matched": 1,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "forge_runs",
+      "operation": "update",
+      "filters": [
+        {
+          "column": "run_id",
+          "kind": "eq",
+          "value": "created-run-1"
+        },
+        {
+          "column": "status",
+          "kind": "eq",
+          "value": "running"
+        },
+        {
+          "column": "metrics->resume->>lease_owner",
+          "kind": "eq",
+          "value": "owner-UUID"
+        }
+      ],
+      "conflict": null,
+      "rows": [],
+      "patch": {
+        "metrics": {
+          "resume": {
+            "version": "forge-run-resume-v1",
+            "scope_key": "h1:full",
+            "lease_owner": "owner-UUID",
+            "lease_expires_at": "2026-10-20T02:06:00.000Z",
+            "completed_game_ids": [],
+            "invocations": 2
+          }
+        },
+        "updated_at": "2026-10-20T02:01:02.000Z"
+      }
+    },
+    {
+      "phase": "commit",
+      "table": "forge_runs",
+      "operation": "update",
+      "matched": 1,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "forge_player_projections",
+      "operation": "delete",
+      "filters": [
+        {
+          "column": "run_id",
+          "kind": "eq",
+          "value": "created-run-1"
+        },
+        {
+          "column": "game_id",
+          "kind": "in",
+          "value": [
+            2026020010
+          ]
+        }
+      ],
+      "conflict": null,
+      "rows": [],
+      "patch": {}
+    },
+    {
+      "phase": "commit",
+      "table": "forge_player_projections",
+      "operation": "delete",
+      "matched": 0,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "forge_team_projections",
+      "operation": "delete",
+      "filters": [
+        {
+          "column": "run_id",
+          "kind": "eq",
+          "value": "created-run-1"
+        },
+        {
+          "column": "game_id",
+          "kind": "in",
+          "value": [
+            2026020010
+          ]
+        }
+      ],
+      "conflict": null,
+      "rows": [],
+      "patch": {}
+    },
+    {
+      "phase": "commit",
+      "table": "forge_team_projections",
+      "operation": "delete",
+      "matched": 0,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "forge_goalie_projections",
+      "operation": "delete",
+      "filters": [
+        {
+          "column": "run_id",
+          "kind": "eq",
+          "value": "created-run-1"
+        },
+        {
+          "column": "game_id",
+          "kind": "in",
+          "value": [
+            2026020010
+          ]
+        }
+      ],
+      "conflict": null,
+      "rows": [],
+      "patch": {}
+    },
+    {
+      "phase": "commit",
+      "table": "forge_goalie_projections",
+      "operation": "delete",
+      "matched": 0,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "forge_player_projections",
+      "operation": "upsert",
+      "filters": [],
+      "conflict": "run_id,game_id,player_id,horizon_games",
+      "rows": [
+        {
+          "run_id": "created-run-1",
+          "game_id": 2026020010,
+          "player_id": 1,
+          "horizon_games": 1,
+          "proj_goals_es": 0.9
+        }
+      ],
+      "patch": {}
+    },
+    {
+      "phase": "commit",
+      "table": "forge_player_projections",
+      "operation": "upsert",
+      "matched": 1,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "forge_team_projections",
+      "operation": "upsert",
+      "filters": [],
+      "conflict": "run_id,game_id,team_id,horizon_games",
+      "rows": [
+        {
+          "run_id": "created-run-1",
+          "game_id": 2026020010,
+          "team_id": 10,
+          "horizon_games": 1,
+          "proj_goals_es": 0.9
+        }
+      ],
+      "patch": {}
+    },
+    {
+      "phase": "commit",
+      "table": "forge_team_projections",
+      "operation": "upsert",
+      "matched": 1,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "forge_player_projections",
+      "operation": "upsert",
+      "filters": [],
+      "conflict": "run_id,game_id,player_id,horizon_games",
+      "rows": [
+        {
+          "run_id": "created-run-1",
+          "game_id": 2026020010,
+          "player_id": 2,
+          "horizon_games": 1,
+          "proj_goals_es": 0.9
+        }
+      ],
+      "patch": {}
+    },
+    {
+      "phase": "commit",
+      "table": "forge_player_projections",
+      "operation": "upsert",
+      "matched": 1,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "forge_team_projections",
+      "operation": "upsert",
+      "filters": [],
+      "conflict": "run_id,game_id,team_id,horizon_games",
+      "rows": [
+        {
+          "run_id": "created-run-1",
+          "game_id": 2026020010,
+          "team_id": 20,
+          "horizon_games": 1,
+          "proj_goals_es": 0.9
+        }
+      ],
+      "patch": {}
+    },
+    {
+      "phase": "commit",
+      "table": "forge_team_projections",
+      "operation": "upsert",
+      "matched": 1,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "forge_goalie_projections",
+      "operation": "upsert",
+      "filters": [],
+      "conflict": "run_id,game_id,goalie_id,horizon_games",
+      "rows": [
+        {
+          "run_id": "created-run-1",
+          "game_id": 2026020010,
+          "goalie_id": 101,
+          "horizon_games": 1,
+          "proj_saves": 0.9
+        }
+      ],
+      "patch": {}
+    },
+    {
+      "phase": "commit",
+      "table": "forge_goalie_projections",
+      "operation": "upsert",
+      "matched": 1,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "forge_goalie_projections",
+      "operation": "upsert",
+      "filters": [],
+      "conflict": "run_id,game_id,goalie_id,horizon_games",
+      "rows": [
+        {
+          "run_id": "created-run-1",
+          "game_id": 2026020010,
+          "goalie_id": 102,
+          "horizon_games": 1,
+          "proj_saves": 0.9
+        }
+      ],
+      "patch": {}
+    },
+    {
+      "phase": "commit",
+      "table": "forge_goalie_projections",
+      "operation": "upsert",
+      "matched": 1,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "player_prediction_outputs",
+      "operation": "delete",
+      "filters": [
+        {
+          "column": "snapshot_date",
+          "kind": "eq",
+          "value": "2026-10-20"
+        },
+        {
+          "column": "game_id",
+          "kind": "eq",
+          "value": 2026020010
+        },
+        {
+          "column": "model_name",
+          "kind": "eq",
+          "value": "forge"
+        },
+        {
+          "column": "model_version",
+          "kind": "eq",
+          "value": "market-context-v1"
+        },
+        {
+          "column": "prediction_scope",
+          "kind": "eq",
+          "value": "pregame"
+        }
+      ],
+      "conflict": null,
+      "rows": [],
+      "patch": {}
+    },
+    {
+      "phase": "commit",
+      "table": "player_prediction_outputs",
+      "operation": "delete",
+      "matched": 0,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "player_prediction_outputs",
+      "operation": "upsert",
+      "filters": [],
+      "conflict": "snapshot_date,player_id,model_name,model_version,prediction_scope,metric_key,game_id",
+      "rows": [
+        {
+          "snapshot_date": "2026-10-20",
+          "player_id": 1,
+          "model_name": "forge",
+          "model_version": "test-v1",
+          "prediction_scope": "pregame",
+          "metric_key": "goals",
+          "game_id": 2026020010,
+          "projected_value": 0.9,
+          "metadata": {
+            "run_id": "created-run-1"
+          }
+        },
+        {
+          "snapshot_date": "2026-10-20",
+          "player_id": 2,
+          "model_name": "forge",
+          "model_version": "test-v1",
+          "prediction_scope": "pregame",
+          "metric_key": "goals",
+          "game_id": 2026020010,
+          "projected_value": 0.9,
+          "metadata": {
+            "run_id": "created-run-1"
+          }
+        }
+      ],
+      "patch": {}
+    },
+    {
+      "phase": "commit",
+      "table": "player_prediction_outputs",
+      "operation": "upsert",
+      "matched": 2,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "game_prediction_outputs",
+      "operation": "delete",
+      "filters": [
+        {
+          "column": "snapshot_date",
+          "kind": "eq",
+          "value": "2026-10-20"
+        },
+        {
+          "column": "game_id",
+          "kind": "eq",
+          "value": 2026020010
+        },
+        {
+          "column": "model_name",
+          "kind": "eq",
+          "value": "forge"
+        },
+        {
+          "column": "model_version",
+          "kind": "eq",
+          "value": "market-context-v1"
+        },
+        {
+          "column": "prediction_scope",
+          "kind": "eq",
+          "value": "pregame"
+        }
+      ],
+      "conflict": null,
+      "rows": [],
+      "patch": {}
+    },
+    {
+      "phase": "commit",
+      "table": "game_prediction_outputs",
+      "operation": "delete",
+      "matched": 0,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "game_prediction_outputs",
+      "operation": "upsert",
+      "filters": [],
+      "conflict": "snapshot_date,game_id,model_name,model_version,prediction_scope",
+      "rows": [
+        {
+          "snapshot_date": "2026-10-20",
+          "game_id": 2026020010,
+          "model_name": "forge",
+          "model_version": "market-context-v1",
+          "prediction_scope": "pregame",
+          "home_team_id": 10,
+          "away_team_id": 20,
+          "home_win_probability": null,
+          "away_win_probability": null,
+          "home_expected_goals": 0.9,
+          "away_expected_goals": 0.9,
+          "total_expected_goals": 1.8,
+          "spread_projection": 0,
+          "components": {
+            "market_inputs": {},
+            "selected_goalies": {
+              "home": null,
+              "away": null
+            }
+          },
+          "provenance": {
+            "game_market_provider": null,
+            "input_family": "forge-game-projection"
+          },
+          "metadata": {
+            "horizon_games": 1,
+            "run_id": "created-run-1"
+          }
+        }
+      ],
+      "patch": {}
+    },
+    {
+      "phase": "commit",
+      "table": "game_prediction_outputs",
+      "operation": "upsert",
+      "matched": 1,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "model_market_flags_daily",
+      "operation": "delete",
+      "filters": [
+        {
+          "column": "snapshot_date",
+          "kind": "eq",
+          "value": "2026-10-20"
+        },
+        {
+          "column": "game_id",
+          "kind": "eq",
+          "value": 2026020010
+        },
+        {
+          "column": "model_name",
+          "kind": "eq",
+          "value": "forge"
+        },
+        {
+          "column": "model_version",
+          "kind": "eq",
+          "value": "market-context-v1"
+        }
+      ],
+      "conflict": null,
+      "rows": [],
+      "patch": {}
+    },
+    {
+      "phase": "commit",
+      "table": "model_market_flags_daily",
+      "operation": "delete",
+      "matched": 0,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "forge_runs",
+      "operation": "update",
+      "filters": [
+        {
+          "column": "run_id",
+          "kind": "eq",
+          "value": "created-run-1"
+        },
+        {
+          "column": "status",
+          "kind": "eq",
+          "value": "running"
+        },
+        {
+          "column": "metrics->resume->>lease_owner",
+          "kind": "eq",
+          "value": "owner-UUID"
+        }
+      ],
+      "conflict": null,
+      "rows": [],
+      "patch": {
+        "status": "running",
+        "metrics": {
+          "as_of_date": "2026-10-20",
+          "horizon_games": 1,
+          "input_provenance": {
+            "rolling_player_history_contract": "full_selected_scope_through_end_date_v1",
+            "external_fantasy_input_contract": "excluded_from_native_inputs_v1"
+          },
+          "decision_as_of": "2026-10-20T02:01:02.000Z",
+          "board_lease": null,
+          "analytics_sidecar": {
+            "version": "forge-analytics-sidecar-scope-v1",
+            "status": "enabled"
+          },
+          "execution_scope": {
+            "mode": "full_slate",
+            "requested_game_ids": []
+          },
+          "started_at": "2026-10-20T02:01:02.000Z",
+          "skater_rollout": {
+            "modelVersion": "skater-baseline-v1",
+            "mode": "baseline",
+            "featureFlag": "FORGE_SKATER_MODEL_MODE",
+            "rollbackMode": "baseline"
+          },
+          "games": 1,
+          "player_rows": 2,
+          "team_rows": 2,
+          "goalie_rows": 2,
+          "learning": {
+            "recent_window_games": 5,
+            "goal_rate_prior_strength": "adaptive",
+            "assist_rate_prior_strength": "adaptive",
+            "players_considered": 0,
+            "goal_rate_recent_players": 0,
+            "assist_rate_recent_players": 0,
+            "goal_rate_recent_share": 0,
+            "assist_rate_recent_share": 0
+          },
+          "data_quality": {
+            "missing_pbp_games": 0,
+            "missing_shift_totals": 0,
+            "missing_line_combos": 0,
+            "stale_line_combos_soft": 0,
+            "stale_line_combos_hard": 0,
+            "line_combo_fallbacks_used": 0,
+            "line_combo_hard_failures": 0,
+            "empty_skater_rosters": 0,
+            "filtered_skater_team_or_position": 0,
+            "filtered_skater_missing_metrics": 0,
+            "filtered_skater_hard_stale": 0,
+            "soft_stale_skater_penalties": 0,
+            "role_volatility_penalties_applied": 0,
+            "role_continuity_boosts_applied": 0,
+            "skater_availability_penalties_applied": 0,
+            "skater_unavailable_filtered": 0,
+            "skater_pool_recovery_attempts": 0,
+            "skater_pool_recovery_activated": 0,
+            "skater_pool_recovery_restored": 0,
+            "skater_pool_recovery_failed": 0,
+            "skater_pool_recovery_candidates_added": 0,
+            "skater_pool_emergency_missing_metrics_included": 0,
+            "skater_pool_players_dropped_no_ev_pp_gate": 0,
+            "skater_pool_projected_teams": 0,
+            "skater_pool_projected_count_min": null,
+            "skater_pool_projected_count_max": null,
+            "skater_pool_projected_count_sum": 0,
+            "skater_pool_projected_count_avg": null,
+            "skater_pool_underfilled_projected_teams": 0,
+            "skater_pool_emergency_toi_target_caps_applied": 0,
+            "missing_ev_metrics_players": 0,
+            "missing_pp_metrics_players": 0,
+            "deployment_prior_profiles_found": 0,
+            "deployment_prior_toi_blends_applied": 0,
+            "shot_quality_profiles_found": 0,
+            "shot_quality_adjustments_applied": 0,
+            "on_ice_context_profiles_found": 0,
+            "on_ice_context_adjustments_applied": 0,
+            "trend_adjustment_rows_eligible": 0,
+            "trend_adjustment_players_with_rows": 0,
+            "trend_adjustment_players_adjusted": 0,
+            "trend_adjustment_players_missing_rows": 0,
+            "trend_adjustment_players_neutralized_by_recency": 0,
+            "trend_adjustment_soft_stale_selected": 0,
+            "trend_adjustment_hard_stale_selected": 0,
+            "trend_adjustment_fetch_failures": 0,
+            "team_level_context_teams_with_signal": 0,
+            "team_level_context_adjustments_applied": 0,
+            "opponent_goalie_context_profiles_found": 0,
+            "opponent_goalie_context_adjustments_applied": 0,
+            "rest_schedule_teams_with_signal": 0,
+            "rest_schedule_adjustments_applied": 0,
+            "small_sample_players": 0,
+            "small_sample_shrinkage_applied": 0,
+            "small_sample_callup_fallbacks": 0,
+            "missing_pp_conversion_samples": 0,
+            "pp_opportunity_teams_modeled": 0,
+            "pp_opportunity_players_reweighted": 0,
+            "teammate_coupling_players_adjusted": 0,
+            "role_usage_bounds_applied": 0,
+            "reconciliation_distribution_adjustments": 0,
+            "reconciliation_top_es_share_max": null,
+            "reconciliation_top_pp_share_max": null,
+            "role_scenarios_players_modeled": 0,
+            "role_scenarios_avg_count": null,
+            "role_scenario_blends_applied": 0,
+            "role_scenario_horizon_games_modeled": 0,
+            "toi_scaled_teams": 0,
+            "toi_scale_min": null,
+            "toi_scale_max": null
+          },
+          "warnings": [],
+          "daily_board_evidence": {
+            "assertions": [],
+            "conflicts": []
+          },
+          "resume": {
+            "version": "forge-run-resume-v1",
+            "scope_key": "h1:full",
+            "lease_owner": "owner-UUID",
+            "lease_expires_at": "2026-10-20T02:06:00.000Z",
+            "completed_game_ids": [
+              2026020010
+            ],
+            "invocations": 2
+          }
+        },
+        "updated_at": "2026-10-20T02:01:02.000Z"
+      }
+    },
+    {
+      "phase": "commit",
+      "table": "forge_runs",
+      "operation": "update",
+      "matched": 1,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "forge_runs",
+      "operation": "update",
+      "filters": [
+        {
+          "column": "run_id",
+          "kind": "eq",
+          "value": "created-run-1"
+        },
+        {
+          "column": "status",
+          "kind": "eq",
+          "value": "running"
+        },
+        {
+          "column": "metrics->resume->>lease_owner",
+          "kind": "eq",
+          "value": "owner-UUID"
+        }
+      ],
+      "conflict": null,
+      "rows": [],
+      "patch": {
+        "status": "succeeded",
+        "metrics": {
+          "as_of_date": "2026-10-20",
+          "horizon_games": 1,
+          "input_provenance": {
+            "rolling_player_history_contract": "full_selected_scope_through_end_date_v1",
+            "external_fantasy_input_contract": "excluded_from_native_inputs_v1"
+          },
+          "decision_as_of": "2026-10-20T02:01:02.000Z",
+          "board_lease": null,
+          "analytics_sidecar": {
+            "version": "forge-analytics-sidecar-scope-v1",
+            "status": "enabled"
+          },
+          "execution_scope": {
+            "mode": "full_slate",
+            "requested_game_ids": []
+          },
+          "started_at": "2026-10-20T02:01:02.000Z",
+          "skater_rollout": {
+            "modelVersion": "skater-baseline-v1",
+            "mode": "baseline",
+            "featureFlag": "FORGE_SKATER_MODEL_MODE",
+            "rollbackMode": "baseline"
+          },
+          "games": 1,
+          "player_rows": 2,
+          "team_rows": 2,
+          "goalie_rows": 2,
+          "learning": {
+            "recent_window_games": 5,
+            "goal_rate_prior_strength": "adaptive",
+            "assist_rate_prior_strength": "adaptive",
+            "players_considered": 0,
+            "goal_rate_recent_players": 0,
+            "assist_rate_recent_players": 0,
+            "goal_rate_recent_share": 0,
+            "assist_rate_recent_share": 0
+          },
+          "data_quality": {
+            "missing_pbp_games": 0,
+            "missing_shift_totals": 0,
+            "missing_line_combos": 0,
+            "stale_line_combos_soft": 0,
+            "stale_line_combos_hard": 0,
+            "line_combo_fallbacks_used": 0,
+            "line_combo_hard_failures": 0,
+            "empty_skater_rosters": 0,
+            "filtered_skater_team_or_position": 0,
+            "filtered_skater_missing_metrics": 0,
+            "filtered_skater_hard_stale": 0,
+            "soft_stale_skater_penalties": 0,
+            "role_volatility_penalties_applied": 0,
+            "role_continuity_boosts_applied": 0,
+            "skater_availability_penalties_applied": 0,
+            "skater_unavailable_filtered": 0,
+            "skater_pool_recovery_attempts": 0,
+            "skater_pool_recovery_activated": 0,
+            "skater_pool_recovery_restored": 0,
+            "skater_pool_recovery_failed": 0,
+            "skater_pool_recovery_candidates_added": 0,
+            "skater_pool_emergency_missing_metrics_included": 0,
+            "skater_pool_players_dropped_no_ev_pp_gate": 0,
+            "skater_pool_projected_teams": 0,
+            "skater_pool_projected_count_min": null,
+            "skater_pool_projected_count_max": null,
+            "skater_pool_projected_count_sum": 0,
+            "skater_pool_projected_count_avg": null,
+            "skater_pool_underfilled_projected_teams": 0,
+            "skater_pool_emergency_toi_target_caps_applied": 0,
+            "missing_ev_metrics_players": 0,
+            "missing_pp_metrics_players": 0,
+            "deployment_prior_profiles_found": 0,
+            "deployment_prior_toi_blends_applied": 0,
+            "shot_quality_profiles_found": 0,
+            "shot_quality_adjustments_applied": 0,
+            "on_ice_context_profiles_found": 0,
+            "on_ice_context_adjustments_applied": 0,
+            "trend_adjustment_rows_eligible": 0,
+            "trend_adjustment_players_with_rows": 0,
+            "trend_adjustment_players_adjusted": 0,
+            "trend_adjustment_players_missing_rows": 0,
+            "trend_adjustment_players_neutralized_by_recency": 0,
+            "trend_adjustment_soft_stale_selected": 0,
+            "trend_adjustment_hard_stale_selected": 0,
+            "trend_adjustment_fetch_failures": 0,
+            "team_level_context_teams_with_signal": 0,
+            "team_level_context_adjustments_applied": 0,
+            "opponent_goalie_context_profiles_found": 0,
+            "opponent_goalie_context_adjustments_applied": 0,
+            "rest_schedule_teams_with_signal": 0,
+            "rest_schedule_adjustments_applied": 0,
+            "small_sample_players": 0,
+            "small_sample_shrinkage_applied": 0,
+            "small_sample_callup_fallbacks": 0,
+            "missing_pp_conversion_samples": 0,
+            "pp_opportunity_teams_modeled": 0,
+            "pp_opportunity_players_reweighted": 0,
+            "teammate_coupling_players_adjusted": 0,
+            "role_usage_bounds_applied": 0,
+            "reconciliation_distribution_adjustments": 0,
+            "reconciliation_top_es_share_max": null,
+            "reconciliation_top_pp_share_max": null,
+            "role_scenarios_players_modeled": 0,
+            "role_scenarios_avg_count": null,
+            "role_scenario_blends_applied": 0,
+            "role_scenario_horizon_games_modeled": 0,
+            "toi_scaled_teams": 0,
+            "toi_scale_min": null,
+            "toi_scale_max": null
+          },
+          "warnings": [],
+          "daily_board_evidence": {
+            "assertions": [],
+            "conflicts": []
+          },
+          "finished_at": "2026-10-20T02:01:02.000Z",
+          "timed_out": false,
+          "resume": {
+            "version": "forge-run-resume-v1",
+            "scope_key": "h1:full",
+            "lease_owner": "owner-UUID",
+            "lease_expires_at": "2026-10-20T02:01:02.000Z",
+            "completed_game_ids": [
+              2026020010
+            ],
+            "invocations": 2
+          }
+        },
+        "updated_at": "2026-10-20T02:01:02.000Z"
+      }
+    },
+    {
+      "phase": "commit",
+      "table": "forge_runs",
+      "operation": "update",
+      "matched": 1,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "commit",
+      "table": "forge_player_projections",
+      "operation": "upsert",
+      "matched": 1,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "forge_team_projections",
+      "operation": "upsert",
+      "filters": [],
+      "conflict": "run_id,game_id,team_id,horizon_games",
+      "rows": [
+        {
+          "run_id": "created-run-1",
+          "game_id": 2026020010,
+          "team_id": 10,
+          "horizon_games": 1,
+          "proj_goals_es": 0.1
+        }
+      ],
+      "patch": {}
+    },
+    {
+      "phase": "commit",
+      "table": "forge_team_projections",
+      "operation": "upsert",
+      "matched": 1,
+      "errorAfterCommit": null
+    },
+    {
+      "phase": "dispatch",
+      "table": "forge_runs",
+      "operation": "update",
+      "filters": [
+        {
+          "column": "run_id",
+          "kind": "eq",
+          "value": "created-run-1"
+        },
+        {
+          "column": "status",
+          "kind": "eq",
+          "value": "running"
+        },
+        {
+          "column": "metrics->resume->>lease_owner",
+          "kind": "eq",
+          "value": "owner-UUID"
+        }
+      ],
+      "conflict": null,
+      "rows": [],
+      "patch": {
+        "status": "running",
+        "metrics": {
+          "as_of_date": "2026-10-20",
+          "horizon_games": 1,
+          "input_provenance": {
+            "rolling_player_history_contract": "full_selected_scope_through_end_date_v1",
+            "external_fantasy_input_contract": "excluded_from_native_inputs_v1"
+          },
+          "decision_as_of": "2026-10-20T02:00:00.000Z",
+          "board_lease": null,
+          "analytics_sidecar": {
+            "version": "forge-analytics-sidecar-scope-v1",
+            "status": "enabled"
+          },
+          "execution_scope": {
+            "mode": "full_slate",
+            "requested_game_ids": []
+          },
+          "started_at": "2026-10-20T02:00:00.000Z",
+          "skater_rollout": {
+            "modelVersion": "skater-baseline-v1",
+            "mode": "baseline",
+            "featureFlag": "FORGE_SKATER_MODEL_MODE",
+            "rollbackMode": "baseline"
+          },
+          "games": 0,
+          "player_rows": 0,
+          "team_rows": 0,
+          "goalie_rows": 0,
+          "learning": {
+            "recent_window_games": 5,
+            "goal_rate_prior_strength": "adaptive",
+            "assist_rate_prior_strength": "adaptive",
+            "players_considered": 0,
+            "goal_rate_recent_players": 0,
+            "assist_rate_recent_players": 0,
+            "goal_rate_recent_share": 0,
+            "assist_rate_recent_share": 0
+          },
+          "data_quality": {
+            "missing_pbp_games": 0,
+            "missing_shift_totals": 0,
+            "missing_line_combos": 0,
+            "stale_line_combos_soft": 0,
+            "stale_line_combos_hard": 0,
+            "line_combo_fallbacks_used": 0,
+            "line_combo_hard_failures": 0,
+            "empty_skater_rosters": 0,
+            "filtered_skater_team_or_position": 0,
+            "filtered_skater_missing_metrics": 0,
+            "filtered_skater_hard_stale": 0,
+            "soft_stale_skater_penalties": 0,
+            "role_volatility_penalties_applied": 0,
+            "role_continuity_boosts_applied": 0,
+            "skater_availability_penalties_applied": 0,
+            "skater_unavailable_filtered": 0,
+            "skater_pool_recovery_attempts": 0,
+            "skater_pool_recovery_activated": 0,
+            "skater_pool_recovery_restored": 0,
+            "skater_pool_recovery_failed": 0,
+            "skater_pool_recovery_candidates_added": 0,
+            "skater_pool_emergency_missing_metrics_included": 0,
+            "skater_pool_players_dropped_no_ev_pp_gate": 0,
+            "skater_pool_projected_teams": 0,
+            "skater_pool_projected_count_min": null,
+            "skater_pool_projected_count_max": null,
+            "skater_pool_projected_count_sum": 0,
+            "skater_pool_projected_count_avg": null,
+            "skater_pool_underfilled_projected_teams": 0,
+            "skater_pool_emergency_toi_target_caps_applied": 0,
+            "missing_ev_metrics_players": 0,
+            "missing_pp_metrics_players": 0,
+            "deployment_prior_profiles_found": 0,
+            "deployment_prior_toi_blends_applied": 0,
+            "shot_quality_profiles_found": 0,
+            "shot_quality_adjustments_applied": 0,
+            "on_ice_context_profiles_found": 0,
+            "on_ice_context_adjustments_applied": 0,
+            "trend_adjustment_rows_eligible": 0,
+            "trend_adjustment_players_with_rows": 0,
+            "trend_adjustment_players_adjusted": 0,
+            "trend_adjustment_players_missing_rows": 0,
+            "trend_adjustment_players_neutralized_by_recency": 0,
+            "trend_adjustment_soft_stale_selected": 0,
+            "trend_adjustment_hard_stale_selected": 0,
+            "trend_adjustment_fetch_failures": 0,
+            "team_level_context_teams_with_signal": 0,
+            "team_level_context_adjustments_applied": 0,
+            "opponent_goalie_context_profiles_found": 0,
+            "opponent_goalie_context_adjustments_applied": 0,
+            "rest_schedule_teams_with_signal": 0,
+            "rest_schedule_adjustments_applied": 0,
+            "small_sample_players": 0,
+            "small_sample_shrinkage_applied": 0,
+            "small_sample_callup_fallbacks": 0,
+            "missing_pp_conversion_samples": 0,
+            "pp_opportunity_teams_modeled": 0,
+            "pp_opportunity_players_reweighted": 0,
+            "teammate_coupling_players_adjusted": 0,
+            "role_usage_bounds_applied": 0,
+            "reconciliation_distribution_adjustments": 0,
+            "reconciliation_top_es_share_max": null,
+            "reconciliation_top_pp_share_max": null,
+            "role_scenarios_players_modeled": 0,
+            "role_scenarios_avg_count": null,
+            "role_scenario_blends_applied": 0,
+            "role_scenario_horizon_games_modeled": 0,
+            "toi_scaled_teams": 0,
+            "toi_scale_min": null,
+            "toi_scale_max": null
+          },
+          "warnings": [],
+          "daily_board_evidence": {
+            "assertions": [],
+            "conflicts": []
+          },
+          "resume": {
+            "version": "forge-run-resume-v1",
+            "scope_key": "h1:full",
+            "lease_owner": "owner-UUID",
+            "lease_expires_at": "2026-10-20T02:01:02.000Z",
+            "completed_game_ids": [],
+            "invocations": 1
+          }
+        },
+        "updated_at": "2026-10-20T02:01:02.000Z"
+      }
+    },
+    {
+      "phase": "commit",
+      "table": "forge_runs",
+      "operation": "update",
+      "matched": 0,
+      "errorAfterCommit": null
+    }
+  ],
+  "limits": [
+    "Actual runner, lifecycle, cleanup, projection and analytics persistence, and metrics finalization; fake preflight/statistical stages and in-memory DB client.",
+    "Deferred commit/transport is injected; neither real SQL concurrency nor production timing is validated.",
+    "No proposed fix, reader admission/scorability, or statistical output correctness is tested."
+  ]
+}

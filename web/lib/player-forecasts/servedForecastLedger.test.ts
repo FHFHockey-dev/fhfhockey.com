@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GameForecast } from "lib/rosterScheduleOptimizer/planningTypes";
-import { buildLedgerRows, scoreLedger, settleLedgerRows, type BuildLedgerInput, type LedgerRow } from "./servedForecastLedger";
+import { buildLedgerRows, scoreLedger, settleLedgerRows, settleLedgerUniverse, type BuildLedgerInput, type LedgerRow } from "./servedForecastLedger";
 
 const NOW = new Date("2026-10-21T12:30:00Z");
 const forecast = (playerId: string, gameId: string, runId: string, stats: Record<string, number | null>, startProbability: number | null = null): GameForecast => ({
@@ -74,14 +74,29 @@ describe("settleLedgerRows", () => {
     skaters: [{ game_id: 100, player_id: 11, goals: 1, assists: 0, pp_points: 0, shots: 4, hits: null, blocked_shots: 2 }],
     goalies: [{ game_id: 100, player_id: 31, saves: 30, goals_against: 0, shots_against: 30, wins: 1, shutouts: 1, games_started: 1 }] }, "2026-10-22T11:00:00Z");
 
-  it("keeps unknown actuals null and marks players missing from a settled game as not dressed", () => {
+  it("keeps unknown actuals null and refuses to infer DNP from unrelated actuals", () => {
     expect(find(settled, 11, "bridge_exact")).toMatchObject({ dressed: true, act_goals: 1, act_hits: null, act_fantasy_points: null, settled_at: "2026-10-22T11:00:00Z" });
-    expect(find(settled, 22, "bridge_reaimed")).toMatchObject({ dressed: false, act_goals: 0, act_fantasy_points: 0, outcome_source: "wgo_skater_stats" });
+    expect(find(settled, 22, "bridge_reaimed")).toMatchObject({ dressed: null, act_goals: null, act_fantasy_points: null, settled_at: null });
     expect(find(settled, 31, "naive_last5")).toMatchObject({ dressed: true, started: true, act_win: 1, act_shutout: 1, act_fantasy_points: 13 });
   });
 
   it("leaves rows unsettled when their game has no actual rows", () => {
     expect(settleLedgerRows(rows, { skaters: [], goalies: [] }, "x").every(row => row.settled_at === null)).toBe(true);
+  });
+
+  it("requires final and complete evidence for the exact game, team and class before inferring zero", () => {
+    const scope = { gameId: 100, teamId: 2, playerClass: "skater" as const, final: true, complete: true };
+    for (const change of [{ final: false }, { complete: false }, { gameId: 999 }, { teamId: 1 }, { playerClass: "goalie" as const }]) {
+      const result = settleLedgerRows(rows, { skaters: [], goalies: [], completeScopes: [{ ...scope, ...change }] }, "s");
+      expect(find(result, 22, "bridge_reaimed")).toMatchObject({ dressed: null, settled_at: null, act_fantasy_points: null });
+    }
+    const dnp = settleLedgerRows(rows, { skaters: [], goalies: [], completeScopes: [scope] }, "s");
+    expect(find(dnp, 22, "bridge_reaimed")).toMatchObject({ dressed: false, act_goals: 0, act_fantasy_points: 0 });
+    const recovered = settleLedgerRows(dnp, { skaters: [{ game_id: 100, player_id: 22, goals: 1 }], goalies: [] }, "later");
+    expect(find(recovered, 22, "bridge_reaimed")).toMatchObject({ dressed: true, act_goals: 1, act_hits: null, act_fantasy_points: null });
+    expect(settleLedgerRows(recovered, { skaters: [{ game_id: 100, player_id: 22, goals: 1 }], goalies: [] }, "later")).toEqual(recovered);
+    expect(find(settleLedgerRows(dnp, { skaters: [], goalies: [] }, "unverified"), 22, "bridge_reaimed"))
+      .toMatchObject({ dressed: null, settled_at: null, act_goals: null, act_fantasy_points: null });
   });
 });
 
@@ -91,7 +106,7 @@ describe("scoreLedger", () => {
   const fixture: LedgerRow[] = Array.from({ length: 20 }, (_, i) => ({ ...base, player_id: 1000 + i, exp_goals: (i + 1) / 20, act_goals: i >= 18 ? 1 : 0,
     exp_fantasy_points: 2, act_fantasy_points: i % 2 ? 1 : 4, team_rest_days: i % 2 ? 2 : 1, dressed: i !== 0, settled_at: "s" }));
   fixture.push({ ...base, player_id: 9999, settled_at: null });
-  const [score] = scoreLedger(fixture);
+  const [score] = scoreLedger(fixture, undefined, fixture.filter(row => row.settled_at !== null));
 
   it("reports n, coverage, phantoms, MAE and signed bias", () => {
     expect(score).toMatchObject({ source: "bridge_exact", player_class: "skater", n: 20, dressed: 19, covered: 19, coverage: 1, phantoms: 1 });
@@ -112,5 +127,19 @@ describe("scoreLedger", () => {
     const last5 = scoreLedger(goalie).find(row => row.source === "naive_last5" && row.player_class === "goalie")!;
     expect(last5.reliability.start).toEqual([{ bin: 8, n: 1, predicted: 0.8, observed: 1 }]);
     expect(last5.reliability.win).toEqual([{ bin: 4, n: 1, predicted: 0.48, observed: 1 }]);
+  });
+
+  it("includes a no-history debut in the independent coverage universe without fabricating a forecast", () => {
+    const args = input();
+    args.players = [args.players[0], { nhlId: 99, planningId: "debut", playerClass: "skater", teamId: 1 }];
+    const built = buildLedgerRows(args);
+    expect(built.universe.map(row => row.player_id)).toEqual([11, 99]);
+    expect(built.rows.some(row => row.player_id === 99)).toBe(false);
+    const actuals = { skaters: [11, 99].map(player_id => ({ game_id: 100, player_id, goals: 0 })), goalies: [] };
+    const rows = settleLedgerRows(built.rows, actuals, "s"), universe = settleLedgerUniverse(built.universe, actuals);
+    expect(scoreLedger(rows, undefined, [...universe, ...universe])[0]).toMatchObject({ dressed: 2, covered: 1, coverage: 0.5, coverageStatus: "known" });
+    expect(scoreLedger(rows)[0]).toMatchObject({ dressed: null, coverage: null, coverageStatus: "unavailable" });
+    expect(scoreLedger(rows, undefined, built.universe)[0]).toMatchObject({ dressed: null, coverage: null, coverageStatus: "incomplete" });
+    expect(scoreLedger(rows, undefined, [])[0]).toMatchObject({ dressed: 0, covered: 0, coverage: null, coverageStatus: "known" });
   });
 });

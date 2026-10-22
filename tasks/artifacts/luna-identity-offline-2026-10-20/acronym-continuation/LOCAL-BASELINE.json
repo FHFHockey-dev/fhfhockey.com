@@ -1,0 +1,64 @@
+{
+  "mode": "offline_proposal_only",
+  "canPublish": false,
+  "canWriteAliases": false,
+  "canChangeStatus": false,
+  "requiresHumanReview": true,
+  "version": "local-alias-identity-review-v1",
+  "status": "evaluated",
+  "reason": null,
+  "sourceHash": "f04ca301aad1ed251b1c36ef77be739398a15be68c8e722f20b6fe4fa042400e",
+  "directoryHash": "1e95394b5e380e815f16bbc9c7b2c84d8a36ce8144d807556b0179c64f517e30",
+  "lineageKey": "original-post:2104971594632454155",
+  "occurrences": [
+    {
+      "id": "local-occurrence:1e1647440e5f57328d6495f0",
+      "span": {
+        "start": 0,
+        "end": 9,
+        "text": "Podkolzin"
+      },
+      "origin": "existing_alias_occurrence",
+      "baselineCandidateIds": [
+        "nhl:8481617"
+      ],
+      "baselineSelectedId": "nhl:8481617",
+      "candidateIds": [
+        "nhl:8481617"
+      ],
+      "deterministicSelectedId": "nhl:8481617",
+      "modelCandidateIds": [],
+      "candidateTruncated": false,
+      "activeMembership": "known",
+      "modelProposal": null
+    },
+    {
+      "id": "local-occurrence:fe9ab1a33c591651eac514b1",
+      "span": {
+        "start": 20,
+        "end": 23,
+        "text": "RNH"
+      },
+      "origin": "existing_alias_occurrence",
+      "baselineCandidateIds": [
+        "nhl:8481617"
+      ],
+      "baselineSelectedId": null,
+      "candidateIds": [
+        "nhl:8476454"
+      ],
+      "deterministicSelectedId": null,
+      "modelCandidateIds": [],
+      "candidateTruncated": false,
+      "activeMembership": "known",
+      "modelProposal": null
+    }
+  ],
+  "holds": [],
+  "notes": [],
+  "modelMode": "not_run",
+  "modelStatus": "disabled",
+  "modelReason": null,
+  "attempts": 0,
+  "requestHashes": []
+}

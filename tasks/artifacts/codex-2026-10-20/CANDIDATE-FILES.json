@@ -1,0 +1,177 @@
+{
+  "baseHead": "9695a2fe65e4393640dc312dd3b0b83485e5c97e",
+  "observedHead": "34a5588db25157c76e7c5b89a18b0ab99740bf76",
+  "ownedCandidatePaths": 40,
+  "files": [
+    {
+      "path": "supabase/tests/data_api_grants.sql",
+      "sha256": "5feef6b29df9cf83cd1142f1d569a01de562663d8868be9a28963aad4ed31e2d"
+    },
+    {
+      "path": "supabase/tests/data_api_grants_defaults.sql",
+      "sha256": "7d0826371ed177e1ed38471c5dccb5d0e856b2ca842392c8e55789f48dc75371"
+    },
+    {
+      "path": "supabase/tests/data_api_grants_rso_isolation.sql",
+      "sha256": "42793b3bd3c6d08376ea5c9f20ef3ab88d3d31a779d8306a358a50391b0ff97a"
+    },
+    {
+      "path": "web/__tests__/components/CronReportEmail/CronAuditEmail.test.tsx",
+      "sha256": "3b227b76507a318a90c0bfddaeaf28fddc7dcc9426917189f29209295f23cbe5"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/cron-report.test.ts",
+      "sha256": "249a25cd83106144ed56cc864282e2247225f77d65b6fb08b07db02585980ed1"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts",
+      "sha256": "193fc83e56061396e2bfd4d558e66a35e1433901e9dea427e7ec0c857a1bd81c"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+      "sha256": "fc98ad1a8552cf6c26e2b2fb4215db8525f5fdfaec87ebfd31474e1262628f4b"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-nst-team-daily.test.ts",
+      "sha256": "9feaf2429c4723caa10432687dcfbf3c17b896b7d40671e4bc7cdf182d11d61b"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-wgo-goalies.test.ts",
+      "sha256": "ea480b72c4ce64a368b219412b8524fb7d6a79f067b3630c8edf3c129b7c49c5"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-wgo-skaters.types.test.ts",
+      "sha256": "e4788bc3973ceb7490e935a97d7f5eea1c5b30091155cf0472097e3d1c3519d4"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/draft-pro/recommendations.test.ts",
+      "sha256": "838e251c5ce18f4093728a0baf33106ad0ef01d2a448c5cc3781e7b61eca27f9"
+    },
+    {
+      "path": "web/components/CronReportEmail/CronAuditEmail.tsx",
+      "sha256": "75e3d414a0fbc1545e66dae4f9bc6076920646f421206519a83839a294c2e680"
+    },
+    {
+      "path": "web/lib/cron/nstBurstPlans.test.ts",
+      "sha256": "1d70d3d63ee03b1b299af8f3baf459ef99d79e6bd48060138cc253e0ab830e4e"
+    },
+    {
+      "path": "web/lib/cron/nstBurstPlans.ts",
+      "sha256": "3def41d2256af921f1ca7d2e4057764a5b8fde4eeeb3988ca33a17eef188f6bc"
+    },
+    {
+      "path": "web/lib/cron/nstRateLimitPolicy.ts",
+      "sha256": "ef47131b6240711bf0b433970224bdbb4b5e838af2d255f2c4c8ee6cd4b904f3"
+    },
+    {
+      "path": "web/lib/draft-pro/api-tests/dust.test.ts",
+      "sha256": "bfc7c54b55c1a871fe78bc7024fab45286f20a8f78ec2dc999b55bca54823ad2"
+    },
+    {
+      "path": "web/lib/draft-pro/api-tests/export.test.ts",
+      "sha256": "86dd39e82adeccbf051dbae210458a4ed086718623d97669e819d0a3df9db29e"
+    },
+    {
+      "path": "web/lib/draft-pro/dustRateLimit.ts",
+      "sha256": "891dfd84f8e2a82c3fad3ec33e49573cb08e4989f58a9646fa9699f8b7cc25aa"
+    },
+    {
+      "path": "web/lib/draft-pro/dustSeason.ts",
+      "sha256": "830cbc643c32705db4bf9fcac7c6979f54bd077ea86ce8b750527d6fa438aba9"
+    },
+    {
+      "path": "web/lib/game-predictions/featureBuilder.test.ts",
+      "sha256": "ba1b1d0b5da44da3fab8074246624fdfc7661e4c179cd625214825e2640957ab"
+    },
+    {
+      "path": "web/lib/game-predictions/featureBuilder.ts",
+      "sha256": "14d5e6fb70f100879ddc10879dd6a73af3a97af98a8a18b22dd5287f2b7b7c71"
+    },
+    {
+      "path": "web/lib/nst/client.test.ts",
+      "sha256": "fb55c30cb71eea23be72e70c88821d7399d37dd9a1324cdf6ad9b53ed6f39e6f"
+    },
+    {
+      "path": "web/lib/nst/client.ts",
+      "sha256": "712eefa3c63b3340770a4d45fb2c97428ffe7ede49a5581f36f75a9c9a3783e9"
+    },
+    {
+      "path": "web/lib/nst/requestBudget.test.ts",
+      "sha256": "249e3bc673c0943b7cbfbb4209cd5204de6d2a1234c97fca2158de556343f281"
+    },
+    {
+      "path": "web/lib/nst/requestBudget.ts",
+      "sha256": "a5b56d1a2034e709fd32a827b29f0e2e55ab782154631b5d5e62d5380b450430"
+    },
+    {
+      "path": "web/lib/sources/fixtures/iftttComparisonObservations.json",
+      "sha256": "a12f0646e8f640f6eb0ebe5026ee4be31c519257e3fb9731ab586b2214053add"
+    },
+    {
+      "path": "web/lib/sources/iftttSemanticResearch.test.ts",
+      "sha256": "163f51076ade9c060bed656ce1858c61a96d21b683dd9c9d6a401ab1074c290f"
+    },
+    {
+      "path": "web/lib/sources/tweetInterpretation.test.ts",
+      "sha256": "17019873e8042b7f9fa72c3cb63dc347e735cba901b6974fb9c887ca4379390d"
+    },
+    {
+      "path": "web/lib/trends/strengthOfSchedule.test.ts",
+      "sha256": "ef3f96157657de9487478cb99df31e965fc3e852d4989852e2b85ddef8f975c8"
+    },
+    {
+      "path": "web/lib/trends/strengthOfScheduleContract.ts",
+      "sha256": "d30cfcb930ec93bf3a06b350efd7b7e75993fab5b91b63a9dc6599755d26088d"
+    },
+    {
+      "path": "web/lib/underlying-stats/teamScheduleStrength.test.ts",
+      "sha256": "87558fa9dc9c201ae747a92d5bb1ea094cf58d1cee39614e0ce2c794e2b5755e"
+    },
+    {
+      "path": "web/lib/underlying-stats/teamScheduleStrength.ts",
+      "sha256": "2f75bd42f1abdaeb072c2f3f622383e0439b5b52fcbdaf35be5faa64e207fa8e"
+    },
+    {
+      "path": "web/pages/api/v1/db/cron-report.ts",
+      "sha256": "2c3bfbd09db3562a22cf592c20cc7c0e3dd5fcb5a7a57a3fc6a586343644441b"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-gamelog.ts",
+      "sha256": "6786c16d4e9b49d5c3d378e8df889019ef12fe2145fcb81a723ca40116abf144"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-team-daily.ts",
+      "sha256": "abbe2bf9fd887e01334953e84c0f68bbf284c508ae1e3001677619819a799845"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-wgo-goalies.ts",
+      "sha256": "ffffde2a86ede73088d8542ea7656908dc004287723deea8e0b437afa1eb3f3c"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-wgo-skaters.ts",
+      "sha256": "bf97c3e4e4b2a2cf94fc89e6ad794b022e6875128beeb38815e77b3a99cb7679"
+    },
+    {
+      "path": "web/pages/api/v1/draft-pro/dust.ts",
+      "sha256": "2d49ba4c264d152abb1f7631b7467225732ea0094de23cba83dba359a9320409"
+    },
+    {
+      "path": "web/pages/api/v1/draft-pro/export.ts",
+      "sha256": "33cc381a354fc6ce2b4b01075dac6690528a4380836069972166f7a37e54e77f"
+    },
+    {
+      "path": "web/pages/api/v1/draft-pro/recommendations.ts",
+      "sha256": "5be9e66526e7bd1fb7f59de83e5c35a620a1f25551a06d5813c0a070abb5e3fd"
+    },
+    {
+      "path": "web/lib/cron/nhlOffSeason.ts",
+      "owner": "Claude dependency, read only by Codex",
+      "sha256": "7b3202d5d4e8006a908ae2cdbeef217949f357499456f99353fd17f902ebd77f"
+    },
+    {
+      "path": "web/lib/cron/withCronJobAudit.ts",
+      "owner": "Claude dependency, read only by Codex",
+      "sha256": "02790f98626c71accd9bdb0b01a2e9da95799a254c14b98ad82a94bfca635094"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "npx",
+    "--no-install",
+    "eslint",
+    "pages/api/v1/db/run-rolling-forge-pipeline.ts",
+    "__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts",
+    "lib/rollingForgePipelineRunState.ts",
+    "lib/projections/projectionPipelineState.ts",
+    "lib/projections/projectionPipelineState.test.ts"
+  ],
+  "exit_code": 0,
+  "duration_seconds": 1.72
+}

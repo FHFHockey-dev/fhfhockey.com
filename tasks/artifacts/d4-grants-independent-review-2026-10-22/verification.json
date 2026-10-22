@@ -1,0 +1,28 @@
+{
+  "decision": "qualified_local_acceptance_harness_repair_only",
+  "new_concrete_findings": 0,
+  "head": "d3f057c6c849d5d5474bc912a6f461f617c65b15",
+  "candidate_files_match": 3,
+  "canonical_migration_hashes_match": 97,
+  "source_hashes_match": 106,
+  "order": "1-88,89-90,91-97",
+  "preflight_tests_passed": 6,
+  "tap_classifier_cases_passed": 8,
+  "historical_expectations_reconciled": 66,
+  "browser_expectation_changes": 0,
+  "privilege_expansions": 0,
+  "sql_executed": false,
+  "initdb_retried": false,
+  "open_gates": [
+    "fresh positive and negative SQL replay",
+    "PG15/platform-extension parity",
+    "real PostgREST/JWT",
+    "hosted catalog and application acceptance"
+  ],
+  "blocker": {
+    "action": "fresh disposable cluster initdb",
+    "status": "previously denied by runtime sandbox; not retried",
+    "reason": "shmget size=56 Operation not permitted",
+    "outcome": "no application SQL ran; v9 cluster removed"
+  }
+}

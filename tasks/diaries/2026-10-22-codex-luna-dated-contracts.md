@@ -1,0 +1,16 @@
+# Luna dated export and replacement contracts
+
+- Scope: task-artifact-only mapping of the existing approved public-player export and alias confirmation receipt, plus a review-only identity-to-claim replacement contract and focused offline fixtures. No application edits, credentials, private exports, new data reads, paid requests or live writes.
+- Where: canonical `octoberBranch`, HEAD `a811b0762ffe29006c3df7eaa4c19bf18deecda3`. Own only this diary and `tasks/artifacts/luna-dated-contracts-2026-10-22/`; all sealed trial and active sprint files are read-only dependencies.
+- Start: read current AGENTS and prior readiness handoff; approved export contains two public players/registry links, undated aliases and roster database-record timestamps. Alias receipt records owner confirmation, not independently verified historical validity. No delegation needed for this small cohesive contract packet.
+- Decision: preserve observed/known timestamps separately from effective intervals. Missing historical evidence is unavailable; do not repurpose database creation or owner confirmation as effective validity. Proposed replacement contract retains exact source spans and identities but has no execution/publication authority.
+- Next: derive a minimal provenance fixture from allowlisted fields, implement task-local pure mapping/contract checks, run guarded focused tests and verify every trial pin unchanged.
+- Blockers: none for fixture preparation. Historical alias validity and independently effective roster intervals remain missing; future application integration requires a separately reviewed packet.
+
+## Verified checkpoint
+- Created allowlisted public-player evidence derivative, preserving unknown historical intervals. Two strict snapshots keep two canonical players while withholding all four aliases/two memberships; raw record intervals and owner confirmation stay in a hash-bound sidecar.
+- Added explicit two-subject S06 review contract; saved model output stays bound to its old directory, never the new strict projections. Literal source unit/direction retained, claim certainty/prior slot/game applicability unknown, all effect/transport flags false.
+- Final guarded tests: 30/30 (16 mapper, 14 replacement). Scoped tsc and artifact generator exit 0. Initial provenance-length failure fixed by digest-bound sidecar, not truncation/schema relaxation. Initial tsc implicit dotenv stub fixed with explicit Node types.
+- Deliverables: `tasks/artifacts/luna-dated-contracts-2026-10-22/README.md`, `APPLICATION-PACKET.md`, fixtures/modules/tests/configs, dated outputs and held review packet. No application file changed.
+- Next: final pin/diff checks then parent review of alias-time and native replacement decisions. Historical evidence remains unavailable; no new access/spend/write approval requested or used. Diary retained for handoff.
+- Final handoff: all 40 trial pins, five direct input pins and 33 readiness pins unchanged; retained reference digest matches. Derived snapshots and held packet checked, scoped whitespace clean. `PRESERVATION.json` records exact output hashes. Offline packet complete; historical evidence/design decisions and later application integration remain open.

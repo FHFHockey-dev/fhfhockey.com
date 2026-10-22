@@ -1,0 +1,41 @@
+{
+  "checkedAt": "2026-10-21T18:36:56.386Z",
+  "sandboxAccount": "acct_1UDRxGLaomqkve47",
+  "frozenAt": "2027-07-01T07:00:00.000Z",
+  "subscriptionCanceled": true,
+  "noJulyInvoice": true,
+  "juneUnpaidInvoiceVoided": true,
+  "paidInvoices": 8,
+  "zeroValueInvoices": 1,
+  "voidInvoices": 1,
+  "centralMonthlyAccessAtCutoff": false,
+  "centralSeasonAccessAtCutoff": false,
+  "crossAccountCancellation": 404,
+  "anonymousCancellation": 401,
+  "manualWorkspacePreserved": true,
+  "syntheticUsers": 2,
+  "jobs": [
+    {
+      "kind": "retry",
+      "status": "done",
+      "snapshots": 1
+    },
+    {
+      "kind": "retry",
+      "status": "done",
+      "snapshots": 1
+    },
+    {
+      "kind": "stop",
+      "status": "done",
+      "snapshots": 1
+    },
+    {
+      "kind": "cutoff",
+      "status": "done",
+      "snapshots": 2
+    }
+  ],
+  "hostedCheckoutCasesUsed": 3,
+  "hostedCheckoutCap": 3
+}

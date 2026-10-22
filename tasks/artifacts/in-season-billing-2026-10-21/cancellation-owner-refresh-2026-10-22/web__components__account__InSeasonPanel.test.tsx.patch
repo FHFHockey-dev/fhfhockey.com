@@ -1,0 +1,52 @@
+--- before/web/components/account/InSeasonPanel.test.tsx
++++ after/web/components/account/InSeasonPanel.test.tsx
+@@ -10,7 +10,7 @@
+ beforeEach(() => {
+   vi.resetAllMocks();
+   mocks.auth.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } });
+-  mocks.session.mockResolvedValue({ data: { session: { access_token: "fixture" } } });
++  mocks.session.mockResolvedValue({ data: { session: { access_token: "fixture", user: { id: "owner-a" } } } });
+   mocks.access.mockReturnValue({ status: "ready", access: { eligible: false }, refresh: mocks.refresh });
+   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { seasonPassAvailable: false } }) }));
+ });
+@@ -156,3 +156,40 @@
+   fireEvent.click(screen.getByRole("button", { name: "Confirm cancellation" })); await screen.findByText(/Billing stop completed/);
+   expect(screen.queryByText(/Billing stop is pending/)).toBeNull(); expect(screen.queryByRole("button", { name: "Cancel monthly access" })).toBeNull();
+ });
++it.each(["TOKEN_REFRESHED", "SIGNED_IN"])("preserves an unresolved cancellation ID through same-owner %s", async event => {
++  fixtureApi({ management: true }); const implementation = vi.mocked(fetch).getMockImplementation()!;
++  vi.mocked(fetch).mockImplementation((input, init) => input === "/api/v1/account/in-season/cancel" ? Promise.reject(new Error("Cancellation response lost")) : implementation(input, init));
++  render(<InSeasonPanel />); fireEvent.click(await screen.findByRole("button", { name: "Cancel monthly access" }));
++  fireEvent.click(screen.getByRole("button", { name: "Confirm cancellation" })); await screen.findByText("Cancellation response lost");
++  const refreshed = { access_token: "refreshed-fixture", user: { id: "owner-a" } };
++  mocks.session.mockResolvedValue({ data: { session: refreshed } });
++  act(() => mocks.auth.mock.calls[0][0](event, refreshed));
++  fireEvent.click(await screen.findByRole("button", { name: "Cancel monthly access" }));
++  fireEvent.click(screen.getByRole("button", { name: "Confirm cancellation" })); await screen.findByText("Cancellation response lost");
++  const calls = vi.mocked(fetch).mock.calls.filter(([url]) => url === "/api/v1/account/in-season/cancel");
++  expect(calls).toHaveLength(2); expect(calls[1][1]!.body).toBe(calls[0][1]!.body);
++  expect(calls[1][1]!.headers).toEqual({ Authorization: "Bearer refreshed-fixture", "Content-Type": "application/json" });
++  expect(screen.queryByText(/Cancellation saved/)).toBeNull();
++});
++it.each(["owner_change", "owner_change_without_event", "sign_out_then_same_owner"])("clears unresolved cancellation IDs on %s", async transition => {
++  fixtureApi({ management: true }); const implementation = vi.mocked(fetch).getMockImplementation()!;
++  vi.mocked(fetch).mockImplementation((input, init) => input === "/api/v1/account/in-season/cancel" ? Promise.reject(new Error("Cancellation response lost")) : implementation(input, init));
++  render(<InSeasonPanel />); fireEvent.click(await screen.findByRole("button", { name: "Cancel monthly access" }));
++  fireEvent.click(screen.getByRole("button", { name: "Confirm cancellation" })); await screen.findByText("Cancellation response lost");
++  if (transition === "sign_out_then_same_owner") {
++    mocks.session.mockResolvedValue({ data: { session: null } });
++    act(() => mocks.auth.mock.calls[0][0]("SIGNED_OUT", null));
++    expect(screen.queryByRole("alertdialog")).toBeNull(); expect(screen.queryByText("Cancellation response lost")).toBeNull();
++  }
++  const nextSession = { access_token: "next-fixture", user: { id: transition === "sign_out_then_same_owner" ? "owner-a" : "owner-b" } };
++  mocks.session.mockResolvedValue({ data: { session: nextSession } });
++  if (transition !== "owner_change_without_event") act(() => mocks.auth.mock.calls[0][0]("SIGNED_IN", nextSession));
++  fireEvent.click(await screen.findByRole("button", { name: "Cancel monthly access" }));
++  fireEvent.click(screen.getByRole("button", { name: "Confirm cancellation" })); await screen.findByText("Cancellation response lost");
++  const calls = vi.mocked(fetch).mock.calls.filter(([url]) => url === "/api/v1/account/in-season/cancel");
++  expect(calls).toHaveLength(2);
++  // Deliberately repeat the same synthetic subscription ID: identity alone must
++  // never carry an earlier owner's unresolved request into a new session owner.
++  expect(JSON.parse(calls[1][1]!.body as string).requestId).not.toBe(JSON.parse(calls[0][1]!.body as string).requestId);
++  expect(calls[1][1]!.headers).toEqual({ Authorization: "Bearer next-fixture", "Content-Type": "application/json" });
++});

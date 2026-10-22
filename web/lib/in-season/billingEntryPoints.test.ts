@@ -1,0 +1,125 @@
+import { readFileSync } from "node:fs";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { NextApiRequest, NextApiResponse } from "next";
+
+const mocks = vi.hoisted(() => ({ auth: vi.fn(), config: vi.fn(), minimum: vi.fn(), stripe: vi.fn(), store: vi.fn(), run: vi.fn(), rpc: vi.fn() }));
+vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: mocks.auth }));
+vi.mock("lib/supabase/server", () => ({ default: { rpc: mocks.rpc } }));
+vi.mock("./billingConfig", () => ({ assertInSeasonSandboxConfiguration: mocks.config, getInSeasonSandboxMonthlyMinimum: mocks.minimum,
+  getInSeasonSandboxStripe: mocks.stripe, IN_SEASON_SANDBOX_CATALOG: { accountId: "acct_fixture" } }));
+vi.mock("./monthlyStore", () => ({ monthlyBillingStore: mocks.store }));
+vi.mock("./monthlyExecutor", () => ({ runMonthlyBillingJobs: mocks.run }));
+import subscriptions from "pages/api/v1/account/in-season/subscriptions";
+import worker from "pages/api/v1/internal/in-season-billing";
+import { monthlyManagementEnabled, monthlySignupAvailability } from "./billingEntryConfig";
+
+function response() {
+  const res = { status: vi.fn(), json: vi.fn(), end: vi.fn(), setHeader: vi.fn() };
+  res.status.mockReturnValue(res); return res as unknown as NextApiResponse & typeof res;
+}
+const token = "synthetic-worker-token-for-offline-tests";
+const request = (method = "GET", body?: unknown) => ({ method, body, headers: { authorization: `Bearer ${token}` }, query: {} } as NextApiRequest);
+const row = { userId: "owner", subscriptionId: "sub_fixture", cancelledAt: null, billingStoppedAt: null, stopComplete: false };
+beforeEach(() => {
+  vi.resetAllMocks();
+  for (const key of ["IN_SEASON_SANDBOX_WORKER_ENABLED", "IN_SEASON_SANDBOX_MONTHLY_SIGNUP_ENABLED", "IN_SEASON_SANDBOX_MANAGEMENT_ENABLED", "IN_SEASON_SANDBOX_AUTOMATIC_RETRIES_DISABLED", "IN_SEASON_SANDBOX_RETRY_VERIFICATION_REFERENCE", "IN_SEASON_SANDBOX_WORKER_TOKEN"]) vi.stubEnv(key, "");
+  mocks.config.mockReturnValue({ origin: "http://localhost:3000" }); mocks.auth.mockResolvedValue({ id: "owner" });
+  mocks.rpc.mockResolvedValue({ data: [row], error: null }); mocks.run.mockResolvedValue({ completed: [], failed: [] });
+  mocks.store.mockReturnValue({}); mocks.stripe.mockReturnValue({});
+  mocks.minimum.mockReturnValue({ accountId: "acct_fixture", chargeCurrency: "usd", settlementCurrency: "usd", minimumChargeCents: 50, verificationReference: "fixture" });
+});
+afterEach(() => { vi.unstubAllEnvs(); });
+
+describe("entrypoint activation gates", () => {
+  const now = new Date("2026-10-21T16:00:00Z");
+  it("defaults signup and management off even with a verified minimum", () => {
+    expect(monthlySignupAvailability(now)).toMatchObject({ available: false, reason: "disabled" }); expect(monthlyManagementEnabled()).toBe(false);
+  });
+  it("uses the existing calendar-day quote only after explicit activation", () => {
+    vi.stubEnv("IN_SEASON_SANDBOX_MONTHLY_SIGNUP_ENABLED", "true"); expect(monthlySignupAvailability(now)).toMatchObject({ available: true, initialAmountCents: 177 });
+  });
+  it("does not assume a minimum or round up tiny charges", () => {
+    vi.stubEnv("IN_SEASON_SANDBOX_MONTHLY_SIGNUP_ENABLED", "true"); mocks.minimum.mockReturnValueOnce(null);
+    expect(monthlySignupAvailability(now)).toMatchObject({ available: false, reason: "minimum_not_verified" });
+    expect(monthlySignupAvailability(new Date("2026-10-31T16:00Z"))).toMatchObject({ available: false, reason: "below_verified_minimum", initialAmountCents: 16 });
+  });
+  it("retains the adapter's final 31-minute signup closure", () => {
+    vi.stubEnv("IN_SEASON_SANDBOX_MONTHLY_SIGNUP_ENABLED", "true"); expect(monthlySignupAvailability(new Date("2027-07-01T03:29Z"))).toMatchObject({ available: false, reason: "season_ended" });
+  });
+});
+
+describe("owner-only billing summaries", () => {
+  beforeEach(() => vi.stubEnv("IN_SEASON_SANDBOX_MANAGEMENT_ENABLED", "true"));
+  it("projects only safe fields and binds the RPC to the authenticated owner", async () => {
+    mocks.rpc.mockResolvedValue({ data: [{ ...row, customerId: "never expose", state: { private: true } }], error: null });
+    const res = response(); await subscriptions(request(), res);
+    expect(mocks.rpc).toHaveBeenCalledWith("list_in_season_sandbox_subscriptions", { p_user_id: "owner" });
+    const { userId: _owner, ...summary } = row;
+    expect(res.json).toHaveBeenCalledWith({ data: { subscriptions: [summary] } }); expect(mocks.stripe).not.toHaveBeenCalled();
+    expect(res.setHeader).toHaveBeenCalledWith("Cache-Control", "private, no-store");
+  });
+  it("requires no paid entitlement and handles an owner with no subscriptions", async () => {
+    mocks.rpc.mockResolvedValue({ data: [], error: null }); const res = response(); await subscriptions(request(), res);
+    expect(res.json).toHaveBeenCalledWith({ data: { subscriptions: [] } });
+  });
+  it.each(["off", "isolation", "anonymous", "invalid_session", "foreign_query"])("rejects %s before ledger access", async kind => {
+    const req = request(); const res = response();
+    if (kind === "off") vi.stubEnv("IN_SEASON_SANDBOX_MANAGEMENT_ENABLED", "false");
+    if (kind === "isolation") mocks.config.mockImplementation(() => { throw new Error(); });
+    if (kind === "anonymous") req.headers = {};
+    if (kind === "invalid_session") mocks.auth.mockImplementation(async (_req, reply) => { reply.status(401).end(); return null; });
+    if (kind === "foreign_query") req.query = { userId: "other" };
+    await subscriptions(req, res); expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(kind === "foreign_query" ? 400 : ["anonymous", "invalid_session"].includes(kind) ? 401 : 503);
+  });
+  it.each([[{ ...row, userId: "other" }], [{ ...row, stopComplete: undefined }], [{ ...row, cancelledAt: "bad" }], Array(21).fill(row), null])("rejects malformed or foreign readback", async data => {
+    mocks.rpc.mockResolvedValue({ data, error: null }); const res = response(); await subscriptions(request(), res); expect(res.status).toHaveBeenCalledWith(503);
+    expect(JSON.stringify(res.json.mock.calls)).not.toContain("sub_fixture");
+  });
+  it("reports missing RPC/schema as unavailable, never an empty successful lookup", async () => {
+    mocks.rpc.mockResolvedValue({ data: null, error: new Error("not installed") }); const res = response(); await subscriptions(request(), res); expect(res.status).toHaveBeenCalledWith(503);
+  });
+  it("keeps the separate SQL draft read-only, owner-filtered and service-only", () => {
+    const sql = readFileSync("../tasks/artifacts/in-season-billing-2026-10-21/inactive-entrypoints-2026-10-22/DRAFT-OWNER-LOOKUP.sql", "utf8");
+    expect(sql).toContain("where user_id=p_user_id"); expect(sql).toContain("limit 20");
+    expect(sql).toContain("from public,anon,authenticated"); expect(sql).toContain("to service_role");
+    expect(sql).not.toMatch(/\b(insert|update|delete|alter table)\b/i);
+  });
+});
+
+describe("inactive authenticated billing worker", () => {
+  function enable() {
+    vi.stubEnv("IN_SEASON_SANDBOX_WORKER_ENABLED", "true"); vi.stubEnv("IN_SEASON_SANDBOX_WORKER_TOKEN", token);
+    vi.stubEnv("IN_SEASON_SANDBOX_AUTOMATIC_RETRIES_DISABLED", "true"); vi.stubEnv("IN_SEASON_SANDBOX_RETRY_VERIFICATION_REFERENCE", "offline verification");
+  }
+  it("has no external work when disabled", async () => { const res = response(); await worker(request("POST"), res); expect(res.status).toHaveBeenCalledWith(503); expect(mocks.config).not.toHaveBeenCalled(); expect(mocks.run).not.toHaveBeenCalled(); });
+  it.each(["missing_token", "wrong_token", "GET", "body", "query", "isolation", "unverified_retries"])("rejects %s without creating service clients", async kind => {
+    enable(); const req = request("POST"); const res = response();
+    if (kind === "missing_token") vi.stubEnv("IN_SEASON_SANDBOX_WORKER_TOKEN", "");
+    if (kind === "wrong_token") req.headers.authorization = "Bearer wrong";
+    if (kind === "GET") req.method = "GET";
+    if (kind === "body") req.body = { limit: 100, now: "2027-07-01" };
+    if (kind === "query") req.query = { subscriptionId: "sub_other" };
+    if (kind === "isolation") mocks.config.mockImplementation(() => { throw new Error(); });
+    if (kind === "unverified_retries") vi.stubEnv("IN_SEASON_SANDBOX_AUTOMATIC_RETRIES_DISABLED", "false");
+    await worker(req, res); expect(mocks.stripe).not.toHaveBeenCalled(); expect(mocks.store).not.toHaveBeenCalled(); expect(mocks.run).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(kind === "wrong_token" ? 401 : kind === "GET" ? 405 : ["body", "query"].includes(kind) ? 400 : 503);
+  });
+  it("fixes the bound to one and does not accept clock/owner overrides", async () => {
+    enable(); mocks.run.mockResolvedValue({ completed: ["job_a"], failed: [] }); const res = response(); await worker(request("POST", {}), res);
+    expect(mocks.run).toHaveBeenCalledWith({ stripe: {}, store: {}, limit: 1, retries: { accountId: "acct_fixture", automaticRetriesDisabled: true, verificationReference: "offline verification" } });
+    expect(res.json).toHaveBeenCalledWith({ data: { outcome: "completed", completed: ["job_a"], failed: [] } });
+  });
+  it("reports no completed jobs when leases are busy or the queue is empty", async () => {
+    enable(); const res = response(); await worker(request("POST"), res); expect(res.json).toHaveBeenCalledWith({ data: { outcome: "no_jobs_completed", completed: [], failed: [] } });
+  });
+  it("does not report a resolved executor failure as successful or expose provider details", async () => {
+    enable(); mocks.run.mockResolvedValue({ completed: ["done"], failed: [{ id: "unknown", error: "private payment detail" }] });
+    const res = response(); await worker(request("POST"), res); expect(res.status).toHaveBeenCalledWith(503);
+    expect(res.json).toHaveBeenCalledWith({ data: { outcome: "needs_attention", completed: ["done"], failed: [{ id: "unknown", reason: "reconciliation_required" }] } });
+  });
+  it("reports global account/list failure as uncertain and never retries in the route", async () => {
+    enable(); mocks.run.mockRejectedValue(new Error("private account detail")); const res = response(); await worker(request("POST"), res);
+    expect(res.status).toHaveBeenCalledWith(503); expect(mocks.run).toHaveBeenCalledTimes(1); expect(JSON.stringify(res.json.mock.calls)).not.toContain("private account");
+  });
+});

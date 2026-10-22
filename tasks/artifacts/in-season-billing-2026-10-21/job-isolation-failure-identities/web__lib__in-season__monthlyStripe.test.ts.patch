@@ -1,0 +1,15 @@
+--- web/lib/in-season/monthlyStripe.test.ts (baseline)
++++ web/lib/in-season/monthlyStripe.test.ts
+@@ -68,9 +68,10 @@
+   it("cannot invent a new grace window from later failure attempts", () => {
+     const f = fixture(); f.invoice.status = "open";
+     const event = { id: "evt_failed", type: "invoice.payment_failed", livemode: false, created: Date.parse("2026-10-21T12:00Z") / 1000, data: { object: f.invoice } } as Stripe.Event;
+-    expect(verifiedMonthlyFailure(f.binding, event)).toMatchObject({ firstFailureAt: "2026-10-21T12:00:00.000Z", failedAttempts: 1 });
++    expect(verifiedMonthlyFailure(f.binding, event)).toMatchObject({ firstFailureAt: "2026-10-21T12:00:00.000Z", failureId: "invoice:in_1:initial" });
+     f.invoice.attempt_count = 2; event.created += 86400;
+-    expect(verifiedMonthlyFailure(f.binding, event)).toMatchObject({ firstFailureAt: null, failedAttempts: 2 });
++    expect(verifiedMonthlyFailure(f.binding, event)).toMatchObject({ firstFailureAt: null, failureId: "invoice:in_1:initial" });
++    expect(verifiedMonthlyFailure(f.binding, event)).not.toHaveProperty("failedAttempts");
+     event.livemode = true;
+     expect(() => verifiedMonthlyFailure(f.binding, event)).toThrow();
+   });

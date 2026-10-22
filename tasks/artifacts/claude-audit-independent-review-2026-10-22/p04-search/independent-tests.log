@@ -1,0 +1,106 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/reviewSearchNavigation.test.tsx
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-mx4zwpjs/isolation/snapshot/web
+
+(node:77206) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/reviewSearchNavigation.test.tsx > keeps hover and touch from prefetching player pages when prefetch is false
+REAL_LINK_PREFETCH_OBSERVED [["/stats/player/101","/stats/player/101",{"priority":true,"bypassPrefetchedCheck":true}],["/stats/player/101","/stats/player/101",{"priority":true,"bypassPrefetchedCheck":true}]]
+
+ ❯ lib/reviewSearchNavigation.test.tsx (11 tests | 1 failed) 101ms
+   ✓ real Next Link navigates exactly once to the selected fresh player and clears the input 48ms
+   ✓ leaves ctrlKey activation to native navigation without clearing 8ms
+   ✓ leaves metaKey activation to native navigation without clearing 5ms
+   ✓ leaves shiftKey activation to native navigation without clearing 5ms
+   ✓ leaves altKey activation to native navigation without clearing 4ms
+   ✓ stale empty cannot terminate newer loading or create navigable results 6ms
+   ✓ stale error cannot terminate newer loading or create navigable results 5ms
+   ✓ stale reject cannot terminate newer loading or create navigable results 6ms
+   ✓ removes the old navigation target immediately and cancels the newer debounce on clear 6ms
+   ✓ does not transfer pending state or navigation into a remount 2ms
+   × keeps hover and touch from prefetching player pages when prefetch is false 7ms
+     → expected "spy" to not be called at all, but actually been called 2 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      "/stats/player/101",
+      "/stats/player/101",
+      Object {
+        "bypassPrefetchedCheck": true,
+        "locale": undefined,
+        "priority": true,
+      },
+    ]
+
+[1m  2nd spy call:
+
+[22m    Array [
+      "/stats/player/101",
+      "/stats/player/101",
+      Object {
+        "bypassPrefetchedCheck": true,
+        "locale": undefined,
+        "priority": true,
+      },
+    ]
+[39m[90m
+
+Number of calls: [1m2[22m
+[39m
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/reviewSearchNavigation.test.tsx > keeps hover and touch from prefetching player pages when prefetch is false
+AssertionError: expected "spy" to not be called at all, but actually been called 2 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      "/stats/player/101",
+      "/stats/player/101",
+      Object {
+        "bypassPrefetchedCheck": true,
+        "locale": undefined,
+        "priority": true,
+      },
+    ]
+
+[1m  2nd spy call:
+
+[22m    Array [
+      "/stats/player/101",
+      "/stats/player/101",
+      Object {
+        "bypassPrefetchedCheck": true,
+        "locale": undefined,
+        "priority": true,
+      },
+    ]
+[39m[90m
+
+Number of calls: [1m2[22m
+[39m
+ ❯ lib/reviewSearchNavigation.test.tsx:98:30
+     96|   fireEvent.mouseEnter(link); fireEvent.touchStart(link);
+     97|   console.log("REAL_LINK_PREFETCH_OBSERVED", JSON.stringify(mocks.pref…
+     98|   expect(mocks.prefetch).not.toHaveBeenCalled();
+       |                              ^
+     99|   expect(mocks.push).not.toHaveBeenCalled();
+    100| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  09:22:38
+   Duration  435ms (transform 32ms, setup 9ms, collect 90ms, tests 101ms, environment 142ms, prepare 29ms)
+

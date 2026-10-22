@@ -1,0 +1,398 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts __tests__/pages/api/v1/transactions/ownership-trends.test.ts lib/dashboard/playerOwnership.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-a9lzfg32/isolation/snapshot/web
+
+(node:71710) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ __tests__/pages/api/v1/transactions/ownership-trends.test.ts (31 tests | 15 failed) 17ms
+   ✓ ownership-trends data contract > paginates beyond the 1000-row PostgREST cap with deterministic ranges 1ms
+   ✓ ownership-trends data contract > treats Yahoo forward eligibility as C/LW/RW/F rather than exact F only 0ms
+   ✓ ownership-trends data contract > normalizes Yahoo object metadata without implicit object coercion 0ms
+   ✓ ownership-trends data contract > derives freshness from the latest source timeline date rather than request time 0ms
+   ✓ ownership-trends data contract > builds daily ADP timelines and treats earlier average picks as risers 5ms
+   ✓ ownership-trends data contract > returns a stable public error when ownership trends dependencies fail 1ms
+   ✓ ownership-trends data contract > returns a stable public error when ownership snapshots dependencies fail 0ms
+   ✓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (0) 0ms
+   ✓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (44) 0ms
+   ✓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ("0") 0ms
+   ✓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ("44.5") 0ms
+   ✓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (null) 0ms
+   ✓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (undefined) 0ms
+   × ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ("") 3ms
+     → expected +0 to be null // Object.is equality
+   × ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ("   ") 0ms
+     → expected +0 to be null // Object.is equality
+   × ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (false) 0ms
+     → expected +0 to be null // Object.is equality
+   × ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (true) 0ms
+     → expected 1 to be null // Object.is equality
+   ✓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ("invalid") 0ms
+   × ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ("1e1") 0ms
+     → expected 10 to be null // Object.is equality
+   × ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ("0x10") 0ms
+     → expected 16 to be null // Object.is equality
+   × ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ([]) 0ms
+     → expected +0 to be null // Object.is equality
+   ✓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ({}) 0ms
+   × ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (-1) 0ms
+     → expected -1 to be null // Object.is equality
+   × ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (101) 0ms
+     → expected 101 to be null // Object.is equality
+   ✓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (null) 0ms
+   × ownership snapshot provenance > keeps each last valid observation's own date rather than another player's or an invalid newer point 2ms
+     → expected [ …(2) ] to deeply equal [ { playerId: 12, …(2) }, …(1) ]
+   × ownership snapshot provenance > does not equate an unresolved NHL id to a Yahoo id 0ms
+     → expected [ { playerId: 12, ownership: 99 } ] to deeply equal [ { playerId: 12, …(2) } ]
+   × ownership snapshot provenance > does not choose one of conflicting mapping identities 0ms
+     → expected [ { playerId: 12, ownership: 85 } ] to deeply equal [ { playerId: 12, …(2) } ]
+   × ownership snapshot provenance > does not choose one of conflicting name identities 0ms
+     → expected [ { playerId: 12, ownership: 85 } ] to deeply equal [ { playerId: 12, …(2) } ]
+   × ownership snapshot provenance > fails closed on a truncated ownership response 0ms
+     → expected 200 to be 500 // Object.is equality
+   × ownership snapshot provenance > bounds the whole request before any database reads 0ms
+     → expected 200 to be 400 // Object.is equality
+(node:71710) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/dashboard/playerOwnership.test.ts (6 tests | 3 failed) 10ms
+   ✓ playerOwnership > derives the Yahoo season from the fantasy-calendar year boundary 1ms
+   ✓ playerOwnership > fetches current ownership snapshots keyed by player id 1ms
+   ✓ playerOwnership > fetches ownership trend context keyed by player id 1ms
+   × playerOwnership > preserves per-player source dates through caching, serialization and aging instead of refreshing them to fetch time 4ms
+     → expected { ownership: +0, delta: null, …(1) } to match object { ownership: +0, …(1) }
+(2 matching properties omitted from actual)
+   × playerOwnership > does not let an older trend replace a fresher snapshot or attach its delta to the new value 1ms
+     → expected { ownership: 50, delta: 5, …(1) } to match object { ownership: +0, delta: null, …(1) }
+(1 matching property omitted from actual)
+   × playerOwnership > keeps undated, future and malformed ownership unknown without borrowing response-level freshness 1ms
+     → expected [ 40, 20, 101, null ] to deeply equal [ null, null, null, null ]
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 18 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/dashboard/playerOwnership.test.ts > playerOwnership > preserves per-player source dates through caching, serialization and aging instead of refreshing them to fetch time
+AssertionError: expected { ownership: +0, delta: null, …(1) } to match object { ownership: +0, …(1) }
+(2 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[2m    "ownership": 0,[22m
+[32m-   "ownershipEvidence": {[39m
+[32m-     "observedOn": "2026-03-14",[39m
+[32m-     "provider": "yahoo",[39m
+[32m-     "status": "fresh",[39m
+[32m-     "value": 0,[39m
+[32m-   },[39m
+[2m  }[22m
+
+ ❯ lib/dashboard/playerOwnership.test.ts:105:23
+    103|     vi.stubGlobal("fetch", fetch);
+    104|     const fresh = await fetchOwnershipContextMap([12, 99], "2026-03-14…
+    105|     expect(fresh[12]).toMatchObject({ ownership: 0, ownershipEvidence:…
+       |                       ^
+    106|     expect(fresh[99]).toMatchObject({ ownership: null, ownershipEviden…
+    107|     expect(JSON.parse(JSON.stringify(fresh))[99].ownershipEvidence.obs…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/18]⎯
+
+ FAIL  lib/dashboard/playerOwnership.test.ts > playerOwnership > does not let an older trend replace a fresher snapshot or attach its delta to the new value
+AssertionError: expected { ownership: 50, delta: 5, …(1) } to match object { ownership: +0, delta: null, …(1) }
+(1 matching property omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "delta": null,[39m
+[32m-   "ownership": 0,[39m
+[32m-   "ownershipEvidence": {[39m
+[32m-     "observedOn": "2026-03-14",[39m
+[32m-     "status": "fresh",[39m
+[32m-     "value": 0,[39m
+[32m-   },[39m
+[31m+   "delta": 5,[39m
+[31m+   "ownership": 50,[39m
+[2m  }[22m
+
+ ❯ lib/dashboard/playerOwnership.test.ts:120:70
+    118|       success: true, players: [{ playerId: 12, ownership: 0, observedO…
+    119|     } : { success: true, selectedPlayers: [{ playerId: 12, latest: 50,…
+    120|     expect((await fetchOwnershipContextMap([12], "2026-03-14"))[12]).t…
+       |                                                                      ^
+    121|       ownership: 0, delta: null, ownershipEvidence: { value: 0, observ…
+    122|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/18]⎯
+
+ FAIL  lib/dashboard/playerOwnership.test.ts > playerOwnership > keeps undated, future and malformed ownership unknown without borrowing response-level freshness
+AssertionError: expected [ 40, 20, 101, null ] to deeply equal [ null, null, null, null ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[32m-   null,[39m
+[32m-   null,[39m
+[32m-   null,[39m
+[31m+   40,[39m
+[31m+   20,[39m
+[31m+   101,[39m
+[2m    null,[22m
+[2m  ][22m
+
+ ❯ lib/dashboard/playerOwnership.test.ts:133:58
+    131|     } : { success: true, selectedPlayers: [] })));
+    132|     const map = await fetchOwnershipContextMap([12, 13, 14, 15], "2026…
+    133|     expect(Object.values(map).map(row => row.ownership)).toEqual([null…
+       |                                                          ^
+    134|     expect(map).not.toHaveProperty("99");
+    135|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/18]⎯
+
+ FAIL  __tests__/pages/api/v1/transactions/ownership-trends.test.ts > ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ("")
+ FAIL  __tests__/pages/api/v1/transactions/ownership-trends.test.ts > ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ("   ")
+ FAIL  __tests__/pages/api/v1/transactions/ownership-trends.test.ts > ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (false)
+ FAIL  __tests__/pages/api/v1/transactions/ownership-trends.test.ts > ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ([])
+AssertionError: expected +0 to be null // Object.is equality
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+0
+
+ ❯ __tests__/pages/api/v1/transactions/ownership-trends.test.ts:255:48
+    253|     await ownershipSnapshotsHandler(request("12"), response);
+    254|     expect(response.statusCode).toBe(200);
+    255|     expect(response.body.players[0].ownership).toBe(expected);
+       |                                                ^
+    256|   });
+    257| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/18]⎯
+
+ FAIL  __tests__/pages/api/v1/transactions/ownership-trends.test.ts > ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (true)
+AssertionError: expected 1 to be null // Object.is equality
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+1
+
+ ❯ __tests__/pages/api/v1/transactions/ownership-trends.test.ts:255:48
+    253|     await ownershipSnapshotsHandler(request("12"), response);
+    254|     expect(response.statusCode).toBe(200);
+    255|     expect(response.body.players[0].ownership).toBe(expected);
+       |                                                ^
+    256|   });
+    257| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/18]⎯
+
+ FAIL  __tests__/pages/api/v1/transactions/ownership-trends.test.ts > ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ("1e1")
+AssertionError: expected 10 to be null // Object.is equality
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+10
+
+ ❯ __tests__/pages/api/v1/transactions/ownership-trends.test.ts:255:48
+    253|     await ownershipSnapshotsHandler(request("12"), response);
+    254|     expect(response.statusCode).toBe(200);
+    255|     expect(response.body.players[0].ownership).toBe(expected);
+       |                                                ^
+    256|   });
+    257| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/18]⎯
+
+ FAIL  __tests__/pages/api/v1/transactions/ownership-trends.test.ts > ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ("0x10")
+AssertionError: expected 16 to be null // Object.is equality
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+16
+
+ ❯ __tests__/pages/api/v1/transactions/ownership-trends.test.ts:255:48
+    253|     await ownershipSnapshotsHandler(request("12"), response);
+    254|     expect(response.statusCode).toBe(200);
+    255|     expect(response.body.players[0].ownership).toBe(expected);
+       |                                                ^
+    256|   });
+    257| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/18]⎯
+
+ FAIL  __tests__/pages/api/v1/transactions/ownership-trends.test.ts > ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (-1)
+AssertionError: expected -1 to be null // Object.is equality
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+-1
+
+ ❯ __tests__/pages/api/v1/transactions/ownership-trends.test.ts:255:48
+    253|     await ownershipSnapshotsHandler(request("12"), response);
+    254|     expect(response.statusCode).toBe(200);
+    255|     expect(response.body.players[0].ownership).toBe(expected);
+       |                                                ^
+    256|   });
+    257| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/18]⎯
+
+ FAIL  __tests__/pages/api/v1/transactions/ownership-trends.test.ts > ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (101)
+AssertionError: expected 101 to be null // Object.is equality
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+101
+
+ ❯ __tests__/pages/api/v1/transactions/ownership-trends.test.ts:255:48
+    253|     await ownershipSnapshotsHandler(request("12"), response);
+    254|     expect(response.statusCode).toBe(200);
+    255|     expect(response.body.players[0].ownership).toBe(expected);
+       |                                                ^
+    256|   });
+    257| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/18]⎯
+
+ FAIL  __tests__/pages/api/v1/transactions/ownership-trends.test.ts > ownership snapshot provenance > keeps each last valid observation's own date rather than another player's or an invalid newer point
+AssertionError: expected [ …(2) ] to deeply equal [ { playerId: 12, …(2) }, …(1) ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[2m    {[22m
+[32m-     "observedOn": "2026-10-18",[39m
+[32m-     "ownership": 0,[39m
+[31m+     "ownership": 75,[39m
+[2m      "playerId": 12,[22m
+[2m    },[22m
+[2m    {[22m
+[32m-     "observedOn": "2026-10-21",[39m
+[32m-     "ownership": 45,[39m
+[31m+     "ownership": null,[39m
+[2m      "playerId": 13,[22m
+[2m    },[22m
+[2m  ][22m
+
+ ❯ __tests__/pages/api/v1/transactions/ownership-trends.test.ts:266:35
+    264|     const response = createMockRes();
+    265|     await ownershipSnapshotsHandler(request("12,13"), response);
+    266|     expect(response.body.players).toEqual([
+       |                                   ^
+    267|       { playerId: 12, ownership: 0, observedOn: "2026-10-18" },
+    268|       { playerId: 13, ownership: 45, observedOn: "2026-10-21" }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/18]⎯
+
+ FAIL  __tests__/pages/api/v1/transactions/ownership-trends.test.ts > ownership snapshot provenance > does not equate an unresolved NHL id to a Yahoo id
+AssertionError: expected [ { playerId: 12, ownership: 99 } ] to deeply equal [ { playerId: 12, …(2) } ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[2m    {[22m
+[32m-     "observedOn": null,[39m
+[32m-     "ownership": null,[39m
+[31m+     "ownership": 99,[39m
+[2m      "playerId": 12,[22m
+[2m    },[22m
+[2m  ][22m
+
+ ❯ __tests__/pages/api/v1/transactions/ownership-trends.test.ts:277:35
+    275|     const response = createMockRes();
+    276|     await ownershipSnapshotsHandler(request("12"), response);
+    277|     expect(response.body.players).toEqual([{ playerId: 12, ownership: …
+       |                                   ^
+    278|     expect(reads).not.toContain("yahoo_players_with_normalized_history…
+    279|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/18]⎯
+
+ FAIL  __tests__/pages/api/v1/transactions/ownership-trends.test.ts > ownership snapshot provenance > does not choose one of conflicting mapping identities
+ FAIL  __tests__/pages/api/v1/transactions/ownership-trends.test.ts > ownership snapshot provenance > does not choose one of conflicting name identities
+AssertionError: expected [ { playerId: 12, ownership: 85 } ] to deeply equal [ { playerId: 12, …(2) } ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[2m    {[22m
+[32m-     "observedOn": null,[39m
+[32m-     "ownership": null,[39m
+[31m+     "ownership": 85,[39m
+[2m      "playerId": 12,[22m
+[2m    },[22m
+[2m  ][22m
+
+ ❯ __tests__/pages/api/v1/transactions/ownership-trends.test.ts:290:35
+    288|     const response = createMockRes();
+    289|     await ownershipSnapshotsHandler(request("12"), response);
+    290|     expect(response.body.players).toEqual([{ playerId: 12, ownership: …
+       |                                   ^
+    291|   });
+    292| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/18]⎯
+
+ FAIL  __tests__/pages/api/v1/transactions/ownership-trends.test.ts > ownership snapshot provenance > fails closed on a truncated ownership response
+AssertionError: expected 200 to be 500 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 500[39m
+[31m+ 200[39m
+
+ ❯ __tests__/pages/api/v1/transactions/ownership-trends.test.ts:300:35
+    298|       const response = createMockRes();
+    299|       await ownershipSnapshotsHandler(request("12"), response);
+    300|       expect(response.statusCode).toBe(500);
+       |                                   ^
+    301|       expect(response.body).toEqual({ success: false, error: "OWNERSHI…
+    302|     } finally { log.mockRestore(); }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/18]⎯
+
+ FAIL  __tests__/pages/api/v1/transactions/ownership-trends.test.ts > ownership snapshot provenance > bounds the whole request before any database reads
+AssertionError: expected 200 to be 400 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 200[39m
+
+ ❯ __tests__/pages/api/v1/transactions/ownership-trends.test.ts:309:33
+    307|     const response = createMockRes();
+    308|     await ownershipSnapshotsHandler(request(Array.from({ length: 501 }…
+    309|     expect(response.statusCode).toBe(400);
+       |                                 ^
+    310|     expect(reads).toEqual([]);
+    311|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/18]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  18 failed | 19 passed (37)
+   Start at  09:15:38
+   Duration  547ms (transform 59ms, setup 12ms, collect 56ms, tests 26ms, environment 278ms, prepare 57ms)
+

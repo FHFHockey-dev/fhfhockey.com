@@ -1,0 +1,98 @@
+{
+  "version": "luna-local-application-contracts-v1",
+  "baseHead": "d3f057c6c849d5d5474bc912a6f461f617c65b15",
+  "headAtVerification": "d3f057c6c849d5d5474bc912a6f461f617c65b15",
+  "branch": "octoberBranch",
+  "reviewStatus": "owner_tested_pending_independent_review",
+  "files": [
+    {
+      "path": "web/lib/sources/playerIdentitySnapshotEvidence.ts",
+      "status": "added",
+      "sha256": "390ed603af2cf2ca742ac36ec81c4973d2543684dfb42efbc9c9afeed84c7d4b",
+      "bytes": 7871
+    },
+    {
+      "path": "web/lib/sources/playerIdentitySnapshotEvidence.test.ts",
+      "status": "added",
+      "sha256": "77b834b8c011222d60360c5b8ab111bed4b1dfe8e44eb3cbd238f6c322bbaaaf",
+      "bytes": 8793
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityReplacementReview.ts",
+      "status": "added",
+      "sha256": "23131921ff0d8caea93c4302f01bb3377bb823611c9410108973e0cab09b1124",
+      "bytes": 4226
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityReplacementReview.test.ts",
+      "status": "added",
+      "sha256": "620479333f55017fcc7749535cd09fa893e2772ac8ff4f2371716df8a3640ee2",
+      "bytes": 9229
+    },
+    {
+      "path": "web/lib/sources/fixtures/tweetIdentitySavedEvidence.json",
+      "status": "added",
+      "sha256": "a6ed14b24e05ffdadd0d0de9593c12e5c8aad92bd8a8168d0cf91532598f0a2d",
+      "bytes": 3457
+    }
+  ],
+  "patchSha256": "f918be644677718b90e59962345196ff44544cc081c1559afa794859d28c340d",
+  "retainedTrialPins": {
+    "total": 40,
+    "changes": []
+  },
+  "referenceSha256": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+  "verification": {
+    "testsPassed": 30,
+    "filesPassed": 2,
+    "projectionTests": 16,
+    "replacementTests": 14,
+    "scopedTypecheckExit": 0,
+    "targetedLintExit": 0,
+    "finalNetworkGuardDiagnostics": false,
+    "trailingWhitespace": [],
+    "productionCallers": []
+  },
+  "verificationRecipePins": [
+    {
+      "path": "tasks/artifacts/luna-ifttt-readiness-2026-10-22/network-guard.cjs",
+      "sha256": "d5ff07c8bf758164bef09d8e9990e56f5ecf733134b9b53f8b22ee2038a79c79"
+    },
+    {
+      "path": "tasks/artifacts/luna-ifttt-readiness-2026-10-22/vitest.config.mjs",
+      "sha256": "292dbdb08a3d6bcaae6199210f3b3f66693de5adf4f878f5c4e8e2d045971ace"
+    },
+    {
+      "path": "tasks/artifacts/luna-ifttt-readiness-2026-10-22/empty-global.npmrc",
+      "sha256": "eb9ecf6aa820feb8e15ce8167249164b73acb496882c00cc382b634abf5143c5"
+    },
+    {
+      "path": "tasks/artifacts/luna-application-contracts-2026-10-22/tsconfig.json",
+      "sha256": "dc2898184db8f034e85f131c5f79ab67c396ddb4c897eb65ca47fb2196198cbf"
+    },
+    {
+      "path": "tasks/artifacts/luna-application-contracts-2026-10-22/VERIFY.sh",
+      "sha256": "40eaa60a9ed8030a83d00bf87afa2ae4e96a7d712db401addaaf43c7cac3cb14"
+    }
+  ],
+  "evidencePins": [
+    {
+      "path": "tasks/artifacts/luna-application-contracts-2026-10-22/test-results.json",
+      "sha256": "3a1964d1fc2cdc3f85c2ef04d6063df62d765dd0a7b6a010b907b8c38764ff9b"
+    },
+    {
+      "path": "tasks/artifacts/luna-application-contracts-2026-10-22/tests.log",
+      "sha256": "ec5410c6efd214d3155b65ab9fe81601484576dbd2f96f5a43fed9063d2c5cd5"
+    },
+    {
+      "path": "tasks/artifacts/luna-application-contracts-2026-10-22/tsc.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/artifacts/luna-application-contracts-2026-10-22/lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "externalActionsAttempted": 0,
+  "existingApplicationFilesChanged": []
+}

@@ -1,8 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { requireApiUser } from "lib/api/requireApiUser";
-import { getDraftProFeatureFlags } from "lib/draft-pro/features";
-import { loadDraftProAccess } from "lib/draft-pro/server";
+import { ProviderSyncAccessError, requireProviderSyncAccess } from "lib/integrations/providerSyncAccessServer";
 import { getFantraxAdp, getFantraxLeagueInfo, getFantraxPlayerIds } from "lib/integrations/fantrax/client";
 import { getFantraxConnections } from "lib/integrations/fantrax/server";
 
@@ -54,10 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   });
   if (!user) return;
   try {
-    const access = await loadDraftProAccess(user.id, {
-      now: new Date(), flags: getDraftProFeatureFlags(), patreonVerificationAvailable: true,
-    });
-    if (!access.eligible) return res.status(403).json({ error: "Draft Pro access is required." });
+    await requireProviderSyncAccess(user.id);
     const basePlayers = await loadPlayers();
     if (req.query.includeLeaguePositions !== "1") return res.status(200).json({ players: basePlayers, hasLeagueEligibility: false });
     try {
@@ -72,7 +68,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } catch {
       return res.status(200).json({ players: basePlayers, hasLeagueEligibility: false });
     }
-  } catch {
+  } catch (error) {
+    if (error instanceof ProviderSyncAccessError) return res.status(error.statusCode).json({ error: error.message, code: error.code });
     return res.status(502).json({ error: "Fantrax player data is temporarily unavailable." });
   }
 }

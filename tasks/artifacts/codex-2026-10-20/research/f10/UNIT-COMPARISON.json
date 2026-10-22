@@ -1,0 +1,69 @@
+{
+  "status": "offline_synthetic_contract_and_sensitivity_only",
+  "source_commit": "9695a2fe6",
+  "source_model_version": "v6_roster_ctpi_sos_threshold_52",
+  "feature_set_version_unchanged": "game_features_v6_trusted_ctpi_single_game_form",
+  "producer": {
+    "source_version": "team-power-v2-final-source-observed-pdo",
+    "units": "power_ratings_center100_scale15",
+    "raw_snapshot_version_and_source_through_date": "preserved per opponent game; absent values remain null",
+    "historical_publication_availability": "unproved"
+  },
+  "retained_transform_version": "sos_adjusted_form_v1_neutral50_goal_diff_div50_xgf_scale_0_05",
+  "neutral100": {
+    "goal_differential_offset": 1,
+    "xgf_share_offset_before_clipping": 0.05
+  },
+  "interior_pair": {
+    "raw_home_gd": 1.5,
+    "raw_away_gd": -2,
+    "adjusted_home_gd": 2.5,
+    "adjusted_away_gd": -1,
+    "gd_difference_both_transforms": 3.5,
+    "raw_home_xgf_share": 0.56,
+    "raw_away_xgf_share": 0.4,
+    "legacy_adjusted_home_share": 0.61,
+    "legacy_adjusted_away_share": 0.45,
+    "share_difference_both_transforms": 0.16
+  },
+  "upper_clipped_pair": {
+    "raw_home_share": 0.98,
+    "raw_away_share": 0.95,
+    "legacy_adjusted_home_share": 1,
+    "legacy_adjusted_away_share": 1,
+    "legacy_difference": 0,
+    "research_neutral100_difference": 0.03
+  },
+  "actual_source_inference_sensitivity": {
+    "artifact": "synthetic fixed coefficients; weight 1 on homeMinusAwayAdjustedRecent10XgfPct; all other weights and bias 0; no fitting",
+    "default_excluded_legacy_probability": 0.5,
+    "default_excluded_recentered_probability": 0.5,
+    "opt_in_legacy_probability": 0.5,
+    "opt_in_recentered_probability": 0.5074994375506203,
+    "verified_by": "featureBuilder.test.ts upper-clipped fixture calls buildBaselineFeatureVector and predictBaselineModelRawHomeWinProbability"
+  },
+  "selected_or_deployed_model_comparison": "blocked: no selected artifact coefficients, enabled-feature configuration, immutable compatible evaluation cohort or model-owner approval supplied; no claim about live probabilities or accuracy",
+  "history_bounds": {
+    "maximum_identity_cutoff_queries": 22,
+    "maximum_concurrent_history_queries": 4,
+    "maximum_rows_per_query": 2,
+    "maximum_history_rows_returned_before_deduplication": 22,
+    "snapshot_cutoff": "date strictly less than requested game/source date",
+    "duplicate_latest_date": "throw in loader; unknown affected window in pure builder",
+    "missing_latest": "preserve game slot, emit coverage, withhold affected aggregate",
+    "duplicate_game_id": "collapse exact identity duplicates; throw on conflicting date/teams"
+  },
+  "checks": {
+    "featureBuilder": 42,
+    "baselineModel": 13,
+    "modeledHeadTotals": 3,
+    "total_distinct_tests": 58,
+    "focused_eslint": "passed",
+    "full_typecheck": "not run per assignment",
+    "full_suite_build_or_live_queries": "not run"
+  },
+  "hashes": {
+    "web/lib/game-predictions/featureBuilder.ts": "14d5e6fb70f100879ddc10879dd6a73af3a97af98a8a18b22dd5287f2b7b7c71",
+    "web/lib/game-predictions/featureBuilder.test.ts": "ba1b1d0b5da44da3fab8074246624fdfc7661e4c179cd625214825e2640957ab"
+  }
+}

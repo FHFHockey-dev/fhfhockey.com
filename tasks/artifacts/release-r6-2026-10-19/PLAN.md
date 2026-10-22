@@ -126,3 +126,29 @@ FORGE 7-patch set plus patch 06 (after 10-20 17:00Z), HTML-fallback flag, B2 V2 
   - Full Vitest: 9 failed / 8778 passed, against master `707f60e83`'s 10 failed / 8774. One failure isn't on master's list: `related.server.test.ts`. It's environmental: the shared `node_modules` lacks `next-sanity/dist/next-sanity.esm.js`, and the test fails the same way on the master export.
 - **Expected Vercel entries:** 1 web build plus 3 CANCELED.
 - **After deploy:** tell `local_c39098ae`, which holds TJ's approval for the bounded rolling recompute.
+
+## R6e (held, superseded) and R6f (Chef gate passed; awaiting TJ's confirmation in the Chef session)
+
+- **R6e** (`2a74489af`, compact bridge wire): held, because its budget allowed about 8.8 MB of expanded rows inside account saves, past Vercel's 4.5 MB request limit.
+- **R6f candidate:** `b630e0767d00d6c72506268282834151d78e7da1`, parent master `ccfe5e57b` (R6d), tree `706a2b55d1`. Local ref `chef/release-r6f-candidate`, built by `local_b3174028`.
+- **Size:** 8 files, +256/−22: `bridgeForecastWire.ts` (new), `forgeDailyBridge.ts` + test, `data.ts`, `provider.ts`, `workspace.ts`, `RosterScheduleOptimizer.tsx`, `workspaceRoutes.test.ts`.
+- **Fix:** bridge rows travel packed at every snapshot boundary:
+  - the data and provider responses;
+  - workspace PUT bodies (unpacked before schema validation);
+  - every 200 workspace response;
+  - the sessionStorage preservation journal.
+
+  A snapshot is packed only if every row rebuilds exactly, and a partial rebuild throws. The DB stores complete snapshots. Expanded bridge bytes are now also capped at 4 MB, beside the 2.5 MB compact cap.
+- **Chef gate** (export, throwaway `git init`, no GIT_DIR, under the lock):
+  - `tsc`: 0 errors.
+  - ESLint, 8 files: 0 errors and the 6 known warnings.
+  - Focused Vitest (RSO, Yahoo, in-season, hooks): 79 files, 1264/1264.
+  - Full Vitest: 9 failed / 8782 passed, the same failures as R6d; nothing new.
+- **Offline round-trip on real data** (the saved R6d response for 10-20..10-26, 1,283 bridge rows): pack then unpack reproduces the save body byte for byte. The save body goes from 2,422,222 B unpacked to 1,005,041 B packed, with 0 rows left unpacked.
+- **Known limit:** browser tabs opened before the deploy run the old bundle. They see workspace loads with packed snapshots (no bridge rows) until they reload.
+- **Expected Vercel entries:** 1 web build plus 3 CANCELED.
+- **Smoke test (at most 3 sequential GETs):**
+  1. `/roster-schedule-optimizer`
+  2. the RSO data route (expect `bridgeForecasts` present and `data.forecasts` small)
+  3. `/start-chart`
+- **octoberBranch:** the source commit `b401c5f53` is local and unpushed; pushing it needs TJ.

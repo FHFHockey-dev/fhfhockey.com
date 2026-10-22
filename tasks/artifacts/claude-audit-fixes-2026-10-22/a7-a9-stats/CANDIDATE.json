@@ -1,0 +1,257 @@
+{
+  "packet": "A7\u2013A9",
+  "status": "A7 R1 implemented; independent acceptance pending. A8/A9 qualified acceptance preserved.",
+  "checked_at": "2026-10-22T12:46:49.329476+00:00",
+  "repository": "/Users/tim/Code/fhfhockey.com",
+  "branch": "octoberBranch",
+  "head": "a811b0762ffe29006c3df7eaa4c19bf18deecda3",
+  "baseline_snapshot": "/tmp/fhfh-queue-check-3_hiunsv/isolation/snapshot/web",
+  "final_snapshot": "/tmp/fhfh-queue-check-n9qsiipi/isolation/snapshot/web",
+  "node": "22.11.0",
+  "npm": "10.9.0",
+  "files": [
+    {
+      "path": "web/lib/stats/percentUnits.ts",
+      "operation": "modify existing",
+      "before_sha256": "96e54378f408f4985d5cac117b64403dcc2ff5f88f7bd24405a4b639223da030",
+      "after_sha256": "d9db23a7f88e52d99b01792bcdb7fbffdff3f0a4391b92ed655763fa67d3dad3",
+      "r1_before_sha256": "d9db23a7f88e52d99b01792bcdb7fbffdff3f0a4391b92ed655763fa67d3dad3",
+      "changed_in_r1": false
+    },
+    {
+      "path": "web/lib/stats/percentUnits.test.ts",
+      "operation": "modify existing",
+      "before_sha256": "8fe735aeaceeecf70eeed4dc981f9cd8155be8e7f8d59b6d7b25412beeaa3774",
+      "after_sha256": "b1131e0b47df19d01a90375f291f9d378d5040242bc81e72883ca8e3364a0e4a",
+      "r1_before_sha256": "b1131e0b47df19d01a90375f291f9d378d5040242bc81e72883ca8e3364a0e4a",
+      "changed_in_r1": false
+    },
+    {
+      "path": "web/components/GoalieShareChart/index.tsx",
+      "operation": "modify existing",
+      "before_sha256": "9946c9e4450ff11ed2220c27335467ee5fdeb38c0d44e3c6318eeeeda29de95c",
+      "after_sha256": "eaf214966a91a931c5a67eba2f723f7db943a1905f2bb9f89ab26a33d07bee7b",
+      "r1_before_sha256": "eaf214966a91a931c5a67eba2f723f7db943a1905f2bb9f89ab26a33d07bee7b",
+      "changed_in_r1": false
+    },
+    {
+      "path": "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+      "operation": "add",
+      "before_sha256": null,
+      "after_sha256": "8358449fbb8a3ce4b96c47afe3fc6907af1de077b04612df6874add87e04ba7a",
+      "r1_before_sha256": "8358449fbb8a3ce4b96c47afe3fc6907af1de077b04612df6874add87e04ba7a",
+      "changed_in_r1": false
+    },
+    {
+      "path": "web/hooks/useShotData.ts",
+      "operation": "modify existing",
+      "before_sha256": "2c97f5303311703b074e07cb44b2c2a7072295f1232c931d32d4dbda6949ffcc",
+      "after_sha256": "cc659fb7526cfd9f0ff2f1986c3dcc7a517a09e9a887e032240cd5fd2da276fb",
+      "r1_before_sha256": "cc659fb7526cfd9f0ff2f1986c3dcc7a517a09e9a887e032240cd5fd2da276fb",
+      "changed_in_r1": false
+    },
+    {
+      "path": "web/hooks/useShotData.test.tsx",
+      "operation": "add",
+      "before_sha256": null,
+      "after_sha256": "cc4a4e3f48d4ca6a6af42e4e24e02d88fccf15e46e102882fb2ac1d7c7051b5b",
+      "r1_before_sha256": "cc4a4e3f48d4ca6a6af42e4e24e02d88fccf15e46e102882fb2ac1d7c7051b5b",
+      "changed_in_r1": false
+    },
+    {
+      "path": "web/components/GameStateAnalysis/GameStateAnalysis.tsx",
+      "operation": "modify existing",
+      "before_sha256": "5543c3bd12b82d57a2b8122b2456e78ac609cbcbfe9b18170a899f545d41f477",
+      "after_sha256": "d0612c49ba567fba04f41f1bbc5761f4242f25b08c690d0bad776a38c1407ef2",
+      "r1_before_sha256": "5dde8cb58549479c07fe4b3920363227ed6434714a0c230e2c08cabe918f4403",
+      "changed_in_r1": true
+    },
+    {
+      "path": "web/components/GameStateAnalysis/GameStateAnalysis.test.tsx",
+      "operation": "modify existing",
+      "before_sha256": "254d5a3efdddbe4efccb38f6aaad8bde9dee3e9e6e121e3e8fa33cc5615f8d89",
+      "after_sha256": "7eade418baa9e4a1ba18aae4e49e8ddabc25fad99d30821e081d13de1e758c88",
+      "r1_before_sha256": "a1ddced7ee033828bcc112b326e9583594e562f521ff348b7483caa4e9e44daa",
+      "changed_in_r1": true
+    },
+    {
+      "path": "web/components/TeamDashboard/AdvancedL10Metrics.tsx",
+      "operation": "modify existing",
+      "before_sha256": "21a072021b1d262df3b455b100420460956ef055b867f15e2a723c6b5b89aae4",
+      "after_sha256": "9d1143bb2bcc9d6edab3c2605121eaf66b22b647f638a10508c7fddfad43b439",
+      "r1_before_sha256": "adf9bea71dbf3df444ce12e07609194b45c44737f228f4f2b20dda8892799b38",
+      "changed_in_r1": true
+    },
+    {
+      "path": "web/components/TeamDashboard/AdvancedL10Metrics.test.tsx",
+      "operation": "modify existing",
+      "before_sha256": "c6c3e7e4bfa82f6b49ef84cc924626d3654a28c82aa663b34472df734aabd3d0",
+      "after_sha256": "ff094834f973187cba5b29343f110a056918488e9107c7d9a9a3a01726d190f5",
+      "r1_before_sha256": "168be4466a3f5cafc61843e8edaf382b8aab779edb69e96657cf69f6ccddc698",
+      "changed_in_r1": true
+    },
+    {
+      "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+      "operation": "modify existing",
+      "before_sha256": "c9b3dc9c0f9c3f4d2ba07a3c8dc21d431306fe7c77482b1bc1822fd00cc75e44",
+      "after_sha256": "a04e27bea27c4346e2c30e7a1f2dca21c1a092fc241e29a60a34ab6d2ae01f64",
+      "r1_before_sha256": "8a83752a2541faf07032aa387c8a1233975f76984347b5d333f5e875dafd69fa",
+      "changed_in_r1": true
+    },
+    {
+      "path": "web/components/TeamDashboard/TeamDashboard.test.tsx",
+      "operation": "modify existing",
+      "before_sha256": "ce10b583cb6a66f8c4c8443b40e0a04877eb51120a8ff4d7d132f3e264680b67",
+      "after_sha256": "28a540e820d4fb38b954fa9b07b6ff95ee6033b48c8239f3ae91077f39740bc7",
+      "r1_before_sha256": "d5d1ce758270d663c67bce7a2788ed12d65107e333c900ea75ebdae4455a6d9a",
+      "changed_in_r1": true
+    },
+    {
+      "path": "web/lib/stats/teamCountConsumers.test.tsx",
+      "operation": "add",
+      "before_sha256": null,
+      "after_sha256": "5b53c8e3975290074c86226ada9de60fa8c532b2a1fc496f42b6e28aab7dbbfa",
+      "r1_before_sha256": null,
+      "changed_in_r1": true
+    }
+  ],
+  "constraints": {
+    "production_requests": 0,
+    "remote_builds": 0,
+    "deployments": 0,
+    "commits": 0,
+    "pushes": 0,
+    "credential_reads": 0,
+    "dependency_changes": 0
+  },
+  "coordination": {
+    "target": "01a15411-3560-7632-8d31-1dd2447ba00e",
+    "action": "send_message_to_thread for necessary consumer scope",
+    "result": "thread not found; not delivered",
+    "resolution": "Delegation expressly includes affected consumers only as necessary and trusted idle/no-collision evidence; no files beyond that assigned consumer scope were edited."
+  },
+  "packet_patch_sha256": "2a61cd0205a5a98c2a46df2ae900e1c0fa3b967e250046c2c7e7490a034cf7a8",
+  "revision": 2,
+  "observed_head_at_handoff": "d3f057c6c849d5d5474bc912a6f461f617c65b15",
+  "r1_before_snapshot": "/tmp/fhfh-queue-check-4uhrqejj/isolation/snapshot/web",
+  "r1_previous_candidate_sha256": "9d6bdf59238ca38259f0e75a4098cde543926a10cfac3dad7a8198cd21364486",
+  "r1_patch_sha256": "3780ca42acc106216aaf207ca076945ee20f64cbed3e5d57e971080c16d31bdc",
+  "a8_a9_unchanged": {
+    "passed": true,
+    "files": [
+      "web/components/GoalieShareChart/index.tsx",
+      "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+      "web/hooks/useShotData.ts",
+      "web/hooks/useShotData.test.tsx"
+    ],
+    "compared_to": "r1/previous-CANDIDATE.json"
+  },
+  "checks_revision_1": {
+    "original_reproductions_before": {
+      "exit_code": 1,
+      "failed": 3,
+      "skipped": 5,
+      "receipt": "evidence/baseline.log"
+    },
+    "added_async_regressions_before": {
+      "exit_code": 1,
+      "failed": 8,
+      "skipped": 15,
+      "receipt": "evidence/async-regressions-red.log"
+    },
+    "added_a7_regressions_before": {
+      "exit_code": 1,
+      "failed": 37,
+      "skipped": 39,
+      "receipt": "evidence/a7-regressions-red.log"
+    },
+    "aggregate_rank_regressions_before": {
+      "exit_code": 1,
+      "failed": 2,
+      "passed": 1,
+      "skipped": 27,
+      "receipt": "evidence/aggregate-ranks-red.log"
+    },
+    "focused_tests_after": {
+      "exit_code": 0,
+      "passed": 111,
+      "files": 8,
+      "receipt": "evidence/final-tests.log"
+    },
+    "original_reproductions_after": {
+      "exit_code": 0,
+      "passed": 3,
+      "skipped": 5,
+      "receipt": "evidence/final-repros.log"
+    },
+    "scoped_typecheck": {
+      "exit_code": 0,
+      "receipt": "evidence/typecheck.log"
+    },
+    "focused_lint": {
+      "exit_code": 0,
+      "errors": 0,
+      "existing_img_warnings": 2,
+      "receipt": "evidence/lint.log"
+    },
+    "diff_check": {
+      "exit_code": 0,
+      "scope": "tracked packet files plus added-line whitespace check"
+    },
+    "candidate_drift": {
+      "passed": true,
+      "checked_files": 12,
+      "head_unchanged": true,
+      "branch_unchanged": true
+    }
+  },
+  "checks": {
+    "reviewer_reproductions_before": {
+      "exit_code": 1,
+      "failed": 2,
+      "receipt": "r1/reviewer-red.log"
+    },
+    "filter_aware_regressions_before": {
+      "exit_code": 1,
+      "failed": 9,
+      "passed": 1,
+      "receipt": "r1/regressions-red.log"
+    },
+    "focused_tests_after": {
+      "exit_code": 0,
+      "passed": 91,
+      "files": 6,
+      "description": "89 nearest A7 tests plus 2 reviewer cases with query/diagnostic adaptation",
+      "receipt": "r1/final-tests.log"
+    },
+    "scoped_typecheck": {
+      "exit_code": 0,
+      "scope": "13 packet source/test files and imports",
+      "receipt": "r1/typecheck.log"
+    },
+    "focused_lint": {
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 0,
+      "scope": "7 R1-changed files",
+      "receipt": "r1/lint.log"
+    },
+    "diff_check": {
+      "exit_code": 0,
+      "scope": "tracked R1 source files plus cumulative patch added-line whitespace"
+    },
+    "candidate_drift": {
+      "passed": true,
+      "checked_files": 13,
+      "head_unchanged": false,
+      "branch_unchanged": true,
+      "outside_packet_commit_changes": [
+        "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md"
+      ],
+      "outside_packet_uncommitted_source_drift": [
+        "web/components/account/InSeasonPanel.test.tsx",
+        "web/components/account/InSeasonPanel.tsx"
+      ]
+    }
+  }
+}

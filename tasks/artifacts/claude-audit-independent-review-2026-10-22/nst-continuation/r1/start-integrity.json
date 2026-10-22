@@ -1,0 +1,81 @@
+{
+  "head": "d3f057c6c849d5d5474bc912a6f461f617c65b15",
+  "verified_archive_files": 3357,
+  "archive_sha256": "0204013426c5702b1fcd87cf0db9ec8d0919b2a4d2601945ad1d9d8a98e9ac25",
+  "r1_patch_matches": true,
+  "reviewer_fixture_unchanged": true,
+  "files": [
+    {
+      "path": "web/pages/api/v1/db/run-rolling-forge-pipeline.ts",
+      "sha256": "ffe7e16c782987fdfec19f8b1e787a89a76aed0a2739994ec5f80eb9488f97b1",
+      "canonical_matches": true,
+      "tested_matches": true
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts",
+      "sha256": "1137a449405ec993cb8440395311cc199251fd6da87508469390ffc0ff8f8227",
+      "canonical_matches": true,
+      "tested_matches": true
+    },
+    {
+      "path": "web/lib/rollingForgePipelineRunState.ts",
+      "sha256": "6ce1bab745bb6fa870b7aeb717c61b2470072db3645047e48006ea53304d2d38",
+      "canonical_matches": true,
+      "tested_matches": true
+    },
+    {
+      "path": "web/lib/projections/projectionPipelineState.ts",
+      "sha256": "288eaf8e8add181cf23290fda001409d001980aec53f49d96d4164b49e716b8f",
+      "canonical_matches": true,
+      "tested_matches": true
+    },
+    {
+      "path": "web/lib/projections/projectionPipelineState.test.ts",
+      "sha256": "bcfe0ea75668c7cca0d40346d8f901d123d5e7f190c2392bd4b2a5ed79e9b124",
+      "canonical_matches": true,
+      "tested_matches": true
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-gamelog.ts",
+      "sha256": "9f6b8f628f2d4be77e3bf15a3d94ee8bceef6b420618034eab5c23162d8db1d4",
+      "canonical_matches": true,
+      "tested_matches": true
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts",
+      "sha256": "098de11dd4282c779c1fc3ee404b2931b5202af5309045d4409f596cf6e75e84",
+      "canonical_matches": true,
+      "tested_matches": true
+    },
+    {
+      "path": "web/lib/nst/requestBudget.ts",
+      "sha256": "d19258f72183580919d26c16480287faa3f9b2fa30c9a9aa7d2982bba79b487e",
+      "canonical_matches": true,
+      "tested_matches": true
+    },
+    {
+      "path": "web/lib/nst/client.ts",
+      "sha256": "712eefa3c63b3340770a4d45fb2c97428ffe7ede49a5581f36f75a9c9a3783e9",
+      "canonical_matches": true,
+      "tested_matches": true
+    },
+    {
+      "path": "web/lib/nst/gamelogProgress.ts",
+      "sha256": "b0c657c0e28193384939c58fdab6321460347f149b698e8051c4211cacab9942",
+      "canonical_matches": true,
+      "tested_matches": true
+    },
+    {
+      "path": "web/lib/cron/withCronJobAudit.ts",
+      "sha256": "02790f98626c71accd9bdb0b01a2e9da95799a254c14b98ad82a94bfca635094",
+      "canonical_matches": true,
+      "tested_matches": true
+    },
+    {
+      "path": "web/lib/cron/nhlOffSeason.ts",
+      "sha256": "7b3202d5d4e8006a908ae2cdbeef217949f357499456f99353fd17f902ebd77f",
+      "canonical_matches": true,
+      "tested_matches": true
+    }
+  ]
+}

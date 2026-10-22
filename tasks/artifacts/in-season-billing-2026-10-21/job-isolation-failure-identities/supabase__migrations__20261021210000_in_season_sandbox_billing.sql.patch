@@ -1,0 +1,14 @@
+--- supabase/migrations/20261021210000_in_season_sandbox_billing.sql (baseline)
++++ supabase/migrations/20261021210000_in_season_sandbox_billing.sql
+@@ -240,7 +240,10 @@
+ begin
+   if auth.role() is distinct from 'service_role' then raise exception 'Service role required'; end if;
+   if p_limit<1 or p_limit>20 then raise exception 'Job limit invalid'; end if;
+-  return coalesce((select jsonb_agg(to_jsonb(j)) from (select * from public.in_season_sandbox_monthly_jobs where due_at<=clock_timestamp() and (status='pending' or (status='running' and lease_until<=clock_timestamp())) order by due_at,id limit p_limit) j),'[]'::jsonb);
++  -- Urgent work precedes retries; never-attempted then least-recently leased
++  -- jobs rotate failures through the bounded batch without changing due_at.
++  return coalesce((select jsonb_agg(to_jsonb(j)) from (select * from public.in_season_sandbox_monthly_jobs where due_at<=clock_timestamp() and (status='pending' or (status='running' and lease_until<=clock_timestamp()))
++    order by case when kind in ('stop','cutoff') then 0 else 1 end,lease_until asc nulls first,due_at,id limit p_limit) j),'[]'::jsonb);
+ end $$;
+ create function public.claim_in_season_sandbox_monthly_job(p_id text) returns jsonb language plpgsql security definer set search_path=pg_catalog,public as $$
+ declare job public.in_season_sandbox_monthly_jobs; claim_token uuid;

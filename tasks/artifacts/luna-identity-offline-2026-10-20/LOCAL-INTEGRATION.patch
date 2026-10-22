@@ -1,0 +1,521 @@
+diff --git a/web/lib/sources/tweetNewsInference.ts b/web/lib/sources/tweetNewsInference.ts
+index 32a4ec90b..bba3cf024 100644
+--- a/web/lib/sources/tweetNewsInference.ts
++++ b/web/lib/sources/tweetNewsInference.ts
+@@ -227 +227 @@ export function buildTweetNewsInferencePlayerCandidates(args: {
+-  row: TweetNewsAutomationReviewRow;
++  row: Pick<TweetNewsAutomationReviewRow, "team_id">;
+diff --git a/web/lib/sources/tweetIdentityLocalReview.ts b/web/lib/sources/tweetIdentityLocalReview.ts
+new file mode 100644
+index 000000000..b197a3165
+--- /dev/null
++++ b/web/lib/sources/tweetIdentityLocalReview.ts
+@@ -0,0 +1,155 @@
++import { z } from "zod";
++import { timestampMicros } from "lib/projections/evidenceTime";
++import { getAliasReviewOccurrence, type AliasReviewName } from "./playerAliasReview";
++import { resolvePlayerIdentity } from "./playerIdentity";
++import { identityDigest, indexPlayerIdentitySnapshot, snapshotRowAtSource, type PlayerIdentityIndex } from "./playerIdentitySnapshot";
++import { segmentPlayerRow } from "./tweetInterpretation";
++import { buildTweetNewsInferencePlayerCandidates } from "./tweetNewsInference";
++import { IDENTITY_PROPOSAL_AUTHORITY, exactIdentitySpan, prepareFixtureIdentityRequest, proposeFixtureTweetIdentities,
++  validateFixtureIdentityProposal, type FixtureIdentityMention, type FixtureIdentitySource, type FixtureIdentityTransport,
++  type IdentitySourceSpan, type TweetIdentityOccurrenceProposal } from "./tweetIdentityProposal";
++
++export const LOCAL_IDENTITY_REVIEW_VERSION = "local-alias-identity-review-v1";
++const rowSchema = z.object({
++  raw_name: z.string().min(1).max(200), context_text: z.string().max(16000).nullable(), team_id: z.number().int().positive().nullable(),
++  metadata: z.object({
++    contextAlias: z.string().max(200).nullable().optional(), reason: z.string().optional(), reviewKind: z.string().optional(),
++    evidence: z.object({ start: z.number().int().nonnegative(), end: z.number().int().positive(), text: z.string().optional(),
++      origin: z.enum(["parser", "unique_token", "contextual_row"]).optional() }).optional(),
++    situation: z.string().nullable().optional(), sourceOrdinal: z.number().int().positive().nullable().optional(),
++    captureKey: z.string().optional(), sourcePublishedAt: z.string().nullable().optional(), candidates: z.array(z.number()).optional(),
++  }).nullable().optional(),
++});
++type LocalHold = { rowIndex: number; reason: string };
++export type LocalIdentityOccurrence = {
++  id: string; span: IdentitySourceSpan; origin: "existing_alias_occurrence" | "unique_directory_segmentation";
++  baselineCandidateIds: string[]; baselineSelectedId: string | null;
++  candidateIds: string[]; deterministicSelectedId: string | null;
++  modelCandidateIds: string[];
++  candidateTruncated: boolean; activeMembership: "known" | "unknown" | "conflicting";
++  modelProposal: TweetIdentityOccurrenceProposal | null;
++};
++export type LocalIdentityReviewResult = typeof IDENTITY_PROPOSAL_AUTHORITY & {
++  version: typeof LOCAL_IDENTITY_REVIEW_VERSION; status: "disabled" | "held" | "evaluated"; reason: string | null;
++  sourceHash: string | null; directoryHash: string | null; lineageKey: string | null;
++  occurrences: LocalIdentityOccurrence[]; holds: LocalHold[]; notes: string[];
++  modelMode: "not_run" | "mock"; modelStatus: string; modelReason: string | null; attempts: number; requestHashes: string[];
++};
++
++/** Explicit role syntax only: bare letters may be initials; handles/hashtags are not roles. */
++function adjacentPositionHint(text: string, span: IdentitySourceSpan): FixtureIdentityMention["positionHint"] {
++  const start = text.lastIndexOf("\n", span.start - 1) + 1;
++  const before = text.slice(start, span.start).match(/(?:^|[\s(])((?:LW|RW|G|D|C|L|R|F)):\s+$/u);
++  const after = text.slice(span.end).match(/^\s+\((LW|RW|G|D|C|L|R|F)\)/u);
++  const position = before?.[1] ?? after?.[1];
++  if (!position) return null;
++  const offset = before ? span.start - before[0].length + before[0].indexOf(position) : span.end + after![0].indexOf(position);
++  return { position, evidence: { start: offset, end: offset + position.length, text: position } };
++}
++
++/** Local-only caller for retained alias-review rows. No production route imports this module. */
++export async function evaluateLocalAliasIdentityReview(args: {
++  enabled?: boolean; source: FixtureIdentitySource; index: PlayerIdentityIndex; rows: AliasReviewName[];
++  resolver?: { enabled?: boolean; kind: "mock"; transport: FixtureIdentityTransport };
++}): Promise<LocalIdentityReviewResult> {
++  const base: LocalIdentityReviewResult = { ...IDENTITY_PROPOSAL_AUTHORITY, version: LOCAL_IDENTITY_REVIEW_VERSION,
++    status: "disabled", reason: "local_evaluation_disabled", sourceHash: null, directoryHash: null, lineageKey: null,
++    occurrences: [], holds: [], notes: [], modelMode: "not_run", modelStatus: "disabled", modelReason: null, attempts: 0, requestHashes: [] };
++  if (args.enabled !== true) return base;
++  const held = (reason: string) => ({ ...base, status: "held" as const, reason });
++  try {
++    if (args.resolver?.enabled === true) {
++      if (args.resolver.kind !== "mock") return held("paid_trial_preflight_not_integrated");
++      base.modelMode = "mock"; base.modelStatus = "not_dispatched";
++    }
++    const index = indexPlayerIdentitySnapshot(args.index.snapshot), source = args.source;
++    if (!source?.publishedAt || timestampMicros(source.publishedAt) === null || !source.text || source.text.length > 16000
++      || !Array.isArray(args.rows) || !args.rows.length || args.rows.length > 32) return held("invalid_local_review_input");
++    base.sourceHash = identityDigest(source.text); base.directoryHash = index.snapshot.hash; base.lineageKey = source.provenance.lineageKey;
++    const views = index.snapshot.content.rows.map(row => snapshotRowAtSource(row, index, source.publishedAt!).identity);
++    const mentions: FixtureIdentityMention[] = [], origins = new Map<string, LocalIdentityOccurrence["origin"]>();
++    for (const [rowIndex, input] of args.rows.entries()) {
++      const parsed = rowSchema.safeParse(input);
++      const hold = (reason: string) => base.holds.push({ rowIndex, reason });
++      if (!parsed.success) { hold("malformed_alias_review_row"); continue; }
++      const row = parsed.data;
++      if (row.context_text !== source.text) { hold("review_source_text_mismatch"); continue; }
++      if (row.metadata?.sourcePublishedAt && timestampMicros(row.metadata.sourcePublishedAt) !== timestampMicros(source.publishedAt)) {
++        hold("review_source_time_mismatch"); continue;
++      }
++      const evidence = row.metadata?.evidence;
++      if (evidence && !exactIdentitySpan(source.text, { ...evidence, text: evidence.text ?? source.text.slice(evidence.start, evidence.end) })) {
++        hold("malformed_extractor_evidence"); continue;
++      }
++      const occurrence = getAliasReviewOccurrence(row);
++      if (!occurrence || !exactIdentitySpan(source.text, occurrence)) { hold("occurrence_not_uniquely_bound"); continue; }
++      if (evidence && (evidence.start !== occurrence.start || evidence.end !== occurrence.end)) {
++        hold("extractor_occurrence_binding_mismatch"); continue;
++      }
++      if (/\b(?:lines?|lineup|combinations?|combos?|rushes|pairings?|powerplay)\b/iu.test(occurrence.text)) { hold("heading_is_not_a_player"); continue; }
++      if (row.team_id !== null) base.notes.push("undated_team_hint_ignored");
++      if (row.metadata?.situation) base.notes.push("parser_role_not_used_as_source_evidence");
++      const chunk = row.metadata?.reason === "invalid_extraction" || row.metadata?.reviewKind === "invalid_extraction"
++        || /\s[-–—]\s|[|/]|[-‐‑–—].*[-‐‑–—]/u.test(occurrence.text);
++      const segments = chunk ? segmentPlayerRow(occurrence.text, views) : null;
++      if (chunk && !segments) { hold("unparsed_or_ambiguous_name_chunk"); continue; }
++      const spans = segments ? segments.map(span => {
++        // The existing segmenter may consume a trailing separator after name normalization.
++        // Remove only that separator from multi-person evidence, preserving internal compound hyphens.
++        const text = segments.length > 1 ? span.text.replace(/[\s,;/\\•–—−-]+$/u, "") : span.text;
++        return { start: occurrence.start + span.start, end: occurrence.start + span.start + text.length, text };
++      }) : [occurrence];
++      for (const span of spans) {
++        if (!/^[\p{L}\p{M}][\p{L}\p{M} .’'‐‑-]*$/u.test(span.text) || /\b(?:and|with|in the|vs)\b/iu.test(span.text)) { hold("non_name_extraction"); continue; }
++        const id = `local-occurrence:${identityDigest([source.id, span.start, span.end]).slice(0, 24)}`;
++        if (mentions.some(mention => mention.id === id)) continue;
++        mentions.push({ id, kind: "name", span: { start: span.start, end: span.end, text: span.text }, teamHint: null,
++          positionHint: adjacentPositionHint(source.text, span) });
++        origins.set(id, segments ? "unique_directory_segmentation" : "existing_alias_occurrence");
++      }
++    }
++    if (!mentions.length) return { ...base, status: "held", reason: "no_reliable_single_player_occurrences" };
++    const prepared = prepareFixtureIdentityRequest({ enabled: true, index, source, mentions });
++    if (prepared.status !== "prepared") return { ...base, status: "held", reason: prepared.reason };
++    const request = prepared.request;
++    const players = views.map(player => ({ id: player.playerId, fullName: player.fullName, lastName: player.lastName,
++      position: player.position ?? null, team_id: player.teamId ?? null, aliases: player.aliases }));
++    const baseline = buildTweetNewsInferencePlayerCandidates({ row: { team_id: null }, players,
++      sources: [{ id: "wrapper", text: source.text, url: source.url, authorHandle: source.authorId }] });
++    const baselineIds = baseline.map(player => `nhl:${player.id}`), baselineViews = views.filter(player => baseline.some(row => row.id === player.playerId));
++    base.occurrences = request.content.occurrences.map(mention => {
++      const old = resolvePlayerIdentity(mention.span.text, baselineViews);
++      const exact = mention.candidateSet.candidates.filter(candidate => !["fuzzy", "context"].includes(candidate.basis));
++      let selected = mention.candidateSet.exactStatus === "matched" && exact.length === 1 ? exact[0]!.row.canonicalId : null;
++      if (selected) {
++        const content = { ...request.content, occurrences: [mention] }, hash = identityDigest(content);
++        try { validateFixtureIdentityProposal({ content, hash }, {
++          version: request.content.version, requestHash: hash, directoryHash: index.snapshot.hash,
++          occurrences: [{ occurrenceId: mention.id, canonicalId: selected, status: "matched", evidence: mention.span, identityConfidence: "unknown" }],
++        }); } catch { selected = null; }
++      }
++      const memberships = mention.candidateSet.candidates.map(c => c.activeTeamIds);
++      return { id: mention.id, span: mention.span, origin: origins.get(mention.id)!, baselineCandidateIds: baselineIds,
++        baselineSelectedId: old.status === "matched" ? `nhl:${old.player.playerId}` : null,
++        candidateIds: mention.candidateSet.candidates.map(c => c.row.canonicalId), deterministicSelectedId: selected,
++        modelCandidateIds: [],
++        candidateTruncated: mention.candidateSet.truncated,
++        activeMembership: memberships.some(ids => ids.length > 1) ? "conflicting" : !memberships.length || memberships.some(ids => !ids.length) ? "unknown" : "known", modelProposal: null };
++    });
++    base.notes = [...new Set(base.notes)];
++    // The local runner intentionally supports mock transports only until paid preflight is reconciled.
++    if (args.resolver?.enabled === true) {
++      const resolver = args.resolver;
++      const result = await proposeFixtureTweetIdentities({ enabled: true, index, source, mentions, transport: async (request, options) => {
++        for (const mention of request.content.occurrences) {
++          const occurrence = base.occurrences.find(item => item.id === mention.id)!;
++          occurrence.modelCandidateIds = mention.candidateSet.candidates.map(c => c.row.canonicalId);
++        }
++        return resolver.transport(request, options);
++      } });
++      base.modelMode = "mock"; base.modelStatus = result.status; base.modelReason = result.reason; base.attempts = result.attempts; base.requestHashes = result.requestHashes;
++      for (const occurrence of base.occurrences) occurrence.modelProposal = result.proposals.find(proposal => proposal.occurrenceId === occurrence.id) ?? null;
++    }
++    return { ...base, status: "evaluated", reason: null };
++  } catch { return held("invalid_local_review_input"); }
++}
+diff --git a/web/lib/sources/tweetIdentityEvaluation.ts b/web/lib/sources/tweetIdentityEvaluation.ts
+new file mode 100644
+index 000000000..87828dfd8
+--- /dev/null
++++ b/web/lib/sources/tweetIdentityEvaluation.ts
+@@ -0,0 +1,82 @@
++import { identityDigest } from "./playerIdentitySnapshot";
++import { exactIdentitySpan, type IdentitySourceSpan } from "./tweetIdentityProposal";
++import type { LocalIdentityReviewResult } from "./tweetIdentityLocalReview";
++
++export type IdentityEvaluationCohort = "synthetic_development" | "real_development" | "real_holdout";
++export type IdentityEvaluationLabel = {
++  provenance: "synthetic_authored" | "independently_adjudicated";
++  complete: boolean;
++  adjudicator: string; evidence: string; sourceHash: string; directoryHash: string;
++  occurrences: Array<{ span: IdentitySourceSpan; kind: "player" | "ambiguous" | "non_player"; canonicalId: string | null }>;
++};
++export type IdentityEvaluationSample = {
++  id: string; lineageKey: string; sourceText: string; sourceHash: string; directoryHash: string; cohort: IdentityEvaluationCohort;
++  result: LocalIdentityReviewResult | null; heldReason: string | null; label: IdentityEvaluationLabel | null;
++};
++const emptyArm = () => ({ expectedPlayers: 0, retrievalHits: 0, assignments: 0, wrongPlayers: 0, abstentions: 0,
++  nonPlayerCases: 0, nonPlayerAssignments: 0, missingOccurrences: 0, extraOccurrences: 0 });
++
++/** Labels are joined after execution and never sent to a model. Related documents stay in one cohort. */
++export function gradeLocalIdentityComparison(samples: IdentityEvaluationSample[]) {
++  const lineages = new Map<string, IdentityEvaluationCohort>(), documents = new Set<string>(), ids = new Set<string>();
++  for (const sample of samples) {
++    if (!sample.id || !sample.lineageKey || !sample.sourceHash || !sample.directoryHash
++      || !["synthetic_development", "real_development", "real_holdout"].includes(sample.cohort)
++      || sample.sourceHash !== identityDigest(sample.sourceText) || ids.has(sample.id)
++      || lineages.has(sample.lineageKey) && lineages.get(sample.lineageKey) !== sample.cohort || documents.has(sample.sourceHash))
++      throw new Error("duplicate_or_cross_cohort_source_lineage");
++    ids.add(sample.id); lineages.set(sample.lineageKey, sample.cohort); documents.add(sample.sourceHash);
++    if (sample.cohort === "real_holdout" && sample.label?.provenance !== "independently_adjudicated")
++      throw new Error("holdout_requires_independent_identity_adjudication");
++    if (sample.result && (sample.result.sourceHash !== sample.sourceHash || sample.result.directoryHash !== sample.directoryHash
++      || sample.result.lineageKey !== sample.lineageKey)) throw new Error("evaluation_input_binding_mismatch");
++  }
++  const cohorts = (Object.keys({ synthetic_development: 0, real_development: 0, real_holdout: 0 }) as IdentityEvaluationCohort[]).map(cohort => {
++    const group = samples.filter(sample => sample.cohort === cohort);
++    const arms = { baseline: emptyArm(), deterministic: emptyArm(), mockedResolver: emptyArm() };
++    let gradedSamples = 0, ungradedSamples = 0, heldSamples = 0, labeledOccurrences = 0, mockArmSamples = 0, mockRequests = 0;
++    for (const sample of group) {
++      const label = sample.label, result = sample.result;
++      if (!result || result.status !== "evaluated") heldSamples++;
++      if (!label || label.complete !== true || cohort !== "synthetic_development" && label.provenance !== "independently_adjudicated") { ungradedSamples++; continue; }
++      if (!label.adjudicator.trim() || !label.evidence.trim() || label.sourceHash !== sample.sourceHash || label.directoryHash !== sample.directoryHash
++        || cohort === "synthetic_development" && label.provenance !== "synthetic_authored"
++        || new Set(label.occurrences.map(o => identityDigest(o.span))).size !== label.occurrences.length
++        || label.occurrences.some(o => !exactIdentitySpan(sample.sourceText, o.span) || (o.kind === "player") !== (o.canonicalId !== null)
++          || o.canonicalId !== null && !/^nhl:[1-9]\d*$/.test(o.canonicalId)))
++        throw new Error("invalid_or_unbound_identity_labels");
++      gradedSamples++; labeledOccurrences += label.occurrences.length;
++      const modeled = result?.modelMode === "mock";
++      if (modeled) { mockArmSamples++; mockRequests += result.attempts; }
++      for (const [name, arm] of Object.entries(arms)) {
++        if (name === "mockedResolver" && !modeled) continue;
++        for (const expected of label.occurrences) {
++          const actual = result?.occurrences.find(o => identityDigest(o.span) === identityDigest(expected.span));
++          const candidates = name === "baseline" ? actual?.baselineCandidateIds ?? [] : name === "deterministic" ? actual?.candidateIds ?? [] : actual?.modelCandidateIds ?? [];
++          const selected = name === "baseline" ? actual?.baselineSelectedId : name === "deterministic" ? actual?.deterministicSelectedId : actual?.modelProposal?.canonicalId;
++          if (expected.canonicalId !== null) { arm.expectedPlayers++; if (candidates.includes(expected.canonicalId)) arm.retrievalHits++; }
++          if (expected.kind === "non_player") { arm.nonPlayerCases++; if (selected) arm.nonPlayerAssignments++; }
++          if (!actual) arm.missingOccurrences++;
++          if (selected) { arm.assignments++; if (selected !== expected.canonicalId) arm.wrongPlayers++; } else arm.abstentions++;
++        }
++        for (const actual of result?.occurrences ?? []) {
++          if (label.occurrences.some(expected => identityDigest(expected.span) === identityDigest(actual.span))) continue;
++          arm.extraOccurrences++;
++          const selected = name === "baseline" ? actual.baselineSelectedId : name === "deterministic" ? actual.deterministicSelectedId : actual.modelProposal?.canonicalId;
++          if (selected) { arm.assignments++; arm.wrongPlayers++; }
++        }
++      }
++    }
++    return { cohort, interpretation: cohort === "synthetic_development" ? "synthetic_plumbing_only_not_model_accuracy" : "independent_labels_required",
++      samples: group.length, distinctLineages: new Set(group.map(sample => sample.lineageKey)).size,
++      gradedSamples, ungradedSamples, heldSamples, labeledOccurrences, mockArmSamples, mockRequests,
++      arms, realModelAccuracy: null, certaintyInflation: null,
++      note: "Identity-only proposals cannot grade claim certainty. Mock responses do not measure model efficacy; no real-model arm was run." };
++  });
++  return { version: "local-identity-comparison-v1", cohorts,
++    cases: samples.map(sample => ({ id: sample.id, cohort: sample.cohort, lineageKey: sample.lineageKey, sourceHash: sample.sourceHash,
++      labelStatus: sample.label?.provenance ?? "ungraded", status: sample.result?.status ?? "held", reason: sample.result?.reason ?? sample.heldReason,
++      extractionHolds: sample.result?.holds ?? [], modelStatus: sample.result?.modelStatus ?? "not_run", modelReason: sample.result?.modelReason ?? null,
++      mockRequests: sample.result?.attempts ?? 0,
++      occurrences: sample.result?.occurrences ?? [] })) };
++}
+diff --git a/web/lib/sources/fixtures/tweetIdentityDevelopmentComparison.ts b/web/lib/sources/fixtures/tweetIdentityDevelopmentComparison.ts
+new file mode 100644
+index 000000000..38caffa12
+--- /dev/null
++++ b/web/lib/sources/fixtures/tweetIdentityDevelopmentComparison.ts
+@@ -0,0 +1,65 @@
++import observations from "./iftttComparisonObservations.json";
++import { evaluateLocalAliasIdentityReview } from "../tweetIdentityLocalReview";
++import { gradeLocalIdentityComparison, type IdentityEvaluationSample } from "../tweetIdentityEvaluation";
++import { buildPlayerIdentitySnapshot, identityDigest, indexPlayerIdentitySnapshot } from "../playerIdentitySnapshot";
++import { offlineIdentityIndex, offlineIdentityReply, offlineIdentitySource } from "./tweetIdentityOfflineFixture";
++import type { AliasReviewName } from "../playerAliasReview";
++
++/** Authored fixture expectations are intentionally separate from the source-only caller input. */
++export async function runIdentityDevelopmentComparison() {
++  const index = offlineIdentityIndex(), samples: IdentityEvaluationSample[] = [];
++  const cases: Array<{ id: string; text: string; names: string[]; expected: Array<string | null>; nonPlayer?: boolean; chunk?: boolean; badOffset?: boolean; publishedAt?: string }> = [
++    { id: "alias", text: "Sparky remains out.", names: ["Sparky"], expected: ["nhl:1001"] },
++    { id: "typo", text: "Milo Nort could return.", names: ["Milo Nort"], expected: ["nhl:1001"] },
++    { id: "ambiguous", text: "Vale practiced today.", names: ["Vale"], expected: [null] },
++    { id: "compound-row", text: "Émile St-Pierre — Luc Del Bel — Milo North", names: ["Émile St-Pierre", "Luc Del Bel", "Milo North"], expected: ["nhl:1004", "nhl:1005", "nhl:1001"], chunk: true },
++    { id: "heading", text: "Blackhawks lines", names: ["Blackhawks lines"], expected: [null], nonPlayer: true },
++    { id: "non-player", text: "Bluebird is a mascot.", names: ["Bluebird"], expected: [null], nonPlayer: true },
++    { id: "scoped-alias", text: "Little Spark returned to practice.", names: ["Little Spark"], expected: ["nhl:1001"], publishedAt: "2026-10-01T12:00:00Z" },
++    { id: "stale-alias", text: "Little Spark stayed home.", names: ["Little Spark"], expected: [null] },
++    { id: "bad-extractor", text: "Sparky did not practice.", names: ["Sparky"], expected: ["nhl:1001"], badOffset: true },
++  ];
++  for (const entry of cases) {
++    const source = offlineIdentitySource(entry.text, entry.publishedAt);
++    source.id = `synthetic:${entry.id}`; source.originalPostId = source.id; source.provenance.lineageKey = source.id;
++    const rows: AliasReviewName[] = (entry.chunk ? [entry.text] : entry.names).map(name => ({ raw_name: name, context_text: source.text, team_id: null,
++      metadata: entry.chunk ? { reason: "invalid_extraction" } : entry.badOffset ? { evidence: { start: 500, end: 506, text: name } } : undefined }));
++    const result = await evaluateLocalAliasIdentityReview({ enabled: true, index, source, rows, resolver: { enabled: true, kind: "mock", transport: async request =>
++      offlineIdentityReply(request, (_, i) => {
++        const text = request.content.occurrences[i]!.span.text;
++        const scripted: Record<string, string> = { Sparky: "nhl:1001", "Milo Nort": "nhl:1001", "Émile St-Pierre": "nhl:1004", "Luc Del Bel": "nhl:1005", "Milo North": "nhl:1001" };
++        if (text === "Little Spark" && request.content.source.publishedAt === "2026-10-01T12:00:00Z") return { status: "matched", canonicalId: "nhl:1001" };
++        return scripted[text] ? { status: "matched", canonicalId: scripted[text]! } : { status: text === "Bluebird" ? "not_player" : "ambiguous", canonicalId: null };
++      }) } });
++    samples.push({ id: source.id, lineageKey: source.provenance.lineageKey, sourceText: source.text, sourceHash: identityDigest(source.text), directoryHash: index.snapshot.hash,
++      cohort: "synthetic_development", result, heldReason: null, label: {
++        provenance: "synthetic_authored", complete: true, adjudicator: "fixture author (not independent human gold)", evidence: "Synthetic intended identities and structural controls; no efficacy inference",
++        sourceHash: identityDigest(source.text), directoryHash: index.snapshot.hash,
++        occurrences: entry.names.map((name, i) => ({ span: { start: source.text.indexOf(name), end: source.text.indexOf(name) + name.length, text: name },
++          kind: entry.expected[i] ? "player" : entry.nonPlayer ? "non_player" : "ambiguous", canonicalId: entry.expected[i]! })),
++      } });
++  }
++  // Retained observations are approved development inputs, explicitly NOT canonical-identity gold.
++  // No real directory export is available: keep that missingness instead of inventing NHL IDs/aliases.
++  const realIndex = indexPlayerIdentitySnapshot(buildPlayerIdentitySnapshot({ asOf: "2026-10-20T12:00:00Z",
++    provenance: "No approved real identity export supplied; empty context", records: [],
++    completeness: { status: "unknown", scope: "Retained real development observations", omittedRecords: null } }));
++  for (const record of observations.records) {
++    const source = offlineIdentitySource(record.text, record.publishedAt);
++    source.id = `retained:${record.id}`; source.originalPostId = record.sourceId; source.authorId = record.author;
++    source.url = `https://x.com/${record.author.replace(/^@/, "")}/status/${record.sourceId}`;
++    source.provenance = { kind: "approved_local", label: "Retained comparison observation; derived URL, not identity gold",
++      lineageKey: record.id.startsWith("S10") ? "development-family:S10-unverified-relation" : `development-family:${record.id}` };
++    let result = null;
++    if (record.receivedAt) {
++      source.receivedAt = record.receivedAt;
++      const names = record.id === "S06" ? ["Podkolzin", "RNH"] : record.id === "S04" ? [record.text.split("PP1: ")[1]!.split("\n")[0]!.trim()] : ["5-on-3 drill"];
++      result = await evaluateLocalAliasIdentityReview({ enabled: true, source, index: realIndex,
++        rows: names.map(name => ({ raw_name: name, context_text: record.text, team_id: null,
++          metadata: record.id === "S06" ? undefined : { reason: "invalid_extraction" } })) });
++    }
++    samples.push({ id: source.id, lineageKey: source.provenance.lineageKey, sourceText: source.text, sourceHash: identityDigest(source.text), directoryHash: realIndex.snapshot.hash,
++      cohort: "real_development", label: null, result, heldReason: record.receivedAt ? null : "missing_retained_receipt_time" });
++  }
++  return { samples, report: gradeLocalIdentityComparison(samples) };
++}
+diff --git a/web/lib/sources/tweetIdentityLocalReview.test.ts b/web/lib/sources/tweetIdentityLocalReview.test.ts
+new file mode 100644
+index 000000000..887bf3ea9
+--- /dev/null
++++ b/web/lib/sources/tweetIdentityLocalReview.test.ts
+@@ -0,0 +1,105 @@
++// @vitest-environment node
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import http from "node:http";
++import https from "node:https";
++import { evaluateLocalAliasIdentityReview } from "./tweetIdentityLocalReview";
++import { offlineIdentityIndex, offlineIdentityReply, offlineIdentitySource } from "./fixtures/tweetIdentityOfflineFixture";
++import type { AliasReviewName } from "./playerAliasReview";
++
++const index = offlineIdentityIndex();
++const input = (text = "Sparky remains out.", name = "Sparky") => ({ enabled: true, index, source: offlineIdentitySource(text),
++  rows: [{ raw_name: name, context_text: text, team_id: null }] as AliasReviewName[] });
++beforeEach(() => {
++  const block = () => { throw new Error("local identity integration must remain offline"); };
++  vi.stubGlobal("fetch", vi.fn(block));
++  vi.spyOn(http, "request").mockImplementation(block); vi.spyOn(https, "request").mockImplementation(block);
++});
++afterEach(() => {
++  expect(fetch).not.toHaveBeenCalled(); expect(http.request).not.toHaveBeenCalled(); expect(https.request).not.toHaveBeenCalled();
++  vi.restoreAllMocks(); vi.unstubAllGlobals();
++});
++
++describe("local alias-review integration", () => {
++  it("keeps the evaluation and model boundaries off before reading input/transport getters", async () => {
++    const read = vi.fn(() => { throw new Error("disabled getter"); });
++    const disabled = Object.defineProperties({ enabled: false }, { source: { get: read }, resolver: { get: read } });
++    expect(await evaluateLocalAliasIdentityReview(disabled as never)).toMatchObject({ status: "disabled", attempts: 0 });
++    const args = input(), resolver = Object.defineProperty({ enabled: false, kind: "mock" }, "transport", { get: read });
++    expect(await evaluateLocalAliasIdentityReview({ ...args, resolver } as never)).toMatchObject({ status: "evaluated", modelMode: "not_run", attempts: 0 });
++    expect(read).not.toHaveBeenCalled();
++  });
++  it("adapts the actual alias-review occurrence helper and unchanged baseline into a review-only proposal", async () => {
++    const args = input(), before = structuredClone(args);
++    const transport = vi.fn(async (request: Parameters<typeof offlineIdentityReply>[0]) => {
++      expect(request.content.source.text).toBe(args.source.text);
++      return offlineIdentityReply(request, () => ({ status: "matched", canonicalId: "nhl:1001" }));
++    });
++    const result = await evaluateLocalAliasIdentityReview({ ...args, resolver: { enabled: true, kind: "mock", transport } });
++    expect(result).toMatchObject({ status: "evaluated", canPublish: false, canWriteAliases: false, canChangeStatus: false, modelMode: "mock", attempts: 1,
++      occurrences: [{ baselineCandidateIds: [], baselineSelectedId: null, candidateIds: ["nhl:1001"], deterministicSelectedId: "nhl:1001",
++        modelProposal: { canonicalId: "nhl:1001" }, origin: "existing_alias_occurrence" }] });
++    expect(args).toEqual(before);
++  });
++  it("holds repeated unresolved names without choosing the first occurrence", async () => {
++    const args = input("Sparky is out. Sparky could return.");
++    expect(await evaluateLocalAliasIdentityReview(args)).toMatchObject({ status: "held", holds: [{ reason: "occurrence_not_uniquely_bound" }] });
++    args.rows[0]!.metadata = { evidence: { start: 15, end: 21, text: "Sparky" } };
++    expect(await evaluateLocalAliasIdentityReview(args)).toMatchObject({ status: "evaluated", occurrences: [{ span: { start: 15, end: 21 } }] });
++  });
++  it.each(["bad_span", "wrong_subject_span", "wrong_time", "wrong_text", "negative_span"])("holds malformed extraction before model dispatch: %s", async flaw => {
++    const args = flaw === "wrong_subject_span" ? input("Sparky remains out. Milo North practiced.") : input();
++    if (flaw === "bad_span") args.rows[0]!.metadata = { evidence: { start: 0, end: 6, text: "Wrong!" } };
++    if (flaw === "negative_span") args.rows[0]!.metadata = { evidence: { start: -1, end: 6 } };
++    if (flaw === "wrong_subject_span") args.rows[0]!.metadata = { evidence: { start: 20, end: 30, text: "Milo North" } };
++    if (flaw === "wrong_time") args.rows[0]!.metadata = { sourcePublishedAt: "2026-10-15T00:00:00Z" };
++    if (flaw === "wrong_text") args.rows[0]!.context_text = "different wrapper/quoted source";
++    const transport = vi.fn();
++    expect(await evaluateLocalAliasIdentityReview({ ...args, resolver: { enabled: true, kind: "mock", transport } })).toMatchObject({ status: "held", attempts: 0 });
++    expect(transport).not.toHaveBeenCalled();
++  });
++  it("splits only a unique directory-backed chunk and retains exact Unicode compound-name offsets", async () => {
++    const text = "🏒 Practice:\nÉmile St-Pierre — Luc Del Bel — Milo North", chunk = text.split("\n")[1]!;
++    const args = input(text, chunk); args.rows[0]!.metadata = { reason: "invalid_extraction" };
++    const result = await evaluateLocalAliasIdentityReview(args);
++    expect(result.status).toBe("evaluated");
++    expect(result.occurrences.map(o => [o.span.text, text.slice(o.span.start, o.span.end), o.origin])).toEqual(
++      ["Émile St-Pierre", "Luc Del Bel", "Milo North"].map(name => [name, name, "unique_directory_segmentation"]));
++    const unknown = input("Lomberg-Del Bel-Garland", "Lomberg-Del Bel-Garland"); unknown.rows[0]!.metadata = { reason: "invalid_extraction" };
++    expect(await evaluateLocalAliasIdentityReview(unknown)).toMatchObject({ status: "held", holds: [{ reason: "unparsed_or_ambiguous_name_chunk" }] });
++  });
++  it("holds headings and leaves shared team/parser-role metadata outside the resolver", async () => {
++    expect(await evaluateLocalAliasIdentityReview(input("Blackhawks lines", "Blackhawks lines"))).toMatchObject({ status: "held", holds: [{ reason: "heading_is_not_a_player" }] });
++    const text = "T11 lines:\nVale practiced.", args = input(text, "Vale");
++    args.rows[0]!.team_id = 11; args.rows[0]!.metadata = { situation: "es_defense" };
++    const result = await evaluateLocalAliasIdentityReview(args);
++    expect(result).toMatchObject({ status: "evaluated", notes: ["undated_team_hint_ignored", "parser_role_not_used_as_source_evidence"],
++      occurrences: [{ deterministicSelectedId: null, candidateIds: ["nhl:1002", "nhl:1003"] }] });
++  });
++  it("uses only adjacent explicit position text and never infers a historical team", async () => {
++    const args = input("G: Vale practiced.", "Vale");
++    const result = await evaluateLocalAliasIdentityReview({ ...args, resolver: { enabled: true, kind: "mock", transport: async request => {
++      expect(request.content.occurrences[0]!.positionHint).toEqual({ position: "G", evidence: { start: 0, end: 1, text: "G" } });
++      expect(request.content.occurrences[0]!.teamHint).toBeNull();
++      return offlineIdentityReply(request, () => ({ status: "matched", canonicalId: "nhl:1002" }));
++    } } });
++    expect(result.occurrences[0]!.modelProposal?.canonicalId).toBe("nhl:1002");
++    const historical = input("Milo North practiced.", "Milo North"); historical.source.publishedAt = "2025-01-01T00:00:00Z"; historical.rows[0]!.team_id = 11;
++    expect(await evaluateLocalAliasIdentityReview(historical)).toMatchObject({ occurrences: [{ activeMembership: "unknown" }], notes: ["undated_team_hint_ignored"] });
++  });
++  it.each(["G", "T1G", "@G:", "#G:"])("does not turn an initial/handle/hashtag into role evidence: %s", async prefix => {
++    const args = input(`${prefix} Vale practiced.`, "Vale");
++    const result = await evaluateLocalAliasIdentityReview({ ...args, resolver: { enabled: true, kind: "mock", transport: async request => {
++      expect(request.content.occurrences[0]!.positionHint).toBeNull();
++      return offlineIdentityReply(request, () => ({ status: "ambiguous", canonicalId: null }));
++    } } });
++    expect(result).toMatchObject({ occurrences: [{ deterministicSelectedId: null, modelProposal: { canonicalId: null } }] });
++  });
++  it("records schema/model failures as abstentions and refuses a provider mode", async () => {
++    expect(await evaluateLocalAliasIdentityReview({ ...input(), resolver: { enabled: true, kind: "mock", transport: async () => ({ canPublish: true }) } }))
++      .toMatchObject({ modelStatus: "held", modelReason: "invalid_or_failed_identity_response", occurrences: [{ modelProposal: null }] });
++    const transport = vi.fn();
++    expect(await evaluateLocalAliasIdentityReview({ ...input(), resolver: { enabled: true, kind: "provider", transport } } as never))
++      .toMatchObject({ status: "held", reason: "paid_trial_preflight_not_integrated", attempts: 0 });
++    expect(transport).not.toHaveBeenCalled();
++  });
++});
+diff --git a/web/lib/sources/tweetIdentityEvaluation.test.ts b/web/lib/sources/tweetIdentityEvaluation.test.ts
+new file mode 100644
+index 000000000..b315f3e78
+--- /dev/null
++++ b/web/lib/sources/tweetIdentityEvaluation.test.ts
+@@ -0,0 +1,54 @@
++// @vitest-environment node
++import { describe, expect, it } from "vitest";
++import { gradeLocalIdentityComparison } from "./tweetIdentityEvaluation";
++import { runIdentityDevelopmentComparison } from "./fixtures/tweetIdentityDevelopmentComparison";
++
++describe("offline comparison provenance and matched denominators", () => {
++  it("separates synthetic plumbing from ungraded real development and an empty independent holdout", async () => {
++    const { report } = await runIdentityDevelopmentComparison();
++    expect(report.cohorts).toMatchObject([
++      { cohort: "synthetic_development", samples: 9, gradedSamples: 9, mockArmSamples: 9, interpretation: "synthetic_plumbing_only_not_model_accuracy" },
++      { cohort: "real_development", samples: 4, gradedSamples: 0, ungradedSamples: 4, distinctLineages: 3 },
++      { cohort: "real_holdout", samples: 0, gradedSamples: 0 },
++    ]);
++    const alias = report.cases.find(c => c.id === "synthetic:alias")!.occurrences[0]!;
++    expect(alias).toMatchObject({ baselineCandidateIds: [], deterministicSelectedId: "nhl:1001", modelProposal: { canonicalId: "nhl:1001" } });
++    const typo = report.cases.find(c => c.id === "synthetic:typo")!.occurrences[0]!;
++    expect(typo).toMatchObject({ baselineSelectedId: null, deterministicSelectedId: null, modelProposal: { canonicalId: "nhl:1001" } });
++    expect(report.cases.find(c => c.id === "retained:S10A")).toMatchObject({ labelStatus: "ungraded", reason: "missing_retained_receipt_time" });
++    expect(report.cohorts.every(c => c.realModelAccuracy === null && c.certaintyInflation === null)).toBe(true);
++  });
++  it("counts wrong IDs, non-player assignments and abstentions separately from retrieval coverage", async () => {
++    const { samples } = await runIdentityDevelopmentComparison();
++    const alias = structuredClone(samples.find(s => s.id === "synthetic:alias")!);
++    alias.result!.occurrences[0]!.deterministicSelectedId = "nhl:1002";
++    const nonPlayer = structuredClone(samples.find(s => s.id === "synthetic:non-player")!);
++    nonPlayer.result!.occurrences[0]!.deterministicSelectedId = "nhl:1001";
++    const report = gradeLocalIdentityComparison([alias, nonPlayer]);
++    expect(report.cohorts[0]!.arms.deterministic).toMatchObject({ expectedPlayers: 1, retrievalHits: 1, assignments: 2, wrongPlayers: 2,
++      nonPlayerCases: 1, nonPlayerAssignments: 1, abstentions: 0 });
++    expect(report.cohorts[0]!.arms.baseline).toMatchObject({ assignments: 0, abstentions: 2 });
++  });
++  it("rejects duplicate documents, cross-cohort lineage leaks and missing independent holdout labels", async () => {
++    const { samples } = await runIdentityDevelopmentComparison();
++    expect(() => gradeLocalIdentityComparison([samples[0]!, { ...samples[0]!, id: "duplicate" }])).toThrow("duplicate_or_cross_cohort_source_lineage");
++    const a = samples[0]!, b = { ...samples[1]!, lineageKey: a.lineageKey, cohort: "real_development" as const, result: null, label: null };
++    expect(() => gradeLocalIdentityComparison([a, b])).toThrow("duplicate_or_cross_cohort_source_lineage");
++    expect(() => gradeLocalIdentityComparison([{ ...samples[1]!, cohort: "real_holdout", label: null }])).toThrow("holdout_requires_independent_identity_adjudication");
++  });
++  it("rejects changed source/directory bindings and malformed label spans without relabeling provisional real data", async () => {
++    const { samples } = await runIdentityDevelopmentComparison();
++    const altered = structuredClone(samples[0]!); altered.label!.occurrences[0]!.span.text = "invented";
++    expect(() => gradeLocalIdentityComparison([altered])).toThrow("invalid_or_unbound_identity_labels");
++    const mismatch = structuredClone(samples[0]!); mismatch.result!.directoryHash = "other";
++    expect(() => gradeLocalIdentityComparison([mismatch])).toThrow("evaluation_input_binding_mismatch");
++    const provisional = { ...samples[0]!, cohort: "real_development" as const };
++    expect(gradeLocalIdentityComparison([provisional]).cohorts[1]).toMatchObject({ gradedSamples: 0, ungradedSamples: 1 });
++  });
++  it("does not score incomplete annotations as if omitted identities were non-players", async () => {
++    const { samples } = await runIdentityDevelopmentComparison();
++    const incomplete = structuredClone(samples[0]!); incomplete.label!.complete = false;
++    expect(gradeLocalIdentityComparison([incomplete]).cohorts[0]).toMatchObject({ gradedSamples: 0, ungradedSamples: 1,
++      arms: { deterministic: { assignments: 0, wrongPlayers: 0, expectedPlayers: 0 } } });
++  });
++});
+diff --git a/web/scripts/run-identity-offline-comparison.ts b/web/scripts/run-identity-offline-comparison.ts
+new file mode 100644
+index 000000000..70ee410c1
+--- /dev/null
++++ b/web/scripts/run-identity-offline-comparison.ts
+@@ -0,0 +1,17 @@
++import { mkdirSync, writeFileSync } from "node:fs";
++import { resolve } from "node:path";
++import { runIdentityDevelopmentComparison } from "../lib/sources/fixtures/tweetIdentityDevelopmentComparison";
++
++async function main() {
++  const { report } = await runIdentityDevelopmentComparison();
++  const directory = resolve(__dirname, "../../tasks/artifacts/luna-identity-offline-2026-10-20");
++  mkdirSync(directory, { recursive: true });
++  const path = resolve(directory, "LOCAL-COMPARISON.json");
++  writeFileSync(path, JSON.stringify({ mode: "offline_development_only", resolver: "scripted_mock",
++    paidRequests: 0, newProviderSpendUsd: 0, canPublish: false, ...report }, null, 2) + "\n");
++  process.stdout.write(`${path}\n`);
++  for (const cohort of report.cohorts) process.stdout.write(JSON.stringify({ cohort: cohort.cohort, samples: cohort.samples,
++    gradedSamples: cohort.gradedSamples, ungradedSamples: cohort.ungradedSamples, mockRequests: cohort.mockRequests }) + "\n");
++}
++
++main().catch(() => { process.stderr.write("Offline identity comparison failed\n"); process.exitCode = 1; });

@@ -218,3 +218,119 @@ describe("ownership-trends data contract", () => {
     }
   );
 });
+
+describe("ownership snapshot provenance", () => {
+  const request = (playerIds: string) => ({ method: "GET", query: { playerIds, season: "2026" } }) as any;
+  function database(tables: Record<string, Array<Record<string, unknown>>>) {
+    const reads: string[] = [];
+    createClientMock.mockReturnValue({ from(table: string) {
+      reads.push(table);
+      let rows = tables[table] ?? [];
+      const query = {
+        select: () => query, order: () => query, range: () => query,
+        in: (key: string, ids: unknown[]) => { rows = rows.filter(row => ids.map(String).includes(String(row[key]))); return query; },
+        eq: (key: string, value: unknown) => { rows = rows.filter(row => row[key] === value); return query; },
+        then: (resolve: (result: unknown) => unknown) => Promise.resolve({ data: rows.slice(0, 1000), count: rows.length, error: null }).then(resolve)
+      };
+      return query;
+    } });
+    return reads;
+  }
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://unit-tests.supabase.invalid";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "synthetic-service-role-key";
+  });
+
+  it.each([
+    [0, 0], [44, 44], ["0", 0], ["44.5", 44.5], [null, null], [undefined, null],
+    ["", null], ["   ", null], [false, null], [true, null], ["invalid", null],
+    ["1e1", null], ["0x10", null], [[], null], [{}, null], [-1, null], [101, null], [Infinity, null]
+  ])("keeps malformed ownership unknown and actual zero known (%j)", async (value, expected) => {
+    database({ yahoo_nhl_player_map_read: [{ nhl_player_id: 12, yahoo_player_id: 112 }],
+      yahoo_players_with_normalized_history: [{ player_id: "112", season: 2026, percent_ownership: value }] });
+    const response = createMockRes();
+    await ownershipSnapshotsHandler(request("12"), response);
+    expect(response.statusCode).toBe(200);
+    expect(response.body.players[0].ownership).toBe(expected);
+  });
+
+  it("keeps each last valid observation's own date rather than another player's or an invalid newer point", async () => {
+    database({ yahoo_nhl_player_map_read: [{ nhl_player_id: 12, yahoo_player_id: 112 }, { nhl_player_id: 13, yahoo_player_id: 113 }],
+      yahoo_players_with_normalized_history: [
+        { player_id: "112", season: 2026, percent_ownership: 75, ownership_timeline: [{ date: "2026-10-18", value: 0 }, { date: "2026-10-22", value: "" }] },
+        { player_id: "113", season: 2026, ownership_timeline: [{ date: "2026-10-21", value: "45" }] }
+      ] });
+    const response = createMockRes();
+    await ownershipSnapshotsHandler(request("12,13"), response);
+    expect(response.body.players).toEqual([
+      { playerId: 12, ownership: 0, observedOn: "2026-10-18" },
+      { playerId: 13, ownership: 45, observedOn: "2026-10-21" }
+    ]);
+    expect(response.body.sourceDate).toBe("2026-10-21");
+  });
+
+  it("does not equate an unresolved NHL id to a Yahoo id", async () => {
+    const reads = database({ yahoo_players_with_normalized_history: [{ player_id: "12", season: 2026, percent_ownership: 99 }] });
+    const response = createMockRes();
+    await ownershipSnapshotsHandler(request("12"), response);
+    expect(response.body.players).toEqual([{ playerId: 12, ownership: null, observedOn: null }]);
+    expect(reads).not.toContain("yahoo_players_with_normalized_history");
+  });
+
+  it.each(["mapping", "name"])("does not choose one of conflicting %s identities", async mode => {
+    database({ yahoo_nhl_player_map_read: mode === "mapping" ? [{ nhl_player_id: 12, yahoo_player_id: 112 }, { nhl_player_id: 12, yahoo_player_id: 113 }] : [],
+      players: [{ id: 12, fullName: "Same Name" }],
+      yahoo_players_with_normalized_history: [
+        { player_id: "112", full_name: "Same Name", season: 2026, ownership_timeline: [{ date: "2026-10-20", value: 15 }] },
+        { player_id: "113", full_name: "Same Name", season: 2026, ownership_timeline: [{ date: "2026-10-21", value: 85 }] }
+      ] });
+    const response = createMockRes();
+    await ownershipSnapshotsHandler(request("12"), response);
+    expect(response.body.players).toEqual([{ playerId: 12, ownership: null, observedOn: null }]);
+  });
+
+  it("fails closed on a truncated ownership response", async () => {
+    database({ yahoo_nhl_player_map_read: [{ nhl_player_id: 12, yahoo_player_id: 112 }],
+      yahoo_players_with_normalized_history: Array.from({ length: 1001 }, () => ({ player_id: "112", season: 2026, percent_ownership: 50 })) });
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const response = createMockRes();
+      await ownershipSnapshotsHandler(request("12"), response);
+      expect(response.statusCode).toBe(500);
+      expect(response.body).toEqual({ success: false, error: "OWNERSHIP_SNAPSHOTS_UNAVAILABLE" });
+    } finally { log.mockRestore(); }
+  });
+
+  it("bounds the whole request before any database reads", async () => {
+    const reads = database({});
+    const response = createMockRes();
+    await ownershipSnapshotsHandler(request(Array.from({ length: 501 }, (_, index) => index + 1).join(",")), response);
+    expect(response.statusCode).toBe(400);
+    expect(reads).toEqual([]);
+  });
+
+  it("deduplicates requests and retains an unambiguous name fallback without treating request time as source time", async () => {
+    const reads = database({ players: [{ id: 12, fullName: "Only Match" }],
+      yahoo_players_with_normalized_history: [{ player_id: "112", full_name: "Only Match", season: 2026,
+        ownership_timeline: [{ date: "2026-10-18", value: 0 }] }] });
+    const response = createMockRes();
+    await ownershipSnapshotsHandler(request("12,12"), response);
+    expect(response.statusCode).toBe(200);
+    expect(response.body.players).toEqual([{ playerId: 12, ownership: 0, observedOn: "2026-10-18" }]);
+    expect(reads).toHaveLength(4);
+  });
+
+  it("accepts the 500-player bound with one mapping and one ownership query", async () => {
+    const ids = Array.from({ length: 500 }, (_, index) => index + 1);
+    const reads = database({ yahoo_nhl_player_map_read: ids.map(id => ({ nhl_player_id: id, yahoo_player_id: id + 1000 })),
+      yahoo_players_with_normalized_history: ids.map(id => ({ player_id: String(id + 1000), season: 2026,
+        ownership_timeline: [{ date: "2026-10-21", value: 0 }] })) });
+    const response = createMockRes();
+    await ownershipSnapshotsHandler(request(ids.join(",")), response);
+    expect(response.statusCode).toBe(200);
+    expect(response.body.players).toHaveLength(500);
+    expect(reads).toHaveLength(2);
+    expect(response.body.players.every((row: any) => row.ownership === 0 && row.observedOn === "2026-10-21")).toBe(true);
+  });
+});

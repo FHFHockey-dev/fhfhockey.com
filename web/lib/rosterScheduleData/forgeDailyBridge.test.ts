@@ -61,6 +61,16 @@ describe("FORGE daily bridge", () => {
     expect(s1[1].issuedAt).toBe("2026-10-19T18:00:00.000Z");
   });
 
+  it("keeps a complete exact-game forecast when the newer game's learned head is missing", () => {
+    const data = inputs();
+    data.runs.push({ run_id: "r3", as_of_date: "2026-10-21", created_at: "2026-10-19T17:00:00Z", git_sha: "ghi" });
+    data.skaters.push({ ...skater("r3", "2026-10-21", 2, 101, 10), proj_assists_es: null } as unknown as ReturnType<typeof skater>);
+    const { forecasts } = buildForgeDailyBridgeForecasts(data, players, games, now, 20262027, policy);
+    const rows = forecasts.filter(row => row.playerId === "s1");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ gameId: "1", revisionId: `${FORGE_DAILY_BRIDGE_VERSION}:r2`, stats: { GOALS: 0.35, ASSISTS: 0.45 } });
+  });
+
   it("keeps a skater's own-game line when his team's newer run omits him, withholding only re-aimed copies", () => {
     // r2 (day D) projects s1 and s2 for game 1; r3 (D+1) projects only s1, for game 2.
     const data = inputs();

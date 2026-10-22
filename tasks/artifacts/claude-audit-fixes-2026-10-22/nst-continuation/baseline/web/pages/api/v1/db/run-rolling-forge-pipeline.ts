@@ -1,0 +1,1774 @@
+import { parseQueryBoolean } from "lib/api/queryParams";
+import {
+  buildEndpointScanSummary,
+  type EndpointScanSummary
+} from "lib/api/scanSummary";
+import type { NextApiRequest, NextApiResponse } from "next";
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
+import adminOnly from "utils/adminOnlyMiddleware";
+import { FORGE_COMPATIBILITY_INVENTORY } from "lib/projections/compatibilityInventory";
+import supabase from "lib/supabase/server";
+import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
+import {
+  parseRollingExecutionProfile,
+  ROLLING_FORGE_PIPELINE_BUDGETS_MS,
+  type RollingForgePipelineMode
+} from "lib/rollingPlayerOperationalPolicy";
+import {
+  getRollingForgeDependencyContract,
+  getRollingForgePipelineSpec,
+  getRollingForgeStagesForMode,
+  type RollingForgePipelineStageId
+} from "lib/rollingForgePipeline";
+import {
+  acquireRollingForgeStage,
+  advanceRollingForgeStage,
+  buildRollingForgeRunScopeKey,
+  finishRollingForgeStage,
+  isRollingForgeStageLeaseDead,
+  readRollingForgeRunState,
+  readRollingForgeStageFailedAttempts,
+  readRollingForgeStageKills,
+  recordRollingForgeStageKill
+} from "lib/rollingForgePipelineRunState";
+
+import updateGamesHandler from "./update-games";
+import updateTeamsHandler from "./update-teams";
+import updatePlayersHandler from "./update-players";
+import updateNstGamelogHandler from "./update-nst-gamelog";
+import updateWgoSkatersHandler from "./update-wgo-skaters";
+import updateWgoTotalsHandler from "./update-wgo-totals";
+import updateLineCombinationsHandler from "./update-line-combinations";
+import updatePowerPlayCombinationsBatchHandler from "./update-power-play-combinations";
+import updateRollingPlayerAveragesHandler from "./update-rolling-player-averages";
+import ingestProjectionInputsHandler from "./ingest-projection-inputs";
+import shiftChartsHandler from "./shift-charts";
+import buildProjectionDerivedHandler from "./build-projection-derived-v2";
+import updateGoalieProjectionsV2Handler from "./update-goalie-projections-v2";
+import runProjectionV2Handler from "./run-projection-v2";
+import runProjectionAccuracyHandler from "./run-projection-accuracy";
+
+type StepStatus = "success" | "failed" | "skipped" | "partial";
+// "pending" stages wait for the next invocation of a resumable run.
+type StageStatus = StepStatus | "pending";
+
+type StepResult = {
+  id: string;
+  route: string;
+  status: StepStatus;
+  statusCode: number;
+  durationMs: number;
+  summary: unknown;
+  query: Record<string, string>;
+  reason?: string;
+  // Set when a source shortfall was downgraded so the stage still completes.
+  degraded?: "nst_source_unavailable";
+};
+
+type StageResult = {
+  id: RollingForgePipelineStageId;
+  label: string;
+  status: StageStatus;
+  blocking: boolean;
+  durationMs: number;
+  reason?: string;
+  completedEarlier?: boolean;
+  steps: StepResult[];
+};
+
+type TerminationReceipt = {
+  state:
+    | "not_started"
+    | "completed"
+    | "stopped_on_blocking_failure"
+    | "continuation_required";
+  resumeRequired: boolean;
+  nextStartDate: string | null;
+  // Set for the scheduled (resumable) run and for a partial one-shot stage.
+  runKey?: string;
+  stagesRun?: number;
+  nextStageId?: RollingForgePipelineStageId | null;
+  reason?:
+    | "runtime_budget"
+    | "stage_partial"
+    | "stage_in_progress_elsewhere"
+    | "state_error"
+    | "retry_on_next_invocation"
+    | "attempts_exhausted";
+  rollingResumeFrom?: number | null;
+  detail?: string;
+};
+
+type ResponseBody = {
+  success: boolean;
+  mode: RollingForgePipelineMode;
+  dateWindow: {
+    startDate: string;
+    endDate: string;
+    date: string;
+    rollingStartDate: string;
+    rollingEndDate: string;
+    sourceStartDate: string;
+    sourceEndDate: string;
+  };
+  durationMs: string;
+  runtimeBudget: {
+    budgetMs: number;
+    budgetLabel: string;
+    durationMs: number;
+    durationLabel: string;
+    withinBudget: boolean;
+  };
+  executionControls: {
+    includeDownstream: boolean;
+    includeAccuracy: boolean;
+    stopOnFailure: boolean;
+    // The query value; the scheduled run forces stopOnFailure on.
+    stopOnFailureRequested: boolean;
+  };
+  termination: TerminationReceipt;
+  downstreamSummary: {
+    stageId: "downstream_projection_consumers";
+    includesLegacyStartChartMaterialization: boolean;
+    legacyStartChartMaterializerRetired: boolean;
+    includesAccuracyRefresh: boolean;
+    canonicalSkaterReadPath: string;
+    legacyMaterializerRoute: string | null;
+    notes: string[];
+  };
+  dependencyContract: ReturnType<typeof getRollingForgeDependencyContract>;
+  pipeline: ReturnType<typeof getRollingForgePipelineSpec>;
+  compatibilityInventory: typeof FORGE_COMPATIBILITY_INVENTORY;
+  scanSummary: EndpointScanSummary;
+  stages: StageResult[];
+  failureSummary?: {
+    failedStepCount: number;
+    // stepId is null when the run stopped on a stage it did not run (terminalStop).
+    firstFailure: { stageId: string; stepId: string | null; route: string; statusCode: number;
+      error: string | null; gameId: number | null; stage: string | null; reportedErrorCount: number;
+      code: string | null; endpoint: string | null; attempts: number | null; classification: string | null } | null;
+    // Set when the scheduled run stopped on a stage it will not take again.
+    terminalStop: { code: TerminalStopCode; stageId: RollingForgePipelineStageId } | null;
+    // Steps whose source shortfall was downgraded instead of failing the run.
+    degradedSteps: Array<{ stageId: string; stepId: string; code: string; reason: string | null }>;
+  };
+};
+
+type RouteHandler = (req: any, res: any) => Promise<void>;
+
+type TerminalStopCode = "attempts_exhausted" | "stage_killed";
+
+function getParam(req: NextApiRequest, key: string): string | null {
+  const value = req.query[key];
+  if (typeof value === "string" && value.trim()) return value.trim();
+  return null;
+}
+
+function parseBooleanParam(value: string | null, fallback = false) {
+  const parsed = parseQueryBoolean(value ?? undefined);
+  return parsed ?? fallback;
+}
+
+function parseMode(value: string | null): RollingForgePipelineMode {
+  return parseRollingExecutionProfile(value);
+}
+
+function isoDateOnly(input: Date | string) {
+  const value = typeof input === "string" ? new Date(input) : input;
+  return value.toISOString().slice(0, 10);
+}
+
+function todayEtDateOnly() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value ?? "1970";
+  const month = parts.find((part) => part.type === "month")?.value ?? "01";
+  const day = parts.find((part) => part.type === "day")?.value ?? "01";
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(date: string, delta: number) {
+  const value = new Date(`${date}T00:00:00.000Z`);
+  value.setUTCDate(value.getUTCDate() + delta);
+  return isoDateOnly(value);
+}
+
+function parseDateWindow(req: NextApiRequest, implicitWindow: boolean) {
+  const date = getParam(req, "date") ?? todayEtDateOnly();
+  const startDate = getParam(req, "startDate") ?? date;
+  const endDate = getParam(req, "endDate") ?? date;
+  // The scheduled run fires before today's games, so its rolling step and the
+  // source steps that read played games (NST and WGO skater ingestion,
+  // power-play combinations) use the last completed day. Incremental NST from
+  // today would not include yesterday. Explicit windows stay as requested.
+  const completedDate = addDays(date, -1);
+  return {
+    date,
+    startDate,
+    endDate,
+    rollingStartDate: implicitWindow ? completedDate : startDate,
+    rollingEndDate: implicitWindow ? completedDate : endDate,
+    sourceStartDate: implicitWindow ? completedDate : startDate,
+    sourceEndDate: implicitWindow ? completedDate : endDate
+  };
+}
+
+// The scheduled (implicit-window) run is resumable. Vercel kills the function
+// at 240 s (vercel.json maxDuration), so each invocation stops taking work
+// well before that, stores its progress, and the next invocation continues.
+const RESUMABLE_INVOCATION_BUDGET_MS = 180_000;
+// A stage of unknown length starts after the first one only while it still
+// has about 150 s before the kill.
+const RESUMABLE_STAGE_START_CUTOFF_MS = 90_000;
+// The rolling step bounds itself; start it only with this much claim time left.
+const MIN_ROLLING_CLAIM_MS = 30_000;
+// run-projection-v2 stops at its own deadline and resumes its run on the next
+// call; give it at least this long.
+const MIN_PROJECTION_RUNTIME_MS = 30_000;
+// Outlives the 240 s kill, so a dead invocation's stage frees up before the
+// next 5-minute call.
+const RESUMABLE_STAGE_LEASE_MS = 270_000;
+// A failing blocking stage is retried once, on the next invocation.
+const MAX_BLOCKING_STAGE_ATTEMPTS = 2;
+// An invocation that dies holding a stage (its lease expires while
+// `running`) is recorded; progress is durable, so the stage is taken again,
+// but after this many dead invocations the run stops instead of looping.
+const MAX_KILLED_STAGE_ATTEMPTS = 3;
+// Companion state row (like `<stage id>:kills`) that is `complete` once the
+// goalie step has succeeded in the run, so later invocations skip it.
+const GOALIE_STEP_DONE_KEY = "projection_execution:goalie" as RollingForgePipelineStageId;
+// The rolling route abandons in-flight players here, before the 240 s kill,
+// so it always answers and the cursor it reports is real.
+const ROLLING_IN_FLIGHT_DEADLINE_MS = 220_000;
+// The rolling stage runs in chunks of players and stores the cursor after
+// each one, so a dead invocation loses at most one chunk. The first chunk is
+// a fixed size; later ones are sized from the measured time per player.
+const ROLLING_FIRST_CHUNK_PLAYERS = 16;
+const ROLLING_MIN_CHUNK_PLAYERS = 4;
+const ROLLING_MAX_CHUNK_PLAYERS = 60;
+// Share of the remaining claim budget a chunk may plan to use.
+const ROLLING_CHUNK_BUDGET_SHARE = 0.75;
+// A game whose start was this long ago is treated as completed for line and
+// power-play context.
+const GAME_COMPLETION_GRACE_MS = 3 * 60 * 60 * 1000;
+
+function buildRuntimeBudgetSummary(
+  mode: RollingForgePipelineMode,
+  durationMs: number
+) {
+  const budgetMs = ROLLING_FORGE_PIPELINE_BUDGETS_MS[mode];
+  return {
+    budgetMs,
+    budgetLabel: formatDurationMsToMMSS(budgetMs),
+    durationMs,
+    durationLabel: formatDurationMsToMMSS(durationMs),
+    withinBudget: durationMs <= budgetMs
+  };
+}
+
+function buildQueryString(query: Record<string, string>) {
+  const params = new URLSearchParams(query);
+  const rendered = params.toString();
+  return rendered ? `?${rendered}` : "";
+}
+
+function readNumeric(value: unknown): number | null {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function buildPipelineScanSummary(args: {
+  requestedDate: string;
+  activeDataDate: string;
+  success: boolean;
+  stageResults: StageResult[];
+}) {
+  const failedStages = args.stageResults.filter(
+    (stage) => stage.status === "failed"
+  );
+  const blockingFailures = failedStages.filter((stage) => stage.blocking);
+  const stepSummaries = args.stageResults.flatMap((stage) => stage.steps);
+  const rollingSummary = stepSummaries.find(
+    (step) => step.id === "update-rolling-player-averages"
+  )?.summary as Record<string, any> | undefined;
+  const projectionSummary = stepSummaries.find(
+    (step) => step.id === "run-projection-v2"
+  )?.summary as Record<string, any> | undefined;
+  const accuracySummary = stepSummaries.find(
+    (step) => step.id === "run-projection-accuracy"
+  )?.summary as Record<string, any> | undefined;
+
+  const freshnessBlockers =
+    readNumeric(rollingSummary?.freshnessGate?.blockerCount) ?? 0;
+  const projectionPreflightFailures = Array.isArray(
+    projectionSummary?.preflight?.gates
+  )
+    ? projectionSummary.preflight.gates.filter(
+        (gate: any) => gate?.status === "FAIL"
+      ).length
+    : 0;
+  const accuracyPreflightFailures = Array.isArray(
+    accuracySummary?.preflight?.gates
+  )
+    ? accuracySummary.preflight.gates.filter(
+        (gate: any) => gate?.status === "FAIL"
+      ).length
+    : 0;
+  const blockingIssueCount =
+    freshnessBlockers +
+    projectionPreflightFailures +
+    accuracyPreflightFailures +
+    blockingFailures.length;
+
+  return buildEndpointScanSummary({
+    surface: "rolling_forge_pipeline_operator",
+    requestedDate: args.requestedDate,
+    activeDataDate: args.activeDataDate,
+    fallbackApplied: false,
+    status:
+      blockingFailures.length > 0
+        ? "blocked"
+        : args.success
+          ? "ready"
+          : "partial",
+    rowCounts: {
+      rollingPlayerRowsUpserted: readNumeric(
+        rollingSummary?.runSummary?.rowsUpserted
+      ),
+      projectionPlayerRowsUpserted: readNumeric(
+        projectionSummary?.playerRowsUpserted
+      ),
+      projectionTeamRowsUpserted: readNumeric(
+        projectionSummary?.teamRowsUpserted
+      ),
+      projectionGoalieRowsUpserted: readNumeric(
+        projectionSummary?.goalieRowsUpserted
+      ),
+      accuracyRowsUpserted: readNumeric(accuracySummary?.rowsUpserted)
+    },
+    blockingIssueCount,
+    notes: [
+      ...blockingFailures.map(
+        (stage) =>
+          `${stage.label} failed${stage.reason ? `: ${stage.reason}` : "."}`
+      ),
+      freshnessBlockers > 0
+        ? `Rolling freshness gate reported ${freshnessBlockers} blocker(s).`
+        : null,
+      projectionPreflightFailures > 0
+        ? `Projection execution reported ${projectionPreflightFailures} failed preflight gate(s).`
+        : null,
+      accuracyPreflightFailures > 0
+        ? `Accuracy refresh reported ${accuracyPreflightFailures} failed preflight gate(s).`
+        : null
+    ]
+  });
+}
+
+function createMockRes() {
+  const res: any = {
+    statusCode: 200,
+    headers: {} as Record<string, string | string[]>,
+    body: null as unknown,
+    headersSent: false,
+    setHeader(key: string, value: string | string[]) {
+      this.headers[key] = value;
+    },
+    status(code: number) {
+      this.statusCode = code;
+      return this;
+    },
+    json(payload: unknown) {
+      this.body = payload;
+      this.headersSent = true;
+      return this;
+    },
+    send(payload: unknown) {
+      this.body = payload;
+      this.headersSent = true;
+      return this;
+    }
+  };
+  return res;
+}
+
+// A budget stop from the rolling or projection route (207, operationStatus
+// "partial", resume.required) is unfinished work, not a failure. The stage
+// stays running, uses no failed attempt, and the next invocation resumes it.
+function isPartialResume(statusCode: number, body: unknown) {
+  if (statusCode !== 207 || !body || typeof body !== "object") return false;
+  const record = body as Record<string, any>;
+  return (
+    record.operationStatus === "partial" && record.resume?.required === true
+  );
+}
+
+/**
+ * NST step resume: the consumer side of the pipeline <-> update-nst-gamelog
+ * contract (tasks/artifacts/cross-platform/2026-10-21-claude-to-codex-pipeline-
+ * nst-contract.md with its ~01:00Z amendment, accepted by Codex in
+ * 2026-10-20-codex-to-claude-pipeline-nst-contract.md). INACTIVE until Codex
+ * ships it; enable only after review. With it enabled:
+ * - 200 with success true finishes the step (operationStatus
+ *   "skipped_no_completed_games" is the expected no-work skip); WGO follows.
+ * - 207, operationStatus "continuation_required", resume.required true and
+ *   resume.request.query: the stage pauses, and the next invocation re-calls
+ *   NST with that query and a fresh deadlineAt. WGO waits.
+ * - Anything else (>= 400, success false, a malformed continuation) fails the
+ *   step and blocks the stage: nothing advances.
+ * The query is stored in the stage's projection_pipeline_state row, which has
+ * no JSON column: the replay query must be the query this pipeline sent plus
+ * one `cursor`, a positive integer past the cursor sent, kept in the
+ * forward-only cursor_game_id. Any other query is uncertain and fails the step.
+ */
+const nstStepResume = { enabled: false };
+// Terminal audit headroom kept back from the NST step's deadline.
+const NST_DEADLINE_HEADROOM_MS = 20_000;
+// vercel.json maxDuration: an explicit run never gets longer than this.
+const FUNCTION_MAX_DURATION_MS = 240_000;
+
+type NstOutcome =
+  | { kind: "finished"; skipped: boolean }
+  | { kind: "continuation"; cursor: number }
+  | { kind: "blocked"; reason: string };
+
+function readNstOutcome(step: StepResult, sentCursor: number | null): NstOutcome {
+  const body = step.summary as Record<string, any> | null;
+  const record = body && typeof body === "object" ? body : null;
+  if (step.statusCode === 200 && record?.success !== false && !record?.error) {
+    return { kind: "finished", skipped: record?.operationStatus === "skipped_no_completed_games" };
+  }
+  if (step.statusCode !== 207 || record?.operationStatus !== "continuation_required") {
+    return { kind: "blocked", reason: "NST did not finish or return a continuation; the stage stops here." };
+  }
+  const query = record.resume?.required === true ? record.resume.request?.query : null;
+  if (!query || typeof query !== "object" || Array.isArray(query)) {
+    return { kind: "blocked", reason: "NST continuation has no replayable resume.request.query." };
+  }
+  const { cursor: rawCursor, deadlineAt: _replayDeadline, ...scope } = query as Record<string, unknown>;
+  const { cursor: _sentCursor, deadlineAt: _sentDeadline, ...sentScope } = step.query;
+  const sameScope =
+    Object.keys(scope).length === Object.keys(sentScope).length &&
+    Object.entries(sentScope).every(([key, value]) => scope[key] === value);
+  if (!sameScope) {
+    return { kind: "blocked", reason: "NST continuation query does not replay the request this pipeline sent." };
+  }
+  const cursor = typeof rawCursor === "string" && /^[1-9]\d*$/.test(rawCursor) ? Number(rawCursor) : NaN;
+  if (!Number.isSafeInteger(cursor) || cursor <= (sentCursor ?? 0)) {
+    return { kind: "blocked", reason: "NST continuation cursor is not a positive integer past the cursor sent." };
+  }
+  return { kind: "continuation", cursor };
+}
+
+// The NST route answered, but the source left dates unresolved (NST down or
+// returning 5xx; an HTTP 520-527 origin outage answers 503 "source_down").
+// The run continues on WGO without that day's NST counts; route exceptions
+// and other HTTP errors still fail the step.
+function isNstSourceShortfall(step: StepResult): boolean {
+  const record = step.summary && typeof step.summary === "object"
+    ? step.summary as Record<string, any> : null;
+  const unresolved = record?.nstProgress?.sourceOutcomes?.unresolvedCount;
+  const answered = step.statusCode === 200 ||
+    (step.statusCode === 503 && record?.operationStatus === "source_down");
+  return answered && record?.success === false
+    && !(typeof record.error === "string" && record.error.trim())
+    && Number.isSafeInteger(unresolved) && unresolved > 0;
+}
+
+function classifyStepStatus(statusCode: number, body: unknown): StepStatus {
+  if (isPartialResume(statusCode, body)) return "partial";
+  if (statusCode >= 400) return "failed";
+  if (body && typeof body === "object") {
+    const record = body as Record<string, unknown>;
+    if (record.success === false) return "failed";
+    if (typeof record.error === "string" && record.error.trim()) return "failed";
+  }
+  return "success";
+}
+
+function readRollingNextResumeFrom(stage: StageResult): number | null {
+  if (stage.id === "upstream_skater_sources") {
+    const nst = stage.steps.find((step) => step.id === "update-nst-gamelog");
+    const outcome = nst?.status === "partial" ? readNstOutcome(nst, null) : null;
+    return outcome?.kind === "continuation" ? outcome.cursor : null;
+  }
+  // The rolling stage runs in chunks; the newest chunk carries the cursor.
+  for (const step of [...stage.steps].reverse()) {
+    if (step.id !== "update-rolling-player-averages") continue;
+    const value = readRollingStepNextResumeFrom(step);
+    if (value != null) return value;
+  }
+  return null;
+}
+
+function readRollingStepNextResumeFrom(step: StepResult): number | null {
+  const summary = step.summary as Record<string, any> | undefined;
+  const value =
+    summary?.resume?.nextResumeFrom ?? summary?.runSummary?.nextResumeFrom;
+  return Number.isSafeInteger(value) && value > 0 ? value : null;
+}
+
+async function invokeRouteStep(args: {
+  id: string;
+  route: string;
+  handler: RouteHandler;
+  method?: "GET" | "POST";
+  query?: Record<string, string>;
+}): Promise<StepResult> {
+  const startedAt = Date.now();
+  const query = args.query ?? {};
+  const req: any = {
+    method: args.method ?? "GET",
+    query,
+    headers: {
+      authorization: `Bearer ${process.env.CRON_SECRET ?? ""}`
+    },
+    url: `${args.route}${buildQueryString(query)}`
+  };
+  const res = createMockRes();
+
+  await args.handler(req, res);
+
+  return {
+    id: args.id,
+    route: args.route,
+    status: classifyStepStatus(res.statusCode, res.body),
+    statusCode: res.statusCode,
+    durationMs: Date.now() - startedAt,
+    summary: res.body,
+    query
+  };
+}
+
+type GameInRange = { id: number; startTime: string | null };
+
+async function listGamesInRange(
+  startDate: string,
+  endDate: string
+): Promise<GameInRange[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("games")
+    .select("id, startTime")
+    .gte("date", startDate)
+    .lte("date", endDate)
+    .order("date", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map((row) => {
+    const record = row as { id: number; startTime?: string | null };
+    return {
+      id: Number(record.id),
+      startTime: typeof record.startTime === "string" ? record.startTime : null
+    };
+  });
+}
+
+async function listGameIdsInRange(startDate: string, endDate: string) {
+  return (await listGamesInRange(startDate, endDate)).map((game) => game.id);
+}
+
+// Games that started long enough ago to be over. A game without a known
+// start time counts as completed, which the builders tolerate.
+function selectCompletedGameIds(games: GameInRange[], nowMs: number) {
+  return games
+    .filter((game) => {
+      if (!game.startTime) return true;
+      const startedAt = Date.parse(game.startTime);
+      return !Number.isFinite(startedAt) || startedAt + GAME_COMPLETION_GRACE_MS <= nowMs;
+    })
+    .map((game) => game.id);
+}
+
+// Completed games of the source date that still lack a line row for both
+// teams. Rolling reads this context per game, so a missing game degrades
+// every skater who played in it.
+async function listGamesMissingLineContext(gameIds: number[]) {
+  if (!supabase || gameIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from("lineCombinations")
+    .select("gameId, teamId")
+    .in("gameId", gameIds);
+  if (error) throw error;
+  const teamsByGame = new Map<number, Set<number>>();
+  for (const row of (data ?? []) as Array<{ gameId: number; teamId: number }>) {
+    const teams = teamsByGame.get(Number(row.gameId)) ?? new Set<number>();
+    teams.add(Number(row.teamId));
+    teamsByGame.set(Number(row.gameId), teams);
+  }
+  return gameIds.filter((gameId) => (teamsByGame.get(gameId)?.size ?? 0) < 2);
+}
+
+async function runStage(args: {
+  id: RollingForgePipelineStageId;
+  mode: RollingForgePipelineMode;
+  startDate: string;
+  endDate: string;
+  date: string;
+  rollingStartDate: string;
+  rollingEndDate: string;
+  sourceStartDate: string;
+  sourceEndDate: string;
+  rollingResumeFrom?: number | null;
+  nstResumeCursor?: number | null;
+  sourceDeadlineAtMs?: number;
+  // Epoch ms: the rolling stage starts no chunk and the route claims no
+  // player after this.
+  rollingClaimUntilMs?: number;
+  // Epoch ms: the rolling route abandons in-flight players after this.
+  rollingDeadlineMs?: number;
+  // Stores the rolling cursor after each chunk (the resumable run).
+  persistRollingCursor?: (cursor: number) => Promise<void>;
+  // Earlier failed attempts of the contextual stage in this run. Missing line
+  // context fails the stage once so the next invocation retries it; set only
+  // by the resumable run, a one-shot run just warns.
+  contextualFailedAttempts?: number;
+  projectionDeadlineMs?: number;
+  // The scheduled run also projects the next day's games when budget remains,
+  // so every team has a line for its next game a day ahead. The stage cursor
+  // counts the dates finished; a re-entry skips them (a finished date would
+  // otherwise start a new run).
+  projectNextDay?: boolean;
+  projectionDatesDone?: number;
+  persistProjectionDatesDone?: (done: number) => Promise<void>;
+  // The goalie step already succeeded in this run (stored by the resumable
+  // run; a one-shot run always runs it).
+  goalieStepDone?: boolean;
+  persistGoalieStepDone?: () => Promise<void>;
+  includeDownstream: boolean;
+  includeAccuracy: boolean;
+  useDurableProjectionBacklog: boolean;
+}): Promise<StageResult> {
+  const startedAt = Date.now();
+  const steps: StepResult[] = [];
+  // Set when a stage's loop stops with work left and no failure (rolling
+  // chunks at the claim budget, the next projection date at the deadline).
+  let stageUnfinished = false;
+  const isSingleDateDailyIncremental =
+    args.mode === "daily_incremental" && args.startDate === args.endDate;
+  const projectionInputStartDate = isSingleDateDailyIncremental
+    ? addDays(args.startDate, -14)
+    : args.startDate;
+  const projectionInputEndDate = args.endDate;
+  const derivedBuildStartDate = isSingleDateDailyIncremental
+    ? addDays(args.startDate, -7)
+    : args.startDate;
+  const derivedBuildEndDate = isSingleDateDailyIncremental
+    ? addDays(args.endDate, -1)
+    : args.endDate;
+
+  const addStep = async (step: {
+    id: string;
+    route: string;
+    handler: RouteHandler;
+    method?: "GET" | "POST";
+    query?: Record<string, string>;
+  }) => {
+    steps.push(await invokeRouteStep(step));
+  };
+
+  switch (args.id) {
+    case "core_entity_freshness":
+      await addStep({
+        id: "update-games",
+        route: "/api/v1/db/update-games",
+        handler: updateGamesHandler
+      });
+      await addStep({
+        id: "update-teams",
+        route: "/api/v1/db/update-teams",
+        handler: updateTeamsHandler
+      });
+      await addStep({
+        id: "update-players",
+        route: "/api/v1/db/update-players",
+        handler: updatePlayersHandler
+      });
+      break;
+    case "upstream_skater_sources": {
+      const nstCursor = nstStepResume.enabled ? (args.nstResumeCursor ?? null) : null;
+      const nst = await invokeRouteStep({
+        id: "update-nst-gamelog",
+        route: "/api/v1/db/update-nst-gamelog",
+        handler: updateNstGamelogHandler,
+        query: {
+          runMode: "incremental",
+          startDate: args.sourceStartDate,
+          // The implicit run names its one completed date; explicit windows
+          // pass through as before.
+          ...(args.useDurableProjectionBacklog ? { endDate: args.sourceEndDate } : {}),
+          ...(nstCursor != null ? { cursor: String(nstCursor) } : {}),
+          ...(args.sourceDeadlineAtMs != null
+            ? { deadlineAt: String(args.sourceDeadlineAtMs - NST_DEADLINE_HEADROOM_MS) }
+            : {})
+        }
+      });
+      steps.push(nst);
+      if (nst.status === "failed" && isNstSourceShortfall(nst)) {
+        const message = (nst.summary as Record<string, any>).message;
+        nst.status = "skipped";
+        nst.degraded = "nst_source_unavailable";
+        nst.reason = `NST source unavailable; this run continues on WGO without the day's NST counts. Backfill the date once NST returns.${
+          typeof message === "string" && message ? ` NST: ${message.slice(0, 200)}` : ""}`;
+      }
+      if (nstStepResume.enabled && !nst.degraded) {
+        const outcome = readNstOutcome(nst, nstCursor);
+        if (outcome.kind === "continuation") {
+          // WGO waits until NST finishes.
+          nst.status = "partial";
+          break;
+        }
+        if (outcome.kind === "blocked") {
+          nst.status = "failed";
+          nst.reason = outcome.reason;
+          break;
+        }
+        if (outcome.skipped) {
+          nst.status = "skipped";
+          nst.reason = "NST reported no completed games for the date.";
+        }
+      }
+      await addStep({
+        id: "update-wgo-skaters",
+        route: "/api/v1/db/update-wgo-skaters",
+        handler: updateWgoSkatersHandler,
+        query: {
+          action: "all",
+          startDate: args.sourceStartDate
+        }
+      });
+      await addStep({
+        id: "update-wgo-totals",
+        route: "/api/v1/db/update-wgo-totals",
+        handler: updateWgoTotalsHandler,
+        query: {
+          season: "current"
+        }
+      });
+      break;
+    }
+    case "contextual_builders": {
+      const sourceGames = await listGamesInRange(args.sourceStartDate, args.sourceEndDate);
+      const gameIds = sourceGames.map((game) => game.id);
+      const completedGameIds = selectCompletedGameIds(sourceGames, Date.now());
+      // The completed games of the source date are named explicitly: the
+      // recent-gap mode only repairs games whose team stats already landed,
+      // which left late games without line rows until later in the morning.
+      await addStep({
+        id: "update-line-combinations",
+        route: "/api/v1/db/update-line-combinations",
+        handler: updateLineCombinationsHandler,
+        query:
+          completedGameIds.length > 0
+            ? {
+                repairMode: "historical_backfill",
+                gameIds: completedGameIds.join(",")
+              }
+            : {
+                count: args.mode === "overnight" ? "25" : "10"
+              }
+      });
+      if (gameIds.length === 0) {
+        steps.push({
+          id: "update-power-play-combinations-batch",
+          route: "/api/v1/db/update-power-play-combinations",
+          status: "skipped",
+          statusCode: 200,
+          durationMs: 0,
+          summary: null,
+          query: {},
+          reason: "No games found in the selected date range."
+        });
+      } else {
+        await addStep({
+          id: "update-power-play-combinations-batch",
+          route: "/api/v1/db/update-power-play-combinations",
+          handler: updatePowerPlayCombinationsBatchHandler,
+          query: {
+            startDate: args.sourceStartDate,
+            endDate: args.sourceEndDate
+          }
+        });
+      }
+      if (completedGameIds.length > 0 && !steps.some((step) => step.status === "failed")) {
+        const verifyStartedAt = Date.now();
+        const missing = await listGamesMissingLineContext(completedGameIds);
+        const retry = missing.length > 0 && (args.contextualFailedAttempts ?? 1) === 0;
+        steps.push({
+          id: "verify-line-context",
+          route: "lineCombinations",
+          status: retry ? "failed" : "success",
+          statusCode: 200,
+          durationMs: Date.now() - verifyStartedAt,
+          summary: { completedGames: completedGameIds.length, missingLineContextGameIds: missing },
+          query: {},
+          reason:
+            missing.length === 0
+              ? `Every completed game of ${args.sourceStartDate} has line rows for both teams.`
+              : retry
+                ? `Line rows are missing for ${missing.length} completed game(s) (${missing.join(", ")}); the next invocation retries the stage.`
+                : `Line rows are still missing for ${missing.length} completed game(s) (${missing.join(", ")}); continuing with degraded line context.`
+        });
+      }
+      break;
+    }
+    case "rolling_player_recompute": {
+      const baseQuery = {
+        startDate: args.rollingStartDate,
+        endDate: args.rollingEndDate,
+        fastMode: "true",
+        executionProfile:
+          args.mode === "overnight"
+            ? "overnight"
+            : args.mode === "targeted_repair"
+              ? "targeted_repair"
+              : "daily_incremental",
+        // The contextual stage has just refreshed line and power-play context
+        // for the source date; a remaining source gap degrades the rows it
+        // touches and is reported, instead of blocking the whole day.
+        bypassFreshnessBlockers: "true"
+      };
+      const invokeRolling = (query: Record<string, string>) =>
+        invokeRouteStep({
+          id: "update-rolling-player-averages",
+          route: "/api/v1/db/update-rolling-player-averages",
+          handler: updateRollingPlayerAveragesHandler,
+          query: { ...baseQuery, ...query }
+        });
+      if (args.rollingClaimUntilMs == null) {
+        steps.push(
+          await invokeRolling({
+            ...(args.rollingDeadlineMs != null
+              ? { deadlineAt: String(args.rollingDeadlineMs) }
+              : {}),
+            ...(args.rollingResumeFrom != null
+              ? { resumeFrom: String(args.rollingResumeFrom) }
+              : {})
+          })
+        );
+        break;
+      }
+      // Chunked: every chunk returns and stores its cursor, so an invocation
+      // killed mid-stage loses at most one chunk of players.
+      let cursor = args.rollingResumeFrom ?? null;
+      let msPerPlayer: number | null = null;
+      while (true) {
+        const claimRemainingMs = args.rollingClaimUntilMs - Date.now();
+        if (claimRemainingMs < MIN_ROLLING_CLAIM_MS) {
+          stageUnfinished = true;
+          break;
+        }
+        const chunkPlayers =
+          msPerPlayer == null
+            ? ROLLING_FIRST_CHUNK_PLAYERS
+            : Math.min(
+                ROLLING_MAX_CHUNK_PLAYERS,
+                Math.max(
+                  ROLLING_MIN_CHUNK_PLAYERS,
+                  Math.floor((claimRemainingMs * ROLLING_CHUNK_BUDGET_SHARE) / msPerPlayer)
+                )
+              );
+        const step = await invokeRolling({
+          maxPlayers: String(chunkPlayers),
+          maxRuntimeMs: String(claimRemainingMs),
+          ...(args.rollingDeadlineMs != null
+            ? { deadlineAt: String(args.rollingDeadlineMs) }
+            : {}),
+          ...(cursor != null ? { resumeFrom: String(cursor) } : {})
+        });
+        steps.push(step);
+        if (step.status === "failed") break;
+        const summary = (step.summary as Record<string, any> | null)?.runSummary as
+          | Record<string, any>
+          | undefined;
+        const processedPlayers = readNumeric(summary?.processedPlayers) ?? 0;
+        if (processedPlayers > 0) {
+          msPerPlayer = Math.max(1, step.durationMs / processedPlayers);
+        }
+        const next = readRollingStepNextResumeFrom(step);
+        if (next != null && next !== cursor) {
+          cursor = next;
+          if (args.persistRollingCursor) {
+            try {
+              await args.persistRollingCursor(next);
+            } catch (error) {
+              // The chunk's rows are written; only the stored cursor lags.
+              step.reason = `Cursor ${next} not stored: ${errorMessage(error)}`;
+            }
+          }
+        }
+        if (step.status !== "success") {
+          // The route stopped at its own budget (partial, resume required).
+          break;
+        }
+        const stoppedReason = summary?.stoppedReason;
+        if (stoppedReason !== "max_players") break;
+        if (processedPlayers === 0 || next == null) {
+          // Nothing moved: do not spin on the same cursor.
+          stageUnfinished = true;
+          break;
+        }
+      }
+      break;
+    }
+    case "projection_input_ingest":
+      await addStep({
+        id: "ingest-projection-inputs",
+        route: "/api/v1/db/ingest-projection-inputs",
+        handler: ingestProjectionInputsHandler,
+        method: "POST",
+        query: args.useDurableProjectionBacklog
+          ? undefined
+          : {
+              startDate: projectionInputStartDate,
+              endDate: projectionInputEndDate,
+              maxGames: args.mode === "overnight" ? "80" : "50"
+            }
+      });
+      break;
+    case "projection_relationship_build":
+      await addStep({
+        id: "build-projection-relationships",
+        route: "/api/v1/db/shift-charts",
+        handler: shiftChartsHandler,
+        method: "POST",
+        query: {
+          gameId: "all"
+        }
+      });
+      break;
+    case "projection_derived_build":
+      await addStep({
+        id: "build-projection-derived-v2",
+        route: "/api/v1/db/build-projection-derived-v2",
+        handler: buildProjectionDerivedHandler,
+        method: "POST",
+        query: args.useDurableProjectionBacklog
+          ? undefined
+          : {
+              startDate: derivedBuildStartDate,
+              endDate: derivedBuildEndDate,
+              maxDays: args.mode === "overnight" ? "30" : "14"
+            }
+      });
+      break;
+    case "projection_execution":
+      // Goalie priors run once per run: the resumable run stores the step's
+      // success, so a resumed invocation skips its external NHL fetches. A
+      // failed step stays unmarked and runs again on the next invocation.
+      if (!args.goalieStepDone) {
+        const goalieStep = await invokeRouteStep({
+          id: "update-goalie-projections-v2",
+          route: "/api/v1/db/update-goalie-projections-v2",
+          handler: updateGoalieProjectionsV2Handler,
+          query: {
+            limit: args.mode === "overnight" ? "30" : "7",
+            // The next day's projection gate needs its goalie start priors.
+            ...(args.projectNextDay ? { endDate: addDays(args.date, 1) } : {})
+          }
+        });
+        steps.push(goalieStep);
+        if (goalieStep.status === "success" && args.persistGoalieStepDone) {
+          try {
+            await args.persistGoalieStepDone();
+          } catch (error) {
+            // The step ran; only the marker lags, so the next invocation repeats it.
+            goalieStep.reason = `Completion not stored: ${errorMessage(error)}`;
+          }
+        }
+      }
+      if (args.startDate !== args.endDate) {
+        await addStep({
+          id: "run-projection-v2",
+          route: "/api/v1/db/run-projection-v2",
+          handler: runProjectionV2Handler,
+          query: {
+            startDate: args.startDate,
+            endDate: args.endDate
+          }
+        });
+        break;
+      }
+      {
+        const dates = args.projectNextDay
+          ? [args.date, addDays(args.date, 1)]
+          : [args.date];
+        const datesDone = args.projectionDatesDone ?? 0;
+        for (let index = datesDone; index < dates.length; index += 1) {
+          // Measured after the goalie step, which runs first. The first date of
+          // an invocation always gets its minimum; a later one waits for the
+          // next invocation when less than that is left.
+          const remainingMs =
+            args.projectionDeadlineMs != null
+              ? args.projectionDeadlineMs - Date.now()
+              : null;
+          if (index > datesDone && remainingMs != null && remainingMs < MIN_PROJECTION_RUNTIME_MS) {
+            stageUnfinished = true;
+            break;
+          }
+          const step = await invokeRouteStep({
+            id: "run-projection-v2",
+            route: "/api/v1/db/run-projection-v2",
+            handler: runProjectionV2Handler,
+            query: {
+              date: dates[index],
+              ...(remainingMs != null
+                ? { maxDurationMs: String(Math.max(MIN_PROJECTION_RUNTIME_MS, remainingMs)) }
+                : {})
+            }
+          });
+          steps.push(step);
+          if (step.status === "failed" && index > 0) {
+            // The next day is best effort: its failure is recorded on the
+            // step and never blocks the run date's downstream stages.
+            step.status = "skipped";
+            step.reason = `Next-day projection for ${dates[index]} failed (non-blocking): ${describeStepFailure(step)}`;
+            break;
+          }
+          if (step.status !== "success") break;
+          if (args.persistProjectionDatesDone) {
+            try {
+              await args.persistProjectionDatesDone(index + 1);
+            } catch (error) {
+              // The run is written; only the stored progress lags.
+              step.reason = `Progress ${index + 1} not stored: ${errorMessage(error)}`;
+            }
+          }
+        }
+      }
+      break;
+    case "downstream_projection_consumers":
+      if (!args.includeDownstream) {
+        steps.push({
+          id: "run-projection-accuracy",
+          route: "/api/v1/db/run-projection-accuracy",
+          status: "skipped",
+          statusCode: 200,
+          durationMs: 0,
+          summary: null,
+          query: {},
+          reason:
+            "Downstream accuracy refresh disabled by request."
+        });
+        break;
+      }
+      if (!args.includeAccuracy) {
+        steps.push({
+          id: "run-projection-accuracy",
+          route: "/api/v1/db/run-projection-accuracy",
+          status: "skipped",
+          statusCode: 200,
+          durationMs: 0,
+          summary: null,
+          query: {},
+          reason: "Accuracy refresh disabled by request."
+        });
+      } else {
+        await addStep({
+          id: "run-projection-accuracy",
+          route: "/api/v1/db/run-projection-accuracy",
+          handler: runProjectionAccuracyHandler,
+          query: {
+            date: args.date,
+            projectionOffsetDays: "0"
+          }
+        });
+      }
+      break;
+    case "monitoring":
+      steps.push({
+        id: "cron-report",
+        route: "/api/v1/db/cron-report",
+        status: "skipped",
+        statusCode: 200,
+        durationMs: 0,
+        summary: null,
+        query: {},
+        reason:
+          "Monitoring remains a separate reporting surface and is not invoked recursively by the coordinator."
+      });
+      break;
+  }
+
+  const status = steps.some((step) => step.status === "failed")
+    ? "failed"
+    : stageUnfinished || steps.some((step) => step.status === "partial")
+      ? "partial"
+      : steps.some((step) => step.status === "success")
+        ? "success"
+        : "skipped";
+
+  return {
+    id: args.id,
+    label:
+      getRollingForgePipelineSpec().stages.find((stage) => stage.id === args.id)
+        ?.label ?? args.id,
+    status,
+    blocking:
+      getRollingForgePipelineSpec().stages.find((stage) => stage.id === args.id)
+        ?.blocking ?? true,
+    durationMs: Date.now() - startedAt,
+    steps
+  };
+}
+
+type StageSpec = ReturnType<typeof getRollingForgeStagesForMode>[number];
+type StageArgs = Omit<Parameters<typeof runStage>[0], "id">;
+
+function notRunStage(
+  stage: StageSpec,
+  status: StageStatus,
+  reason: string,
+  completedEarlier = false
+): StageResult {
+  return {
+    id: stage.id,
+    label: stage.label,
+    status,
+    blocking: stage.blocking,
+    durationMs: 0,
+    reason,
+    ...(completedEarlier ? { completedEarlier: true } : {}),
+    steps: []
+  };
+}
+
+function errorMessage(error: unknown) {
+  return (error instanceof Error ? error.message : String(error)).slice(0, 512);
+}
+
+// A short account of why a route step failed, from its status and body.
+function describeStepFailure(step: StepResult) {
+  const body = step.summary && typeof step.summary === "object" ? (step.summary as Record<string, unknown>) : {};
+  const gates = Array.isArray((body.preflight as Record<string, unknown> | undefined)?.gates)
+    ? ((body.preflight as Record<string, any>).gates as Array<Record<string, unknown>>)
+        .filter((gate) => gate?.status === "FAIL")
+        .map((gate) => String(gate.gate_key))
+    : [];
+  const message = [body.error, body.message].find((value) => typeof value === "string" && value.length > 0);
+  return [`HTTP ${step.statusCode}`, gates.length ? `failed gates ${gates.join(", ")}` : null, typeof message === "string" ? message.slice(0, 200) : null]
+    .filter(Boolean)
+    .join("; ");
+}
+
+/**
+ * Runs the scheduled pipeline as a sequence of short invocations. Each
+ * invocation skips stages an earlier one finished, runs the rest in order
+ * until its runtime budget is spent, and stores progress in
+ * projection_pipeline_state (see lib/rollingForgePipelineRunState).
+ */
+async function runResumablePipeline(args: {
+  startedAt: number;
+  stageArgs: StageArgs;
+}): Promise<{
+  stageResults: StageResult[];
+  termination: TerminationReceipt;
+  terminalStopCode: TerminalStopCode | null;
+}> {
+  if (!supabase) {
+    throw new Error("The resumable pipeline requires the Supabase server client.");
+  }
+  const { mode, date } = args.stageArgs;
+  const runKey = buildRollingForgeRunScopeKey(mode, date);
+  const states = await readRollingForgeRunState({ supabase, scopeKey: runKey });
+  const stageResults: StageResult[] = [];
+  let termination: TerminationReceipt | null = null;
+  let terminalStopCode: TerminalStopCode | null = null;
+  let stagesRun = 0;
+  const continuation = (
+    reason: NonNullable<TerminationReceipt["reason"]>,
+    nextStageId: RollingForgePipelineStageId,
+    rollingResumeFrom: number | null,
+    detail?: string
+  ): TerminationReceipt => ({
+    state: "continuation_required",
+    resumeRequired: true,
+    nextStartDate: null,
+    runKey,
+    nextStageId,
+    reason,
+    rollingResumeFrom,
+    ...(detail ? { detail } : {})
+  });
+
+  for (const stage of getRollingForgeStagesForMode(mode)) {
+    if (termination) {
+      stageResults.push(
+        termination.state === "stopped_on_blocking_failure"
+          ? notRunStage(stage, "skipped", "Skipped because an earlier blocking stage failed.")
+          : notRunStage(stage, "pending", "Waiting for the next invocation of this run.")
+      );
+      continue;
+    }
+
+    const state = states.get(stage.id);
+    if (state?.status === "complete") {
+      stageResults.push(
+        notRunStage(stage, "success", "Completed by an earlier invocation of this run.", true)
+      );
+      continue;
+    }
+    const failedAttempts = readRollingForgeStageFailedAttempts(state);
+    if (
+      state?.status === "failed" &&
+      failedAttempts > 0 &&
+      (!stage.blocking || failedAttempts >= MAX_BLOCKING_STAGE_ATTEMPTS)
+    ) {
+      stageResults.push(
+        notRunStage(
+          stage,
+          "failed",
+          `Failed ${failedAttempts} time(s) in earlier invocations of this run; not retried.`,
+          true
+        )
+      );
+      if (stage.blocking) {
+        termination = {
+          state: "stopped_on_blocking_failure",
+          resumeRequired: false,
+          nextStartDate: null,
+          runKey,
+          nextStageId: stage.id,
+          reason: "attempts_exhausted"
+        };
+        terminalStopCode =
+          readRollingForgeStageKills(states, stage.id) >= MAX_KILLED_STAGE_ATTEMPTS
+            ? "stage_killed"
+            : "attempts_exhausted";
+      }
+      continue;
+    }
+
+    const isRolling = stage.id === "rolling_player_recompute";
+    const elapsedMs = Date.now() - args.startedAt;
+    if (
+      stagesRun > 0 &&
+      (isRolling
+        ? RESUMABLE_INVOCATION_BUDGET_MS - elapsedMs < MIN_ROLLING_CLAIM_MS
+        : elapsedMs >= RESUMABLE_STAGE_START_CUTOFF_MS)
+    ) {
+      termination = continuation(
+        "runtime_budget",
+        stage.id,
+        state?.cursorGameId ?? null
+      );
+      stageResults.push(
+        notRunStage(stage, "pending", "Deferred to the next invocation by the runtime budget.")
+      );
+      continue;
+    }
+
+    // A `running` row whose lease has expired was held by an invocation that
+    // died (the function was killed). Its progress is stored, so the stage is
+    // taken again, but every dead invocation is counted and the run stops
+    // once there have been too many.
+    if (isRollingForgeStageLeaseDead(state)) {
+      let kills: number;
+      try {
+        kills = await recordRollingForgeStageKill({
+          supabase,
+          scopeKey: runKey,
+          stageId: stage.id,
+          runDate: date,
+          expiredLeaseOwner: state?.leaseOwner ?? null
+        });
+      } catch (error) {
+        termination = continuation("state_error", stage.id, state?.cursorGameId ?? null, errorMessage(error));
+        stageResults.push(
+          notRunStage(stage, "pending", "Could not record the dead invocation; see termination.detail.")
+        );
+        continue;
+      }
+      if (kills >= MAX_KILLED_STAGE_ATTEMPTS) {
+        // Close the stage as failed with its attempts spent, so later
+        // invocations stop here without touching state again.
+        try {
+          const closing = await acquireRollingForgeStage({
+            supabase,
+            scopeKey: runKey,
+            stageId: stage.id,
+            runDate: date,
+            leaseExpiresAtMs: Date.now() + 30_000
+          });
+          if (closing.status === "running") {
+            await finishRollingForgeStage({
+              supabase,
+              lease: closing,
+              outcome: "failed",
+              attempt: MAX_BLOCKING_STAGE_ATTEMPTS
+            });
+          }
+        } catch (error) {
+          console.warn(
+            "[run-rolling-forge-pipeline] could not close a repeatedly killed stage",
+            errorMessage(error)
+          );
+        }
+        stageResults.push(
+          notRunStage(
+            stage,
+            "failed",
+            `${kills} invocation(s) of this run died while running this stage (last stored cursor ${state?.cursorGameId ?? "none"}); not taken again.`,
+            true
+          )
+        );
+        termination = {
+          state: "stopped_on_blocking_failure",
+          resumeRequired: false,
+          nextStartDate: null,
+          runKey,
+          nextStageId: stage.id,
+          reason: "attempts_exhausted",
+          detail: `Killed ${kills} time(s).`
+        };
+        terminalStopCode = "stage_killed";
+        continue;
+      }
+    }
+
+    let lease;
+    try {
+      lease = await acquireRollingForgeStage({
+        supabase,
+        scopeKey: runKey,
+        stageId: stage.id,
+        runDate: date,
+        leaseExpiresAtMs: args.startedAt + RESUMABLE_STAGE_LEASE_MS
+      });
+    } catch (error) {
+      const message = errorMessage(error);
+      termination = continuation(
+        /LEASE_HELD|REVISION_MISMATCH|CONCURRENT_CHANGE/.test(message)
+          ? "stage_in_progress_elsewhere"
+          : "state_error",
+        stage.id,
+        state?.cursorGameId ?? null,
+        message
+      );
+      stageResults.push(
+        notRunStage(stage, "pending", "Could not take this stage; see termination.detail.")
+      );
+      continue;
+    }
+    if (lease.status === "complete") {
+      // Another invocation finished it between the read and the lease.
+      stageResults.push(
+        notRunStage(stage, "success", "Completed by an earlier invocation of this run.", true)
+      );
+      continue;
+    }
+
+    stagesRun += 1;
+    let activeLease = lease;
+    const result = await runStage({
+      ...args.stageArgs,
+      id: stage.id,
+      ...(stage.id === "upstream_skater_sources"
+        ? {
+            nstResumeCursor: lease.cursorGameId,
+            sourceDeadlineAtMs: args.startedAt + RESUMABLE_INVOCATION_BUDGET_MS
+          }
+        : {}),
+      ...(stage.id === "contextual_builders"
+        ? { contextualFailedAttempts: failedAttempts }
+        : {}),
+      ...(isRolling
+        ? {
+            rollingResumeFrom: lease.cursorGameId,
+            rollingClaimUntilMs: args.startedAt + RESUMABLE_INVOCATION_BUDGET_MS,
+            rollingDeadlineMs: args.startedAt + ROLLING_IN_FLIGHT_DEADLINE_MS,
+            persistRollingCursor: async (cursor: number) => {
+              // Keeps the long lease: this invocation still owns the stage.
+              activeLease = await advanceRollingForgeStage({
+                supabase,
+                lease: activeLease,
+                cursorGameId: cursor,
+                leaseExpiresAtMs: args.startedAt + RESUMABLE_STAGE_LEASE_MS
+              });
+            }
+          }
+        : {}),
+      ...(stage.id === "projection_execution"
+        ? {
+            projectionDeadlineMs:
+              args.startedAt + RESUMABLE_INVOCATION_BUDGET_MS,
+            projectNextDay: true,
+            projectionDatesDone: lease.cursorGameId ?? 0,
+            goalieStepDone: states.get(GOALIE_STEP_DONE_KEY)?.status === "complete",
+            persistGoalieStepDone: async () => {
+              const marker = await acquireRollingForgeStage({
+                supabase,
+                scopeKey: runKey,
+                stageId: GOALIE_STEP_DONE_KEY,
+                runDate: date,
+                leaseExpiresAtMs: Date.now() + 30_000
+              });
+              if (marker.status === "running") {
+                await finishRollingForgeStage({ supabase, lease: marker, outcome: "complete" });
+              }
+            },
+            persistProjectionDatesDone: async (done: number) => {
+              activeLease = await advanceRollingForgeStage({
+                supabase,
+                lease: activeLease,
+                cursorGameId: done,
+                leaseExpiresAtMs: args.startedAt + RESUMABLE_STAGE_LEASE_MS
+              });
+            }
+          }
+        : {})
+    });
+    stageResults.push(result);
+
+    try {
+      if (result.status === "partial") {
+        const nextResumeFrom = readRollingNextResumeFrom(result);
+        const advanced = await advanceRollingForgeStage({
+          supabase,
+          lease: activeLease,
+          cursorGameId: nextResumeFrom
+        });
+        termination = continuation(
+          "stage_partial",
+          stage.id,
+          advanced.cursorGameId
+        );
+      } else if (result.status === "failed") {
+        const attempt = failedAttempts + 1;
+        await finishRollingForgeStage({
+          supabase,
+          lease: activeLease,
+          outcome: "failed",
+          attempt
+        });
+        if (stage.blocking) {
+          const willRetry = attempt < MAX_BLOCKING_STAGE_ATTEMPTS;
+          termination = {
+            state: "stopped_on_blocking_failure",
+            resumeRequired: willRetry,
+            nextStartDate: null,
+            runKey,
+            nextStageId: stage.id,
+            reason: willRetry ? "retry_on_next_invocation" : "attempts_exhausted"
+          };
+          if (!willRetry) terminalStopCode = "attempts_exhausted";
+        }
+      } else {
+        await finishRollingForgeStage({ supabase, lease: activeLease, outcome: "complete" });
+      }
+    } catch (error) {
+      // The stage itself ran; only its receipt was not stored. The next
+      // invocation repeats it, which every stage tolerates.
+      const message = errorMessage(error);
+      termination = termination
+        ? { ...termination, detail: `State write failed: ${message}` }
+        : continuation("state_error", stage.id, activeLease.cursorGameId, message);
+    }
+  }
+
+  return {
+    stageResults,
+    termination: {
+      ...(termination ?? {
+        state: "completed",
+        resumeRequired: false,
+        nextStartDate: null,
+        runKey,
+        nextStageId: null
+      }),
+      stagesRun
+    },
+    terminalStopCode
+  };
+}
+
+export const __testables = {
+  listGameIdsInRange,
+  invokeRouteStep,
+  runStage,
+  nstStepResume
+};
+
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) {
+  const startedAt = Date.now();
+  if (req.method !== "GET" && req.method !== "POST") {
+    res.setHeader("Allow", ["GET", "POST"]);
+    return res.status(405).json({
+      success: false,
+      mode: "daily_incremental",
+      dateWindow: {
+        startDate: "",
+        endDate: "",
+        date: "",
+        rollingStartDate: "",
+        rollingEndDate: "",
+        sourceStartDate: "",
+        sourceEndDate: ""
+      },
+      durationMs: formatDurationMsToMMSS(0),
+      runtimeBudget: buildRuntimeBudgetSummary("daily_incremental", 0),
+      executionControls: {
+        includeDownstream: false,
+        includeAccuracy: false,
+        stopOnFailure: true,
+        stopOnFailureRequested: true
+      },
+      termination: {
+        state: "not_started",
+        resumeRequired: false,
+        nextStartDate: null
+      },
+      downstreamSummary: {
+        stageId: "downstream_projection_consumers",
+        includesLegacyStartChartMaterialization: false,
+        legacyStartChartMaterializerRetired: true,
+        includesAccuracyRefresh: false,
+        canonicalSkaterReadPath:
+          "/api/v1/start-chart -> forge_player_projections",
+        legacyMaterializerRoute: null,
+        notes: []
+      },
+      dependencyContract: getRollingForgeDependencyContract(),
+      pipeline: getRollingForgePipelineSpec(),
+      compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
+      scanSummary: buildEndpointScanSummary({
+        surface: "rolling_forge_pipeline_operator",
+        requestedDate: "",
+        activeDataDate: "",
+        fallbackApplied: false,
+        status: "blocked",
+        rowCounts: {},
+        blockingIssueCount: 1,
+        notes: ["Method not allowed."]
+      }),
+      stages: []
+    });
+  }
+
+  const mode = parseMode(getParam(req, "mode"));
+  const useDurableProjectionBacklog =
+    getParam(req, "date") == null &&
+    getParam(req, "startDate") == null &&
+    getParam(req, "endDate") == null;
+  const {
+    startDate,
+    endDate,
+    date,
+    rollingStartDate,
+    rollingEndDate,
+    sourceStartDate,
+    sourceEndDate
+  } = parseDateWindow(req, useDurableProjectionBacklog);
+  const includeDownstream = parseBooleanParam(
+    getParam(req, "includeDownstream"),
+    true
+  );
+  const includeAccuracy = parseBooleanParam(
+    getParam(req, "includeAccuracy"),
+    mode === "overnight"
+  );
+  const requestedStopOnFailure = parseBooleanParam(
+    getParam(req, "stopOnFailure"),
+    true
+  );
+  const stopOnFailure = useDurableProjectionBacklog
+    ? true
+    : requestedStopOnFailure;
+
+  const stageArgs: StageArgs = {
+    mode,
+    startDate,
+    endDate,
+    date,
+    rollingStartDate,
+    rollingEndDate,
+    sourceStartDate,
+    sourceEndDate,
+    includeDownstream,
+    includeAccuracy,
+    useDurableProjectionBacklog
+  };
+  let stageResults: StageResult[] = [];
+  let termination: TerminationReceipt;
+  let terminalStopCode: TerminalStopCode | null = null;
+
+  if (useDurableProjectionBacklog) {
+    ({ stageResults, termination, terminalStopCode } = await runResumablePipeline({
+      startedAt,
+      stageArgs
+    }));
+  } else {
+    let blocked = false;
+    for (const stage of getRollingForgeStagesForMode(mode)) {
+      if (blocked) {
+        stageResults.push(
+          notRunStage(
+            stage,
+            "skipped",
+            "Skipped because an earlier blocking stage failed or stopped partway."
+          )
+        );
+        continue;
+      }
+
+      const oneShotDeadlineMs =
+        startedAt +
+        Math.min(ROLLING_FORGE_PIPELINE_BUDGETS_MS[mode], FUNCTION_MAX_DURATION_MS);
+      const result = await runStage({
+        ...stageArgs,
+        id: stage.id,
+        sourceDeadlineAtMs: oneShotDeadlineMs,
+        // One-shot runs chunk the rolling step too, so a killed call still
+        // reports the cursor of every finished chunk in its audit row.
+        rollingClaimUntilMs: oneShotDeadlineMs - (FUNCTION_MAX_DURATION_MS - RESUMABLE_INVOCATION_BUDGET_MS),
+        rollingDeadlineMs: oneShotDeadlineMs - (FUNCTION_MAX_DURATION_MS - ROLLING_IN_FLIGHT_DEADLINE_MS)
+      });
+      stageResults.push(result);
+
+      if (
+        stopOnFailure &&
+        stage.blocking &&
+        (result.status === "failed" || result.status === "partial")
+      ) {
+        blocked = true;
+      }
+    }
+
+    const failedBlocking = stageResults.some(
+      (stage) => stage.blocking && stage.status === "failed"
+    );
+    const partialBlocking = stageResults.find(
+      (stage) => stage.blocking && stage.status === "partial"
+    );
+    termination = failedBlocking
+      ? {
+          state: "stopped_on_blocking_failure",
+          resumeRequired: true,
+          nextStartDate: null
+        }
+      : partialBlocking
+        ? {
+            state: "continuation_required",
+            resumeRequired: true,
+            nextStartDate: null,
+            nextStageId: partialBlocking.id,
+            reason: "stage_partial",
+            rollingResumeFrom: readRollingNextResumeFrom(partialBlocking)
+          }
+        : { state: "completed", resumeRequired: false, nextStartDate: null };
+  }
+
+  const success = termination.state === "completed";
+
+  const downstreamNotes = [
+    "Stage 9 is an accuracy-only downstream validation stage, not a canonical skater projection writer.",
+    "The Start Chart read layer resolves skaters from forge_player_projections.",
+    "update-start-chart-projections has been retired; no live player_projections materializer remains in the rolling-to-FORGE pipeline."
+  ];
+  if (!includeDownstream) {
+    downstreamNotes.push(
+      "Downstream accuracy refresh was skipped by request."
+    );
+  } else if (!includeAccuracy) {
+    downstreamNotes.push("Accuracy refresh was skipped by request.");
+  }
+
+  const durationMs = Date.now() - startedAt;
+  const scanSummary = buildPipelineScanSummary({
+    requestedDate: date,
+    activeDataDate: endDate,
+    success,
+    stageResults
+  });
+  const failedSteps = stageResults.flatMap(stage => stage.steps
+    .filter(step => step.status === "failed").map(step => ({ stageId: stage.id, step })));
+  const firstFailed = failedSteps[0];
+  const summary = firstFailed?.step.summary && typeof firstFailed.step.summary === "object"
+    ? firstFailed.step.summary as Record<string, unknown> : {};
+  const errors = Array.isArray(summary.errors) ? summary.errors : [];
+  const firstError = errors[0] && typeof errors[0] === "object" ? errors[0] as Record<string, unknown> : {};
+  const dependencyError = summary.dependencyError && typeof summary.dependencyError === "object"
+    ? summary.dependencyError as Record<string, unknown> : {};
+  const message = [firstError.message, summary.error, summary.message, firstFailed?.step.reason]
+    .find(value => typeof value === "string" && value.length > 0);
+  // Put bounded, observed failure facts before verbose graphs for the existing
+  // 4000 character cron audit. Full child receipts remain unchanged in stages below.
+  const terminalStop = terminalStopCode && termination.nextStageId
+    ? { code: terminalStopCode, stageId: termination.nextStageId }
+    : null;
+  // A terminal stop names its code in firstFailure.code, so a report keys on one
+  // field; with no step run this invocation the stage itself is the failure.
+  const terminalStage = terminalStop && !firstFailed
+    ? stageResults.find(stage => stage.id === terminalStop.stageId)
+    : undefined;
+  const failureSummary = {
+    failedStepCount: failedSteps.length,
+    firstFailure: firstFailed ? { stageId: firstFailed.stageId, stepId: firstFailed.step.id,
+      route: firstFailed.step.route, statusCode: firstFailed.step.statusCode,
+      error: typeof message === "string" ? message.slice(0, 512) : null,
+      gameId: typeof firstError.gameId === "number" ? firstError.gameId : null,
+      stage: typeof firstError.stage === "string" ? firstError.stage.slice(0, 128) : null,
+      code: terminalStop?.code ?? (typeof firstError.code === "string" ? firstError.code.slice(0, 128) : null),
+      endpoint: typeof firstError.endpoint === "string" ? firstError.endpoint.slice(0, 128) : null,
+      attempts: Number.isSafeInteger(firstError.attempts) && Number(firstError.attempts) > 0 ? Number(firstError.attempts) : null,
+      classification: typeof dependencyError.classification === "string" ? dependencyError.classification.slice(0, 128) : null,
+      reportedErrorCount: errors.length }
+      : terminalStop ? { stageId: terminalStop.stageId, stepId: null,
+        route: "/api/v1/db/run-rolling-forge-pipeline", statusCode: 207,
+        error: (termination.detail ?? terminalStage?.reason ?? null)?.slice(0, 512) ?? null,
+        gameId: null, stage: null, code: terminalStop.code, endpoint: null, attempts: null,
+        classification: null, reportedErrorCount: 0 }
+      : null,
+    terminalStop,
+    degradedSteps: stageResults.flatMap(stage => stage.steps
+      .filter(step => step.degraded)
+      .map(step => ({ stageId: stage.id, stepId: step.id, code: step.degraded!, reason: step.reason ?? null }))),
+  };
+  return res.status(success ? 200 : 207).json({
+    success,
+    failureSummary,
+    mode,
+    dateWindow: {
+      startDate,
+      endDate,
+      date,
+      rollingStartDate,
+      rollingEndDate,
+      sourceStartDate,
+      sourceEndDate
+    },
+    durationMs: formatDurationMsToMMSS(durationMs),
+    runtimeBudget: buildRuntimeBudgetSummary(mode, durationMs),
+    executionControls: {
+      includeDownstream,
+      includeAccuracy,
+      stopOnFailure,
+      stopOnFailureRequested: requestedStopOnFailure
+    },
+    termination,
+    downstreamSummary: {
+      stageId: "downstream_projection_consumers",
+      includesLegacyStartChartMaterialization: false,
+      legacyStartChartMaterializerRetired: true,
+      includesAccuracyRefresh: includeDownstream && includeAccuracy,
+      canonicalSkaterReadPath:
+        "/api/v1/start-chart -> forge_player_projections",
+      legacyMaterializerRoute: null,
+      notes: downstreamNotes
+    },
+    dependencyContract: getRollingForgeDependencyContract(),
+    pipeline: getRollingForgePipelineSpec(),
+    compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
+    scanSummary,
+    stages: stageResults
+  });
+}
+
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
+  jobName: "run-rolling-forge-pipeline",
+  includeFinalAuditReceipt: true
+});

@@ -1,0 +1,31 @@
+
+> web@0.1.0 test
+> vitest --run __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts lib/trends/ctpi.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-ctpi-fix-20261022/web
+
+ ✓ __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts (8 tests) 9ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/trends/ctpi.test.ts [ lib/trends/ctpi.test.ts ]
+Error: Cannot find package 'lib/projections/materializationFingerprint' imported from '/private/tmp/fhfh-ctpi-fix-20261022/web/lib/trends/recentTeamFormV2Provenance.ts'
+ ❯ lib/trends/recentTeamFormV2Provenance.ts:1:1
+      1| import {
+       | ^
+      2|   sha256CanonicalJson,
+      3|   stableJsonStringify,
+ ❯ lib/trends/ctpi.test.ts:23:1
+
+Caused by: Error: Failed to load url lib/projections/materializationFingerprint (resolved id: lib/projections/materializationFingerprint) in /private/tmp/fhfh-ctpi-fix-20261022/web/lib/trends/recentTeamFormV2Provenance.ts. Does the file exist?
+ ❯ loadAndTransform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35835:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  8 passed (8)
+   Start at  09:22:15
+   Duration  238ms (transform 58ms, setup 11ms, collect 25ms, tests 9ms, environment 0ms, prepare 60ms)
+

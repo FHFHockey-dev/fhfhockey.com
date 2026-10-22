@@ -30,3 +30,5 @@ describe("Yahoo pickup API", () => {
     expect(res.status).toHaveBeenCalledWith(503); expect(JSON.stringify(res.json.mock.calls)).not.toContain("private provider detail");
   });
 });
+
+vi.mock("lib/in-season/server", () => ({ loadInSeasonAccess: async () => ({ eligible: false, capabilities: [], reason: "no_active_grant" }) }));

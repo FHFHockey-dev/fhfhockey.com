@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/auditLeaseIndependent.test.ts
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-forge-ledger-lease-review-i86qaoq1/isolation/snapshot/web
+
+(node:53842) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/auditLeaseIndependent.test.ts (7 tests) 5ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  08:26:06
+   Duration  349ms (transform 31ms, setup 10ms, collect 20ms, tests 5ms, environment 225ms, prepare 29ms)
+

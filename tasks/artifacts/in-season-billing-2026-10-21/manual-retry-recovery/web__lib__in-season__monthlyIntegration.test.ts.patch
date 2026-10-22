@@ -1,0 +1,118 @@
+--- web/lib/in-season/monthlyIntegration.test.ts (baseline)
++++ web/lib/in-season/monthlyIntegration.test.ts
+@@ -226,8 +226,9 @@
+   function jobFixture(kind: MonthlyJob["kind"], startsAt = new Date("2027-06-01T04:00Z")) {
+     const f = fixture(startsAt);
+     const job: MonthlyJob = { id: kind === "retry" ? "in-season-monthly-retry:in_a:2" : "monthly-cutoff:sub_a", subscription_id: "sub_a", user_id: "user-a", kind,
+-      due_at: kind === "retry" ? "2027-06-02T04:00:00.000Z" : "2027-07-01T04:00:00.000Z", invoice_id: kind === "retry" ? "in_a" : null, attempt: kind === "retry" ? 2 : null, created_at: f.at.toISOString() };
++      due_at: kind === "retry" ? "2027-06-02T04:00:00.000Z" : "2027-07-01T04:00:00.000Z", invoice_id: kind === "retry" ? "in_a" : null, attempt: kind === "retry" ? 2 : null, created_at: f.at.toISOString(), accounting_snapshots: [] };
+     f.store.jobs.mockResolvedValue([job]); f.store.claimJob.mockResolvedValue({ token: "job-lease", job });
++    f.store.snapshotJob.mockImplementation(async (_id, _token, snapshot) => { job.accounting_snapshots.push(structuredClone(snapshot)); });
+     f.setState(reduceMonthlyEvent(f.state(), { kind: "failed", eventId: "evt_fail", userId: "user-a", subscriptionId: "sub_a", invoiceId: "in_a", period: 0, failedAttempts: 1, firstFailureAt: f.at.toISOString() }, f.at));
+     f.invoice.status = "open"; f.invoice.amount_paid = 0; f.invoice.amount_remaining = 499; f.invoice.auto_advance = false;
+     f.payment.status = "open"; f.payment.amount_paid = 0; f.intent.status = "requires_payment_method"; f.intent.amount_received = 0;
+@@ -274,6 +275,21 @@
+     expect(monthlyAccess(f.state(), new Date(paidAt * 1000 + 6 * 60_000)).eligible).toBe(true);
+     expect(f.store.finishJob).toHaveBeenCalledTimes(1);
+   });
++  it.each([1, 3])("keeps a lost-response manual retry unresolved at provider count %s until a delayed payment settles", async count => {
++    const f = jobFixture("retry"); f.invoice.attempt_count = count;
++    f.stripe.invoices.pay.mockRejectedValueOnce(new Error("lost manual retry response"));
++    await expect(f.run()).rejects.toThrow(/lost manual/);
++    const original = structuredClone(f.state());
++    for (const now of ["2027-06-02T04:02Z", "2027-06-02T04:06Z"]) {
++      await expect(f.run(new Date(now))).rejects.toThrow(/Manual retry outcome unresolved/);
++      expect(f.state()).toEqual(original); expect(f.store.finishJob).not.toHaveBeenCalled();
++    }
++    expect(f.stripe.invoices.pay).toHaveBeenCalledTimes(1);
++    expect(f.job.accounting_snapshots[0]).toMatchObject({ operation: "retry", invoiceId: "in_a", attempt: 2, idempotencyKey: f.job.id });
++    f.settle(Date.parse("2027-06-02T04:07Z") / 1000); await f.run(new Date("2027-06-02T04:08Z"));
++    expect(f.state().invoices.in_a).toMatchObject({ paidAt: "2027-06-02T04:07:00.000Z", firstFailureAt: "2027-06-01T04:00:00.000Z", failedAttempts: 1 });
++    expect(f.stripe.invoices.pay).toHaveBeenCalledTimes(1); expect(f.store.finishJob).toHaveBeenCalledTimes(1);
++  });
+   it.each(["cutoff", "local cancellation", "provider cancellation"])("records a recovered payment without reopening access after %s", async boundary => {
+     const f = jobFixture("retry"); f.settle();
+     let now = new Date("2027-06-02T04:06Z");
+@@ -305,14 +321,17 @@
+     await monthlyBillingStore({ rpc }).commit("sub_a", "job:third", "lease", f.state(), new Date(f.job.due_at));
+     expect(rpc).toHaveBeenCalledWith("commit_in_season_sandbox_monthly", expect.objectContaining({ p_stop: true, p_retries: [] }));
+   });
+-  it("persists a third decline recovered after a lost response and queues stopping future billing", async () => {
++  it.each(["before", "after"])("recovers a durable third-decline receipt when the state write fails %s commit", async when => {
+     const f = jobFixture("retry", new Date("2027-05-01T04:00Z"));
+     f.job.attempt = 3; f.job.id = "in-season-monthly-retry:in_a:3"; f.job.due_at = "2027-05-03T04:00:00.000Z";
+     f.setState(reduceMonthlyEvent(f.state(), { kind: "failed", eventId: "second-decline", userId: "user-a", subscriptionId: "sub_a", invoiceId: "in_a", period: 0, failedAttempts: 2, firstFailureAt: null }, new Date("2027-05-02T04:00Z")));
+-    f.invoice.attempt_count = 2;
+-    f.stripe.invoices.pay.mockImplementationOnce(async () => { f.invoice.attempt_count = 3; throw new Error("response lost after decline"); });
+-    await expect(f.run(new Date(f.job.due_at))).rejects.toThrow(/response lost/);
++    f.invoice.attempt_count = 1;
++    f.stripe.invoices.pay.mockRejectedValueOnce(Object.assign(new Error("declined"), { statusCode: 402 }));
++    const commit = f.store.commit.getMockImplementation()!;
++    f.store.commit.mockImplementationOnce(async (...args) => { if (when === "after") await commit(...args); throw new Error("state write response lost"); });
++    await expect(f.run(new Date(f.job.due_at))).rejects.toThrow(/state write/);
+     expect(f.store.finishJob).not.toHaveBeenCalled();
++    expect(f.job.accounting_snapshots[1]).toMatchObject({ operation: "retry_declined", invoiceId: "in_a", attempt: 3, idempotencyKey: f.job.id, statusCode: 402 });
+     const recoveredAt = new Date("2027-05-03T04:06Z"); await f.run(recoveredAt);
+     expect(f.state().invoices.in_a).toMatchObject({ failedAttempts: 3, firstFailureAt: "2027-05-01T04:00:00.000Z", paidAt: null });
+     expect(f.binding.periods).toContainEqual(expect.objectContaining({ from: "2027-06-01T04:00:00.000Z", amountCents: 499 }));
+@@ -321,9 +340,9 @@
+     await monthlyBillingStore({ rpc }).commit("sub_a", `job:${f.job.id}`, "lease", f.state(), recoveredAt);
+     expect(rpc).toHaveBeenCalledWith("commit_in_season_sandbox_monthly", expect.objectContaining({ p_stop: true, p_retries: [] }));
+     const saved = structuredClone(f.state()); await f.run(new Date("2027-05-03T05:00Z"));
+-    expect(f.state()).toEqual(saved); expect(f.store.commit).toHaveBeenCalledTimes(1); expect(f.stripe.invoices.pay).toHaveBeenCalledTimes(1);
+-  });
+-  it.each([0, 1, 2])("does not inflate failures or move the grace anchor when recovery observes %s attempts", async count => {
++    expect(f.state()).toEqual(saved); expect(f.store.commit).toHaveBeenCalledTimes(when === "after" ? 1 : 2); expect(f.stripe.invoices.pay).toHaveBeenCalledTimes(1);
++  });
++  it.each([0, 1, 2, 99])("does not infer manual failures or move the grace anchor from invoice count %s", async count => {
+     const f = jobFixture("retry");
+     f.setState(reduceMonthlyEvent(f.state(), { kind: "failed", eventId: "second-decline", userId: "user-a", subscriptionId: "sub_a", invoiceId: "in_a", period: 0, failedAttempts: 2, firstFailureAt: null }, new Date("2027-06-02T04:00Z")));
+     f.invoice.attempt_count = count;
+@@ -336,10 +355,44 @@
+     const saved = structuredClone(f.state()); await f.run(new Date("2027-06-02T05:00Z"));
+     expect(f.state()).toEqual(saved); expect(f.store.commit).toHaveBeenCalledTimes(1); expect(f.stripe.invoices.pay).not.toHaveBeenCalled();
+   });
+-  it.each([-1, 1.5, NaN])("leaves an invalid recovered attempt count %s unfinished", async count => {
+-    const f = jobFixture("retry"); f.invoice.attempt_count = count;
+-    await expect(f.run(new Date("2027-06-02T04:06Z"))).rejects.toThrow(/attempt count/);
++  it.each([undefined, null, [null]])("rejects missing or malformed durable attempt history %s", async snapshots => {
++    const f = jobFixture("retry"); f.job.accounting_snapshots = snapshots as unknown as Record<string, unknown>[];
++    await expect(f.run()).rejects.toThrow(/attempt history/);
+     expect(f.store.commit).not.toHaveBeenCalled(); expect(f.store.finishJob).not.toHaveBeenCalled(); expect(f.stripe.invoices.pay).not.toHaveBeenCalled();
++  });
++  it.each(["invoice", "attempt", "key", "status"])("rejects a decline receipt with mismatched %s", async field => {
++    const f = jobFixture("retry");
++    const receipt = { operation: "retry_declined", invoiceId: "in_a", attempt: 2, idempotencyKey: f.job.id, statusCode: 402 };
++    if (field === "invoice") receipt.invoiceId = "in_other";
++    if (field === "attempt") receipt.attempt = 3;
++    if (field === "key") receipt.idempotencyKey = "other-job";
++    if (field === "status") receipt.statusCode = 500;
++    f.job.accounting_snapshots.push({ operation: "retry", invoiceId: "in_a", attempt: 2, idempotencyKey: f.job.id }, receipt);
++    await expect(f.run(new Date("2027-06-02T04:06Z"))).rejects.toThrow(/receipt binding/);
++    expect(f.store.commit).not.toHaveBeenCalled(); expect(f.store.finishJob).not.toHaveBeenCalled(); expect(f.stripe.invoices.pay).not.toHaveBeenCalled();
++  });
++  it("retains an unknown attempt when saving its definitive decline receipt fails", async () => {
++    const f = jobFixture("retry"); const snapshot = f.store.snapshotJob.getMockImplementation()!;
++    f.store.snapshotJob.mockImplementation(async (...args) => { if (args[2].operation === "retry_declined") throw new Error("receipt write failed"); await snapshot(...args); });
++    f.stripe.invoices.pay.mockRejectedValueOnce(Object.assign(new Error("declined"), { statusCode: 402 }));
++    await expect(f.run()).rejects.toThrow(/receipt write/);
++    await expect(f.run(new Date("2027-06-02T04:06Z"))).rejects.toThrow(/Manual retry outcome unresolved/);
++    expect(f.state().invoices.in_a.failedAttempts).toBe(1); expect(f.store.commit).not.toHaveBeenCalled(); expect(f.store.finishJob).not.toHaveBeenCalled();
++    expect(f.job.accounting_snapshots).toHaveLength(1); expect(f.stripe.invoices.pay).toHaveBeenCalledTimes(1);
++  });
++  it("recovers a decline receipt whose write succeeded but acknowledgement was lost", async () => {
++    const f = jobFixture("retry"); const snapshot = f.store.snapshotJob.getMockImplementation()!;
++    f.store.snapshotJob.mockImplementation(async (...args) => { await snapshot(...args); if (args[2].operation === "retry_declined") throw new Error("receipt acknowledgement lost"); });
++    f.stripe.invoices.pay.mockRejectedValueOnce(Object.assign(new Error("declined"), { statusCode: 402 }));
++    await expect(f.run()).rejects.toThrow(/acknowledgement/);
++    await f.run(new Date("2027-06-02T04:06Z"));
++    expect(f.state().invoices.in_a).toMatchObject({ failedAttempts: 2, firstFailureAt: "2027-06-01T04:00:00.000Z" });
++    expect(f.job.accounting_snapshots).toHaveLength(2); expect(f.stripe.invoices.pay).toHaveBeenCalledTimes(1); expect(f.store.finishJob).toHaveBeenCalledTimes(1);
++  });
++  it("treats a legacy pre-call snapshot without an idempotency field as unresolved", async () => {
++    const f = jobFixture("retry"); f.job.accounting_snapshots.push({ operation: "retry", invoiceId: "in_a", attempt: 2 });
++    await expect(f.run(new Date("2027-06-02T04:06Z"))).rejects.toThrow(/Manual retry outcome unresolved/);
++    expect(f.store.finishJob).not.toHaveBeenCalled(); expect(f.stripe.invoices.pay).not.toHaveBeenCalled();
+   });
+   it("archives accounting before voiding unpaid invoices and deleting pending items", async () => {
+     const f = jobFixture("cutoff");

@@ -1,0 +1,206 @@
+ok 1 - service CAS creates head revision 1
+ok 2 - service CAS advances head 1 -> 2 with the expected hash
+ok 3 - stale expected revision is a CAS conflict
+ok 4 - service reads the head directly (SELECT only)
+ok 5 - service cannot bypass CAS with a direct UPDATE
+ok 6 - service cannot bypass CAS with a direct INSERT
+ok 7 - service cannot delete heads
+ok 8 - authenticated cannot execute native CAS
+ok 9 - authenticated cannot read native heads
+ok 10 - anon cannot execute native CAS
+ok 11 - anon cannot read native heads
+ok 12 - user A sees only own connected account
+ok 13 - user A filtering by B's id gets no rows
+ok 14 - user A cannot insert a connected account
+ok 15 - user A cannot update connected accounts
+ok 16 - user A cannot delete external leagues
+ok 17 - user A cannot call the token reader RPC
+ok 18 - anon cannot read connected accounts
+ok 19 - anon cannot read provider sync runs
+ok 20 - service inserts a schedule row (identity default)
+ok 21 - service cannot reset the schedule identity sequence
+ok 22 - anon reads the schedule row
+ok 23 - anon cannot delete schedule rows
+ok 24 - anon cannot draw from the schedule sequence
+ok 25 - authenticated reads the schedule
+ok 26 - authenticated cannot update schedule rows
+ok 27 - service cannot update FORGE game revisions
+ok 28 - service cannot truncate FORGE board events
+ok 29 - service cannot truncate Draft Pro purchases
+ok 30 - service cannot truncate saved RSO plans
+ok 31 - service_role DELETE public.connected_accounts matches the caller audit
+ok 32 - service_role INSERT public.connected_accounts matches the caller audit
+ok 33 - service_role REFERENCES public.connected_accounts matches the caller audit
+ok 34 - service_role SELECT public.connected_accounts matches the caller audit
+ok 35 - service_role TRIGGER public.connected_accounts matches the caller audit
+ok 36 - service_role TRUNCATE public.connected_accounts matches the caller audit
+ok 37 - service_role UPDATE public.connected_accounts matches the caller audit
+ok 38 - service_role DELETE public.draft_pro_access_code_attempts matches the caller audit
+ok 39 - service_role INSERT public.draft_pro_access_code_attempts matches the caller audit
+ok 40 - service_role REFERENCES public.draft_pro_access_code_attempts matches the caller audit
+ok 41 - service_role SELECT public.draft_pro_access_code_attempts matches the caller audit
+ok 42 - service_role TRIGGER public.draft_pro_access_code_attempts matches the caller audit
+ok 43 - service_role TRUNCATE public.draft_pro_access_code_attempts matches the caller audit
+ok 44 - service_role UPDATE public.draft_pro_access_code_attempts matches the caller audit
+ok 45 - service_role DELETE public.draft_pro_access_codes matches the caller audit
+ok 46 - service_role INSERT public.draft_pro_access_codes matches the caller audit
+ok 47 - service_role REFERENCES public.draft_pro_access_codes matches the caller audit
+ok 48 - service_role SELECT public.draft_pro_access_codes matches the caller audit
+ok 49 - service_role TRIGGER public.draft_pro_access_codes matches the caller audit
+ok 50 - service_role TRUNCATE public.draft_pro_access_codes matches the caller audit
+ok 51 - service_role UPDATE public.draft_pro_access_codes matches the caller audit
+ok 52 - service_role DELETE public.draft_pro_drafts matches the caller audit
+ok 53 - service_role INSERT public.draft_pro_drafts matches the caller audit
+ok 54 - service_role REFERENCES public.draft_pro_drafts matches the caller audit
+ok 55 - service_role SELECT public.draft_pro_drafts matches the caller audit
+ok 56 - service_role TRIGGER public.draft_pro_drafts matches the caller audit
+ok 57 - service_role TRUNCATE public.draft_pro_drafts matches the caller audit
+ok 58 - service_role UPDATE public.draft_pro_drafts matches the caller audit
+ok 59 - service_role DELETE public.draft_pro_private_import_blobs matches the caller audit
+ok 60 - service_role INSERT public.draft_pro_private_import_blobs matches the caller audit
+ok 61 - service_role REFERENCES public.draft_pro_private_import_blobs matches the caller audit
+ok 62 - service_role SELECT public.draft_pro_private_import_blobs matches the caller audit
+ok 63 - service_role TRIGGER public.draft_pro_private_import_blobs matches the caller audit
+ok 64 - service_role TRUNCATE public.draft_pro_private_import_blobs matches the caller audit
+ok 65 - service_role UPDATE public.draft_pro_private_import_blobs matches the caller audit
+ok 66 - service_role DELETE public.draft_pro_private_import_uploads matches the caller audit
+ok 67 - service_role INSERT public.draft_pro_private_import_uploads matches the caller audit
+ok 68 - service_role REFERENCES public.draft_pro_private_import_uploads matches the caller audit
+ok 69 - service_role SELECT public.draft_pro_private_import_uploads matches the caller audit
+ok 70 - service_role TRIGGER public.draft_pro_private_import_uploads matches the caller audit
+ok 71 - service_role TRUNCATE public.draft_pro_private_import_uploads matches the caller audit
+ok 72 - service_role UPDATE public.draft_pro_private_import_uploads matches the caller audit
+ok 73 - service_role DELETE public.draft_pro_private_imports matches the caller audit
+ok 74 - service_role INSERT public.draft_pro_private_imports matches the caller audit
+ok 75 - service_role REFERENCES public.draft_pro_private_imports matches the caller audit
+ok 76 - service_role SELECT public.draft_pro_private_imports matches the caller audit
+ok 77 - service_role TRIGGER public.draft_pro_private_imports matches the caller audit
+ok 78 - service_role TRUNCATE public.draft_pro_private_imports matches the caller audit
+ok 79 - service_role UPDATE public.draft_pro_private_imports matches the caller audit
+ok 80 - service_role DELETE public.draft_pro_provider_events matches the caller audit
+ok 81 - service_role INSERT public.draft_pro_provider_events matches the caller audit
+ok 82 - service_role REFERENCES public.draft_pro_provider_events matches the caller audit
+ok 83 - service_role SELECT public.draft_pro_provider_events matches the caller audit
+ok 84 - service_role TRIGGER public.draft_pro_provider_events matches the caller audit
+ok 85 - service_role TRUNCATE public.draft_pro_provider_events matches the caller audit
+ok 86 - service_role UPDATE public.draft_pro_provider_events matches the caller audit
+ok 87 - service_role DELETE public.draft_pro_purchases matches the caller audit
+ok 88 - service_role INSERT public.draft_pro_purchases matches the caller audit
+ok 89 - service_role REFERENCES public.draft_pro_purchases matches the caller audit
+ok 90 - service_role SELECT public.draft_pro_purchases matches the caller audit
+ok 91 - service_role TRIGGER public.draft_pro_purchases matches the caller audit
+ok 92 - service_role TRUNCATE public.draft_pro_purchases matches the caller audit
+ok 93 - service_role UPDATE public.draft_pro_purchases matches the caller audit
+ok 94 - service_role DELETE public.draft_pro_refund_requests matches the caller audit
+ok 95 - service_role INSERT public.draft_pro_refund_requests matches the caller audit
+ok 96 - service_role REFERENCES public.draft_pro_refund_requests matches the caller audit
+ok 97 - service_role SELECT public.draft_pro_refund_requests matches the caller audit
+ok 98 - service_role TRIGGER public.draft_pro_refund_requests matches the caller audit
+ok 99 - service_role TRUNCATE public.draft_pro_refund_requests matches the caller audit
+ok 100 - service_role UPDATE public.draft_pro_refund_requests matches the caller audit
+ok 101 - service_role DELETE public.draft_pro_reports matches the caller audit
+ok 102 - service_role INSERT public.draft_pro_reports matches the caller audit
+ok 103 - service_role REFERENCES public.draft_pro_reports matches the caller audit
+ok 104 - service_role SELECT public.draft_pro_reports matches the caller audit
+ok 105 - service_role TRIGGER public.draft_pro_reports matches the caller audit
+ok 106 - service_role TRUNCATE public.draft_pro_reports matches the caller audit
+ok 107 - service_role UPDATE public.draft_pro_reports matches the caller audit
+ok 108 - service_role DELETE public.draft_pro_save_sessions matches the caller audit
+ok 109 - service_role INSERT public.draft_pro_save_sessions matches the caller audit
+ok 110 - service_role REFERENCES public.draft_pro_save_sessions matches the caller audit
+ok 111 - service_role SELECT public.draft_pro_save_sessions matches the caller audit
+ok 112 - service_role TRIGGER public.draft_pro_save_sessions matches the caller audit
+ok 113 - service_role TRUNCATE public.draft_pro_save_sessions matches the caller audit
+ok 114 - service_role UPDATE public.draft_pro_save_sessions matches the caller audit
+ok 115 - service_role DELETE public.draft_pro_scenarios matches the caller audit
+ok 116 - service_role INSERT public.draft_pro_scenarios matches the caller audit
+ok 117 - service_role REFERENCES public.draft_pro_scenarios matches the caller audit
+ok 118 - service_role SELECT public.draft_pro_scenarios matches the caller audit
+ok 119 - service_role TRIGGER public.draft_pro_scenarios matches the caller audit
+ok 120 - service_role TRUNCATE public.draft_pro_scenarios matches the caller audit
+ok 121 - service_role UPDATE public.draft_pro_scenarios matches the caller audit
+ok 122 - service_role DELETE public.external_leagues matches the caller audit
+ok 123 - service_role INSERT public.external_leagues matches the caller audit
+ok 124 - service_role REFERENCES public.external_leagues matches the caller audit
+ok 125 - service_role SELECT public.external_leagues matches the caller audit
+ok 126 - service_role TRIGGER public.external_leagues matches the caller audit
+ok 127 - service_role TRUNCATE public.external_leagues matches the caller audit
+ok 128 - service_role UPDATE public.external_leagues matches the caller audit
+ok 129 - service_role DELETE public.external_teams matches the caller audit
+ok 130 - service_role INSERT public.external_teams matches the caller audit
+ok 131 - service_role REFERENCES public.external_teams matches the caller audit
+ok 132 - service_role SELECT public.external_teams matches the caller audit
+ok 133 - service_role TRIGGER public.external_teams matches the caller audit
+ok 134 - service_role TRUNCATE public.external_teams matches the caller audit
+ok 135 - service_role UPDATE public.external_teams matches the caller audit
+ok 136 - service_role DELETE public.in_season_grants matches the caller audit
+ok 137 - service_role INSERT public.in_season_grants matches the caller audit
+ok 138 - service_role REFERENCES public.in_season_grants matches the caller audit
+ok 139 - service_role SELECT public.in_season_grants matches the caller audit
+ok 140 - service_role TRIGGER public.in_season_grants matches the caller audit
+ok 141 - service_role TRUNCATE public.in_season_grants matches the caller audit
+ok 142 - service_role UPDATE public.in_season_grants matches the caller audit
+ok 143 - service_role DELETE public.in_season_workspaces matches the caller audit
+ok 144 - service_role INSERT public.in_season_workspaces matches the caller audit
+ok 145 - service_role REFERENCES public.in_season_workspaces matches the caller audit
+ok 146 - service_role SELECT public.in_season_workspaces matches the caller audit
+ok 147 - service_role TRIGGER public.in_season_workspaces matches the caller audit
+ok 148 - service_role TRUNCATE public.in_season_workspaces matches the caller audit
+ok 149 - service_role UPDATE public.in_season_workspaces matches the caller audit
+ok 150 - service_role DELETE public.player_forecast_champion_history matches the caller audit
+ok 151 - service_role INSERT public.player_forecast_champion_history matches the caller audit
+ok 152 - service_role REFERENCES public.player_forecast_champion_history matches the caller audit
+ok 153 - service_role SELECT public.player_forecast_champion_history matches the caller audit
+ok 154 - service_role TRIGGER public.player_forecast_champion_history matches the caller audit
+ok 155 - service_role TRUNCATE public.player_forecast_champion_history matches the caller audit
+ok 156 - service_role UPDATE public.player_forecast_champion_history matches the caller audit
+ok 157 - service_role DELETE public.player_forecast_season_completeness_waivers matches the caller audit
+ok 158 - service_role INSERT public.player_forecast_season_completeness_waivers matches the caller audit
+ok 159 - service_role REFERENCES public.player_forecast_season_completeness_waivers matches the caller audit
+ok 160 - service_role SELECT public.player_forecast_season_completeness_waivers matches the caller audit
+ok 161 - service_role TRIGGER public.player_forecast_season_completeness_waivers matches the caller audit
+ok 162 - service_role TRUNCATE public.player_forecast_season_completeness_waivers matches the caller audit
+ok 163 - service_role UPDATE public.player_forecast_season_completeness_waivers matches the caller audit
+ok 164 - service_role DELETE public.player_forecast_season_release_teams matches the caller audit
+ok 165 - service_role INSERT public.player_forecast_season_release_teams matches the caller audit
+ok 166 - service_role REFERENCES public.player_forecast_season_release_teams matches the caller audit
+ok 167 - service_role SELECT public.player_forecast_season_release_teams matches the caller audit
+ok 168 - service_role TRIGGER public.player_forecast_season_release_teams matches the caller audit
+ok 169 - service_role TRUNCATE public.player_forecast_season_release_teams matches the caller audit
+ok 170 - service_role UPDATE public.player_forecast_season_release_teams matches the caller audit
+ok 171 - service_role DELETE public.player_forecast_season_runs matches the caller audit
+ok 172 - service_role INSERT public.player_forecast_season_runs matches the caller audit
+ok 173 - service_role REFERENCES public.player_forecast_season_runs matches the caller audit
+ok 174 - service_role SELECT public.player_forecast_season_runs matches the caller audit
+ok 175 - service_role TRIGGER public.player_forecast_season_runs matches the caller audit
+ok 176 - service_role TRUNCATE public.player_forecast_season_runs matches the caller audit
+ok 177 - service_role UPDATE public.player_forecast_season_runs matches the caller audit
+ok 178 - service_role DELETE public.player_forecast_season_team_aggregates matches the caller audit
+ok 179 - service_role INSERT public.player_forecast_season_team_aggregates matches the caller audit
+ok 180 - service_role REFERENCES public.player_forecast_season_team_aggregates matches the caller audit
+ok 181 - service_role SELECT public.player_forecast_season_team_aggregates matches the caller audit
+ok 182 - service_role TRIGGER public.player_forecast_season_team_aggregates matches the caller audit
+ok 183 - service_role TRUNCATE public.player_forecast_season_team_aggregates matches the caller audit
+ok 184 - service_role UPDATE public.player_forecast_season_team_aggregates matches the caller audit
+ok 185 - service_role DELETE public.provider_sync_runs matches the caller audit
+ok 186 - service_role INSERT public.provider_sync_runs matches the caller audit
+ok 187 - service_role REFERENCES public.provider_sync_runs matches the caller audit
+ok 188 - service_role SELECT public.provider_sync_runs matches the caller audit
+ok 189 - service_role TRIGGER public.provider_sync_runs matches the caller audit
+ok 190 - service_role TRUNCATE public.provider_sync_runs matches the caller audit
+ok 191 - service_role UPDATE public.provider_sync_runs matches the caller audit
+ok 192 - anon cannot execute the uncalled model-promotion RPC
+ok 193 - authenticated cannot execute the uncalled model-promotion RPC
+ok 194 - service_role cannot execute the uncalled model-promotion RPC
+ok 195 - service_role has USAGE but not SELECT on the schedule identity sequence
+ok 196 - postgres public defaults grant nothing to the Data API roles
+ok 197 - anon gets no SELECT on a new public table
+ok 198 - authenticated gets no SELECT on a new public table
+ok 199 - service_role gets no SELECT on a new public table
+ok 200 - anon gets no USAGE on a new serial sequence
+ok 201 - authenticated gets no USAGE on a new serial sequence
+ok 202 - service_role gets no USAGE on a new serial sequence
+ok 203 - new postgres function outside public has no PUBLIC EXECUTE
+ok 204 - explicit grant restores anon SELECT
+ok 205 - SELECT grant does not imply INSERT
+1..205

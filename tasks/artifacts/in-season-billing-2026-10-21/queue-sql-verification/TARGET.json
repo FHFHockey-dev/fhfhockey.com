@@ -1,0 +1,8 @@
+{
+  "root": "/tmp/fhfh-queue-sql-v5pk45ug",
+  "host": "127.0.0.1",
+  "port": 65447,
+  "database": "fhfh_queue_check",
+  "user": "queue_owner",
+  "artifacts": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification"
+}

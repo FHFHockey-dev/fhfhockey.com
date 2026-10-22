@@ -1,0 +1,8 @@
+# P02 goalie correctness
+
+- Scope: parent authorized local P02 correctness only: actual imported-code red tests for missing GAA ranking, unequal-exposure GAA, incomplete SV pairs and QS start/classification coverage; minimal corrections or unavailable states. No VuDu weights, team-xGA/historical inputs, migrations/network/services, commits or deployment.
+- Where: canonical `octoberBranch`, HEAD `d3f057c6c849d5d5474bc912a6f461f617c65b15`; evidence in `tasks/artifacts/research-backlog-readiness-2026-10-22/p02-correctness/`. Prior 15+5 extracted-source audit probes are characterization, not full imported-code regressions. SKO fixture interpreter defect is separate and remains untouched.
+- Start: read AGENTS/current P02 work packet and A7–A9 candidate receipt. Proposed nine-file lease has no overlap with its 13 pinned files. Existing SSR/radar/landing WIP inspected; page queries/radar remain outside edits. Current `statsPageFetch` source/test WIP will be preserved against exact before snapshots.
+- Decision: use current on-net paired counts and numeric seconds convention only; unavailable when any required count/exposure/start/classification is unsupported. Do not hydrate omitted fields or invent starts from appearances. QS coverage is separate from appearance count. First run actual imported source/component tests in a credential-free, network-denied snapshot before fixing.
+- Next: pin lease/baseline/A7–A9 fences, add failing regressions, make the scoped corrections, run focused tests/type/lint and return exact review artifacts.
+- Blockers/approvals: none. No workers spawned; usage/sprint coordination stays with parent.

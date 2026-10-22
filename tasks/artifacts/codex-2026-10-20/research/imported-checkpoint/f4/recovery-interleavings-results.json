@@ -1,0 +1,315 @@
+{
+  "model_version": "fhfh-takeover-model-v1",
+  "assumptions": [
+    "Two actors A(old) and B(new); one game, representative projection row and shared sidecar; mutation ordering follows the actual caller.",
+    "All merges preserve each actor order. DB operations terminate; no fairness/timing claim is modeled.",
+    "Both actors have the SAME issuance identity. A-old vs B-new can arise from uncaptured mutable inputs.",
+    "B takeover is one atomic ownership transition. Current output writes are modeled without a DB ownership predicate.",
+    "Server-fenced validation+mutation is abstractly atomic and serialized with takeover on the same authority; no SQL isolation proof.",
+    "Fresh-run projection isolation presumes R1 is permanently nonadmissible and all selected FORGE reads use R2; it excludes sidecar observers.",
+    "Safety is checked after all modeled events, so late corruptions after B succeeds are not hidden by early termination.",
+    "Enumeration counts measure this finite model, not incident probabilities or exhaustive application coverage."
+  ],
+  "interleavings": [
+    {
+      "variant": "metadata_only",
+      "mutation": "full_tail",
+      "schedules": 792,
+      "unsafe_schedules": 336,
+      "safe_for_modeled_observable": false,
+      "witness": {
+        "trace": [
+          "A.dispatch [first request may be delayed after dispatch]",
+          "B.takeover",
+          "B.clear_projection",
+          "B.put_projection",
+          "B.delete_sidecar",
+          "B.put_sidecar",
+          "B.checkpoint",
+          "B.succeed",
+          "A.put_projection [accepted=True]",
+          "A.delete_sidecar [accepted=True]",
+          "A.put_sidecar [accepted=True]",
+          "A.checkpoint [metadata_CAS=False]"
+        ],
+        "rows": {
+          "R": "A-old"
+        },
+        "sidecar": "A-old",
+        "selected": "R",
+        "metadata_ok": true
+      }
+    },
+    {
+      "variant": "metadata_only",
+      "mutation": "cleanup_tail",
+      "schedules": 36,
+      "unsafe_schedules": 30,
+      "safe_for_modeled_observable": false,
+      "witness": {
+        "trace": [
+          "A.dispatch [first request may be delayed after dispatch]",
+          "B.takeover",
+          "B.clear_projection",
+          "B.put_projection",
+          "B.delete_sidecar",
+          "B.put_sidecar",
+          "B.checkpoint",
+          "B.succeed",
+          "A.delete_projection [accepted=True]"
+        ],
+        "rows": {},
+        "sidecar": "B-new",
+        "selected": "R",
+        "metadata_ok": true
+      }
+    },
+    {
+      "variant": "client_precheck",
+      "mutation": "full_tail",
+      "schedules": 1716,
+      "unsafe_schedules": 336,
+      "safe_for_modeled_observable": false,
+      "witness": {
+        "trace": [
+          "A.precheck [permission_cached=True]",
+          "A.dispatch [first request may be delayed after dispatch]",
+          "B.takeover",
+          "B.clear_projection",
+          "B.put_projection",
+          "B.delete_sidecar",
+          "B.put_sidecar",
+          "B.checkpoint",
+          "B.succeed",
+          "A.put_projection [accepted=True]",
+          "A.delete_sidecar [accepted=True]",
+          "A.put_sidecar [accepted=True]",
+          "A.checkpoint [metadata_CAS=False]"
+        ],
+        "rows": {
+          "R": "A-old"
+        },
+        "sidecar": "A-old",
+        "selected": "R",
+        "metadata_ok": true
+      }
+    },
+    {
+      "variant": "server_check_without_lock",
+      "mutation": "full_tail",
+      "schedules": 1716,
+      "unsafe_schedules": 336,
+      "safe_for_modeled_observable": false,
+      "witness": {
+        "trace": [
+          "A.precheck [permission_cached=True]",
+          "A.dispatch [first request may be delayed after dispatch]",
+          "B.takeover",
+          "B.clear_projection",
+          "B.put_projection",
+          "B.delete_sidecar",
+          "B.put_sidecar",
+          "B.checkpoint",
+          "B.succeed",
+          "A.put_projection [accepted=True]",
+          "A.delete_sidecar [accepted=True]",
+          "A.put_sidecar [accepted=True]",
+          "A.checkpoint [metadata_CAS=False]"
+        ],
+        "rows": {
+          "R": "A-old"
+        },
+        "sidecar": "A-old",
+        "selected": "R",
+        "metadata_ok": true
+      }
+    },
+    {
+      "variant": "same_run_scoped",
+      "mutation": "full_tail",
+      "schedules": 792,
+      "unsafe_schedules": 336,
+      "safe_for_modeled_observable": false,
+      "witness": {
+        "trace": [
+          "A.dispatch [first request may be delayed after dispatch]",
+          "B.takeover",
+          "B.clear_projection",
+          "B.put_projection",
+          "B.delete_sidecar",
+          "B.put_sidecar",
+          "B.checkpoint",
+          "B.succeed",
+          "A.put_projection [accepted=True]",
+          "A.delete_sidecar [accepted=True]",
+          "A.put_sidecar [accepted=True]",
+          "A.checkpoint [metadata_CAS=False]"
+        ],
+        "rows": {
+          "R": "A-old"
+        },
+        "sidecar": "A-old",
+        "selected": "R",
+        "metadata_ok": true
+      }
+    },
+    {
+      "variant": "fresh_run_projection_isolation",
+      "mutation": "full_tail",
+      "schedules": 792,
+      "unsafe_schedules": 0,
+      "safe_for_modeled_observable": true,
+      "witness": null
+    },
+    {
+      "variant": "fresh_run_with_global_sidecar",
+      "mutation": "full_tail",
+      "schedules": 792,
+      "unsafe_schedules": 456,
+      "safe_for_modeled_observable": false,
+      "witness": {
+        "trace": [
+          "A.dispatch [first request may be delayed after dispatch]",
+          "B.takeover",
+          "B.clear_projection",
+          "B.put_projection",
+          "B.delete_sidecar",
+          "B.put_sidecar",
+          "B.checkpoint",
+          "B.succeed",
+          "A.put_projection [accepted=True]",
+          "A.delete_sidecar [accepted=True]",
+          "A.put_sidecar [accepted=True]",
+          "A.checkpoint [metadata_CAS=False]"
+        ],
+        "rows": {
+          "R1": "A-old",
+          "R2": "B-new"
+        },
+        "sidecar": "A-old",
+        "selected": "R2",
+        "metadata_ok": true
+      }
+    },
+    {
+      "variant": "fresh_run_with_global_sidecar",
+      "mutation": "sidecar_delete_tail",
+      "schedules": 36,
+      "unsafe_schedules": 21,
+      "safe_for_modeled_observable": false,
+      "witness": {
+        "trace": [
+          "A.dispatch [first request may be delayed after dispatch]",
+          "B.takeover",
+          "B.clear_projection",
+          "B.put_projection",
+          "B.delete_sidecar",
+          "B.put_sidecar",
+          "B.checkpoint",
+          "B.succeed",
+          "A.delete_sidecar [accepted=True]"
+        ],
+        "rows": {
+          "R1": "partial-A",
+          "R2": "B-new"
+        },
+        "sidecar": null,
+        "selected": "R2",
+        "metadata_ok": true
+      }
+    },
+    {
+      "variant": "server_fenced",
+      "mutation": "full_tail",
+      "schedules": 792,
+      "unsafe_schedules": 0,
+      "safe_for_modeled_observable": true,
+      "witness": null
+    },
+    {
+      "variant": "server_fenced",
+      "mutation": "cleanup_tail",
+      "schedules": 36,
+      "unsafe_schedules": 0,
+      "safe_for_modeled_observable": true,
+      "witness": null
+    }
+  ],
+  "lost_acknowledgements": {
+    "current_running_checkpoint_ack_lost": {
+      "durable_output": "A-complete",
+      "durable_progress": true,
+      "catch_path_status": "failed",
+      "meaning": "committed progress can be relabeled failed; this model does not call it data loss"
+    },
+    "current_final_success_ack_lost": {
+      "durable_status": "succeeded",
+      "failure_rewrite_matches": false,
+      "meaning": "success survives but caller may receive an error; exact readback is required"
+    },
+    "atomic_fenced_receipt": {
+      "first": {
+        "outcome": "committed",
+        "operation_id": "game-write-A",
+        "payload_hash": "426e38bb019db97db6e00221edd045ffeba7f47aedb35ae011be98ed6fc4e0a6",
+        "epoch": 1
+      },
+      "second": {
+        "outcome": "committed",
+        "operation_id": "game-write-B",
+        "payload_hash": "000ac466b1210c39fb219bd1ecb74dbb14ec242b148822276e91f907f91c7cf3",
+        "epoch": 2
+      },
+      "retry_old_after_takeover": {
+        "outcome": "duplicate_receipt",
+        "operation_id": "game-write-A",
+        "payload_hash": "426e38bb019db97db6e00221edd045ffeba7f47aedb35ae011be98ed6fc4e0a6",
+        "epoch": 1
+      },
+      "changed_payload_same_id": {
+        "outcome": "intent_mismatch"
+      },
+      "new_old_epoch_operation": {
+        "outcome": "fenced"
+      },
+      "final_rows": {
+        "R": "B-complete"
+      },
+      "meaning": "old receipt proves historical commit, not current selection"
+    }
+  },
+  "quiescent_handoff": [
+    {
+      "name": "clean_release",
+      "normal_terminal_path": true,
+      "outstanding": 0,
+      "unknown_outcomes": 0,
+      "release_receipt_exact": true,
+      "safe_to_reuse_run": true
+    },
+    {
+      "name": "expired_with_inflight_write",
+      "normal_terminal_path": false,
+      "outstanding": 1,
+      "unknown_outcomes": 0,
+      "release_receipt_exact": false,
+      "safe_to_reuse_run": false
+    },
+    {
+      "name": "request_threw_but_write_may_commit",
+      "normal_terminal_path": true,
+      "outstanding": 0,
+      "unknown_outcomes": 1,
+      "release_receipt_exact": false,
+      "safe_to_reuse_run": false
+    },
+    {
+      "name": "release_ack_lost_unreconciled",
+      "normal_terminal_path": true,
+      "outstanding": 0,
+      "unknown_outcomes": 0,
+      "release_receipt_exact": false,
+      "safe_to_reuse_run": false
+    }
+  ]
+}

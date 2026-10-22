@@ -1,0 +1,37 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/stats/percentUnits.test.ts lib/stats/teamCountConsumers.test.tsx components/TeamDashboard/AdvancedL10Metrics.test.tsx components/GameStateAnalysis/GameStateAnalysis.test.tsx components/TeamDashboard/TeamDashboard.test.tsx lib/reviewConsumerExposure.test.tsx
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-n9qsiipi/isolation/snapshot/web
+
+(node:59205) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/reviewConsumerExposure.test.tsx > retains unknown exposure in the wgo_team_stats consumer sample
+FILTER_AWARE_EXPOSURE_OBSERVED {"table":"wgo_team_stats","field":"games_played","observed":"Power Play—","incompleteNote":true}
+
+stdout | lib/reviewConsumerExposure.test.tsx > retains unknown exposure in the nst_team_5v5 consumer sample
+FILTER_AWARE_EXPOSURE_OBSERVED {"table":"nst_team_5v5","field":"gp","observed":"Corsi For %—","incompleteNote":true}
+
+ ✓ lib/reviewConsumerExposure.test.tsx (2 tests) 26ms
+(node:59205) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/TeamDashboard/TeamDashboard.test.tsx (30 tests) 190ms
+(node:59205) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/stats/teamCountConsumers.test.tsx (10 tests) 102ms
+(node:59205) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/GameStateAnalysis/GameStateAnalysis.test.tsx (4 tests) 47ms
+(node:59205) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/TeamDashboard/AdvancedL10Metrics.test.tsx (5 tests) 40ms
+(node:59205) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/stats/percentUnits.test.ts (40 tests) 3ms
+
+ Test Files  6 passed (6)
+      Tests  91 passed (91)
+   Start at  08:43:05
+   Duration  2.24s (transform 231ms, setup 23ms, collect 681ms, tests 408ms, environment 717ms, prepare 151ms)
+

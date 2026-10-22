@@ -1,0 +1,666 @@
+--- a/web/pages/api/v1/db/run-rolling-forge-pipeline.ts
++++ b/web/pages/api/v1/db/run-rolling-forge-pipeline.ts
+@@ -30,7 +30,9 @@
+   readRollingForgeRunState,
+   readRollingForgeStageFailedAttempts,
+   readRollingForgeStageKills,
+-  recordRollingForgeStageKill
++  recordRollingForgeStageKill,
++  NST_PERSISTENCE_UNCONFIRMED,
++  RollingForgeStageReviewRequiredError
+ } from "lib/rollingForgePipelineRunState";
+ 
+ import updateGamesHandler from "./update-games";
+@@ -64,6 +66,7 @@
+   reason?: string;
+   // Set when a source shortfall was downgraded so the stage still completes.
+   degraded?: "nst_source_unavailable";
++  requiresReview?: "nst_persistence_unconfirmed";
+ };
+ 
+ type StageResult = {
+@@ -95,7 +98,8 @@
+     | "stage_in_progress_elsewhere"
+     | "state_error"
+     | "retry_on_next_invocation"
+-    | "attempts_exhausted";
++    | "attempts_exhausted"
++    | "manual_review_required";
+   rollingResumeFrom?: number | null;
+   detail?: string;
+ };
+@@ -157,7 +161,7 @@
+ 
+ type RouteHandler = (req: any, res: any) => Promise<void>;
+ 
+-type TerminalStopCode = "attempts_exhausted" | "stage_killed";
++type TerminalStopCode = "attempts_exhausted" | "stage_killed" | "nst_persistence_unconfirmed";
+ 
+ function getParam(req: NextApiRequest, key: string): string | null {
+   const value = req.query[key];
+@@ -412,8 +416,8 @@
+  * NST step resume: the consumer side of the pipeline <-> update-nst-gamelog
+  * contract (tasks/artifacts/cross-platform/2026-10-21-claude-to-codex-pipeline-
+  * nst-contract.md with its ~01:00Z amendment, accepted by Codex in
+- * 2026-10-20-codex-to-claude-pipeline-nst-contract.md). INACTIVE until Codex
+- * ships it; enable only after review. With it enabled:
++ * 2026-10-20-codex-to-claude-pipeline-nst-contract.md). The delivered producer
++ * acknowledges progress before returning its continuation:
+  * - 200 with success true finishes the step (operationStatus
+  *   "skipped_no_completed_games" is the expected no-work skip); WGO follows.
+  * - 207, operationStatus "continuation_required", resume.required true and
+@@ -426,7 +430,6 @@
+  * one `cursor`, a positive integer past the cursor sent, kept in the
+  * forward-only cursor_game_id. Any other query is uncertain and fails the step.
+  */
+-const nstStepResume = { enabled: false };
+ // Terminal audit headroom kept back from the NST step's deadline.
+ const NST_DEADLINE_HEADROOM_MS = 20_000;
+ // vercel.json maxDuration: an explicit run never gets longer than this.
+@@ -439,19 +442,23 @@
+ 
+ function readNstOutcome(step: StepResult, sentCursor: number | null): NstOutcome {
+   const body = step.summary as Record<string, any> | null;
+-  const record = body && typeof body === "object" ? body : null;
+-  if (step.statusCode === 200 && record?.success !== false && !record?.error) {
++  const record = body && typeof body === "object" && !Array.isArray(body) ? body : null;
++  if (step.statusCode === 200 && record?.success === true && !record.error && !record.resume?.required
++    && (record.operationStatus == null || ["completed", "skipped_no_completed_games"].includes(record.operationStatus))) {
+     return { kind: "finished", skipped: record?.operationStatus === "skipped_no_completed_games" };
+   }
+   if (step.statusCode !== 207 || record?.operationStatus !== "continuation_required") {
+     return { kind: "blocked", reason: "NST did not finish or return a continuation; the stage stops here." };
+   }
++  if (record.error || record.success !== false || record.nstProgress?.auditPersistence !== "confirmed") {
++    return { kind: "blocked", reason: "NST continuation has no confirmed progress acknowledgement." };
++  }
+   const query = record.resume?.required === true ? record.resume.request?.query : null;
+   if (!query || typeof query !== "object" || Array.isArray(query)) {
+     return { kind: "blocked", reason: "NST continuation has no replayable resume.request.query." };
+   }
+-  const { cursor: rawCursor, deadlineAt: _replayDeadline, ...scope } = query as Record<string, unknown>;
+-  const { cursor: _sentCursor, deadlineAt: _sentDeadline, ...sentScope } = step.query;
++  const { cursor: rawCursor, ...scope } = query as Record<string, unknown>;
++  const { cursor: _sentCursor, ...sentScope } = step.query;
+   const sameScope =
+     Object.keys(scope).length === Object.keys(sentScope).length &&
+     Object.entries(sentScope).every(([key, value]) => scope[key] === value);
+@@ -690,7 +697,7 @@
+       });
+       break;
+     case "upstream_skater_sources": {
+-      const nstCursor = nstStepResume.enabled ? (args.nstResumeCursor ?? null) : null;
++      const nstCursor = args.nstResumeCursor ?? null;
+       const nst = await invokeRouteStep({
+         id: "update-nst-gamelog",
+         route: "/api/v1/db/update-nst-gamelog",
+@@ -698,9 +705,8 @@
+         query: {
+           runMode: "incremental",
+           startDate: args.sourceStartDate,
+-          // The implicit run names its one completed date; explicit windows
+-          // pass through as before.
+-          ...(args.useDurableProjectionBacklog ? { endDate: args.sourceEndDate } : {}),
++          // Freeze the source aperture for scheduled and explicit requests.
++          endDate: args.sourceEndDate,
+           ...(nstCursor != null ? { cursor: String(nstCursor) } : {}),
+           ...(args.sourceDeadlineAtMs != null
+             ? { deadlineAt: String(args.sourceDeadlineAtMs - NST_DEADLINE_HEADROOM_MS) }
+@@ -708,6 +714,14 @@
+         }
+       });
+       steps.push(nst);
++      const nstBody = nst.summary as Record<string, any> | null;
++      if (nstBody?.auditPersistence === "not_confirmed" || nstBody?.writePersistence === "not_confirmed"
++        || nstBody?.nstProgress?.auditPersistence === "not_confirmed") {
++        nst.status = "failed";
++        nst.requiresReview = NST_PERSISTENCE_UNCONFIRMED;
++        nst.reason = "NST persistence is unconfirmed; inspect the source/audit receipt before retrying.";
++        break;
++      }
+       if (nst.status === "failed" && isNstSourceShortfall(nst)) {
+         const message = (nst.summary as Record<string, any>).message;
+         nst.status = "skipped";
+@@ -715,7 +729,7 @@
+         nst.reason = `NST source unavailable; this run continues on WGO without the day's NST counts. Backfill the date once NST returns.${
+           typeof message === "string" && message ? ` NST: ${message.slice(0, 200)}` : ""}`;
+       }
+-      if (nstStepResume.enabled && !nst.degraded) {
++      if (!nst.degraded) {
+         const outcome = readNstOutcome(nst, nstCursor);
+         if (outcome.kind === "continuation") {
+           // WGO waits until NST finishes.
+@@ -1212,6 +1226,15 @@
+       );
+       continue;
+     }
++    if (state?.status === "failed" && state.lastError === NST_PERSISTENCE_UNCONFIRMED) {
++      stageResults.push(notRunStage(stage, "failed", "NST persistence is unconfirmed; manual review is required before retrying.", true));
++      termination = {
++        state: "stopped_on_blocking_failure", resumeRequired: false, nextStartDate: null,
++        runKey, nextStageId: stage.id, reason: "manual_review_required"
++      };
++      terminalStopCode = NST_PERSISTENCE_UNCONFIRMED;
++      continue;
++    }
+     const failedAttempts = readRollingForgeStageFailedAttempts(state);
+     if (
+       state?.status === "failed" &&
+@@ -1266,7 +1289,9 @@
+     // died (the function was killed). Its progress is stored, so the stage is
+     // taken again, but every dead invocation is counted and the run stops
+     // once there have been too many.
+-    if (isRollingForgeStageLeaseDead(state)) {
++    // NST cannot replay an abandoned invocation without reviewing its writes.
++    // Its acquisition guard below handles the fresh state without mutating it.
++    if (stage.id !== "upstream_skater_sources" && isRollingForgeStageLeaseDead(state)) {
+       let kills: number;
+       try {
+         kills = await recordRollingForgeStageKill({
+@@ -1341,6 +1366,14 @@
+       });
+     } catch (error) {
+       const message = errorMessage(error);
++      if (error instanceof RollingForgeStageReviewRequiredError) {
++        stageResults.push(notRunStage(stage, "failed", message, true));
++        termination = { state: "stopped_on_blocking_failure", resumeRequired: false,
++          nextStartDate: null, runKey, nextStageId: stage.id,
++          reason: "manual_review_required", detail: message };
++        terminalStopCode = NST_PERSISTENCE_UNCONFIRMED;
++        continue;
++      }
+       termination = continuation(
+         /LEASE_HELD|REVISION_MISMATCH|CONCURRENT_CHANGE/.test(message)
+           ? "stage_in_progress_elsewhere"
+@@ -1439,23 +1472,32 @@
+         );
+       } else if (result.status === "failed") {
+         const attempt = failedAttempts + 1;
++        const reviewCode = result.steps.find(step => step.requiresReview)?.requiresReview;
++        // The known uncertainty remains terminal even if saving its hold fails.
++        // The already-acquired running row also blocks a later NST takeover.
++        if (reviewCode) {
++          termination = { state: "stopped_on_blocking_failure", resumeRequired: false,
++            nextStartDate: null, runKey, nextStageId: stage.id, reason: "manual_review_required" };
++          terminalStopCode = reviewCode;
++        }
+         await finishRollingForgeStage({
+           supabase,
+           lease: activeLease,
+           outcome: "failed",
+-          attempt
++          attempt,
++          failureCode: reviewCode
+         });
+         if (stage.blocking) {
+-          const willRetry = attempt < MAX_BLOCKING_STAGE_ATTEMPTS;
++          const willRetry = !reviewCode && attempt < MAX_BLOCKING_STAGE_ATTEMPTS;
+           termination = {
+             state: "stopped_on_blocking_failure",
+             resumeRequired: willRetry,
+             nextStartDate: null,
+             runKey,
+             nextStageId: stage.id,
+-            reason: willRetry ? "retry_on_next_invocation" : "attempts_exhausted"
++            reason: reviewCode ? "manual_review_required" : willRetry ? "retry_on_next_invocation" : "attempts_exhausted"
+           };
+-          if (!willRetry) terminalStopCode = "attempts_exhausted";
++          if (!willRetry) terminalStopCode = reviewCode ?? "attempts_exhausted";
+         }
+       } else {
+         await finishRollingForgeStage({ supabase, lease: activeLease, outcome: "complete" });
+@@ -1489,8 +1531,7 @@
+ export const __testables = {
+   listGameIdsInRange,
+   invokeRouteStep,
+-  runStage,
+-  nstStepResume
++  runStage
+ };
+ 
+ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) {
+@@ -1630,21 +1671,26 @@
+       stageResults.push(result);
+ 
+       if (
+-        stopOnFailure &&
++        result.steps.some(step => step.requiresReview) || (stopOnFailure &&
+         stage.blocking &&
+-        (result.status === "failed" || result.status === "partial")
++        (result.status === "failed" || result.status === "partial"))
+       ) {
+         blocked = true;
+       }
+     }
+ 
++    const manualReviewStage = stageResults.find(stage => stage.steps.some(step => step.requiresReview));
++    if (manualReviewStage) terminalStopCode = NST_PERSISTENCE_UNCONFIRMED;
+     const failedBlocking = stageResults.some(
+       (stage) => stage.blocking && stage.status === "failed"
+     );
+     const partialBlocking = stageResults.find(
+       (stage) => stage.blocking && stage.status === "partial"
+     );
+-    termination = failedBlocking
++    termination = manualReviewStage
++      ? { state: "stopped_on_blocking_failure", resumeRequired: false, nextStartDate: null,
++          nextStageId: manualReviewStage.id, reason: "manual_review_required" }
++      : failedBlocking
+       ? {
+           state: "stopped_on_blocking_failure",
+           resumeRequired: true,
+--- a/web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts
++++ b/web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts
+@@ -604,6 +604,24 @@
+     });
+   });
+ 
++  it("keeps an explicit NST window bounded and holds uncertain writes even when stopOnFailure is false", async () => {
++    vi.useFakeTimers({ toFake: ["Date"] });
++    vi.setSystemTime(new Date("2026-10-19T10:05:00.000Z"));
++    updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => {
++      res.status(500).json({ success: false, error: "write acknowledgement lost", writePersistence: "not_confirmed" });
++    });
++    const res = createMockRes();
++    await handler({ method: "GET", query: { mode: "daily_incremental", startDate: "2026-10-16", endDate: "2026-10-17", stopOnFailure: "false" }, headers: {} } as any, res);
++    expect(updateNstGamelogMock.mock.calls[0][0].query).toEqual({
++      runMode: "incremental", startDate: "2026-10-16", endDate: "2026-10-17",
++      deadlineAt: String(Date.parse("2026-10-19T10:05:00.000Z") + 190_000)
++    });
++    expect(res.body.termination).toMatchObject({ state: "stopped_on_blocking_failure", resumeRequired: false, reason: "manual_review_required" });
++    expect(res.body.failureSummary.terminalStop).toEqual({ code: "nst_persistence_unconfirmed", stageId: "upstream_skater_sources" });
++    expect(updateWgoSkatersMock).not.toHaveBeenCalled();
++    expect(updateRollingPlayerAveragesMock).not.toHaveBeenCalled();
++  });
++
+   it("does not include retired support-only WGO routes in the upstream stage", async () => {
+     const req: any = {
+       method: "GET",
+@@ -823,23 +841,20 @@
+       expect(runProjectionV2Mock.mock.calls[0]?.[0]?.query?.date).toBe("2026-10-19");
+     });
+ 
+-    describe("NST step resume (agreed contract; inactive until Codex ships it)", () => {
++    describe("NST step resume (production-default producer contract)", () => {
+       const continuation = (cursor: string, overrides: Record<string, string> = {}) =>
+         async (req: any, res: any) => {
+           res.status(207).json({
+             success: false,
+             operationStatus: "continuation_required",
+-            resume: { required: true, request: { query: { ...req.query, cursor, deadlineAt: "1", ...overrides } } }
++            nstProgress: { auditPersistence: "confirmed" },
++            resume: { required: true, request: { query: { ...req.query, cursor, ...overrides } } }
+           });
+         };
+-      const reply = (status: number, body: Record<string, unknown>) => async (_req: any, res: any) => {
++      const reply = (status: number, body: unknown) => async (_req: any, res: any) => {
+         res.status(status).json(body);
+       };
+-      beforeEach(() => {
+-        __testables.nstStepResume.enabled = true;
+-      });
+       afterEach(() => {
+-        __testables.nstStepResume.enabled = false;
+         updateNstGamelogMock.mockReset();
+       });
+ 
+@@ -875,6 +890,28 @@
+         expect(nstStageRow()).toMatchObject({ status: "complete" });
+         expect(third.statusCode).toBe(200);
+         expect(third.body.termination).toMatchObject({ state: "completed" });
++        const fourth = await invokeScheduled("2026-10-19T10:20:00.000Z");
++        expect(fourth.body.termination.state).toBe("completed");
++        expect(updateNstGamelogMock).toHaveBeenCalledTimes(3);
++        expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
++        expect([...pipelineStateRows.values()].filter(row => row.operation_key.startsWith("upstream_skater_sources:kill:"))).toHaveLength(0);
++      });
++
++      it("keeps a resumed source-down result explicitly degraded and allows WGO once", async () => {
++        updateNstGamelogMock.mockImplementationOnce(continuation("7"))
++          .mockImplementationOnce(reply(503, { success: false, operationStatus: "source_down",
++            nstProgress: { auditPersistence: "confirmed", sourceOutcomes: { unresolvedCount: 1 } } }));
++        await invokeScheduled("2026-10-19T10:05:00.000Z");
++        const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
++        expect(updateNstGamelogMock.mock.calls[1][0].query).toMatchObject({ cursor: "7" });
++        expect(second.body.failureSummary.degradedSteps).toEqual([
++          { stageId: "upstream_skater_sources", stepId: "update-nst-gamelog", code: "nst_source_unavailable", reason: expect.stringContaining("Backfill the date") }
++        ]);
++        expect(nstStageRow()).toMatchObject({ status: "complete", cursor_game_id: 7 });
++        expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
++        await invokeScheduled("2026-10-19T10:15:00.000Z");
++        expect(updateNstGamelogMock).toHaveBeenCalledTimes(2);
++        expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
+       });
+ 
+       it("advances to WGO on the expected no-completed-games skip", async () => {
+@@ -889,11 +926,20 @@
+       });
+ 
+       it.each([
++        ["a missing success acknowledgement", reply(200, {})],
++        ["a null success body", reply(200, null)],
++        ["a non-boolean success acknowledgement", reply(200, { success: "true" })],
++        ["a contradictory successful continuation", reply(200, { success: true, operationStatus: "continuation_required", resume: { required: true } })],
+         ["a provider failure (>= 400)", reply(503, { success: false, classification: "rate_limited" })],
+         ["incomplete work (200, success false)", reply(200, { success: false, message: "Incomplete NST work; inspect source outcomes and deferred URLs." })],
+         ["a 207 that is not a continuation", reply(207, { success: false, operationStatus: "partial" })],
+         ["a cursor that is not positive", continuation("0")],
+         ["a non-integer cursor", continuation("7.5")],
++        ["a changed deadline", continuation("7", { deadlineAt: "1" })],
++        ["an unacknowledged continuation", async (req: any, res: any) => {
++          res.status(207).json({ success: false, operationStatus: "continuation_required",
++            resume: { required: true, request: { query: { ...req.query, cursor: "7" } } } });
++        }],
+         ["a missing cursor", async (req: any, res: any) => {
+           res.status(207).json({ success: false, operationStatus: "continuation_required",
+             resume: { required: true, request: { query: { ...req.query } } } });
+@@ -932,7 +978,23 @@
+         expect(nstStageRow()).toMatchObject({ status: "failed", cursor_game_id: 7 });
+       });
+ 
+-      it("does not advance when the cursor cannot be stored: the next invocation repeats from the last stored cursor", async () => {
++      it.each(["auditPersistence", "writePersistence"])("holds %s uncertainty for review across invocations without rerunning NST", async (field) => {
++        updateNstGamelogMock
++          .mockImplementationOnce(continuation("7"))
++          .mockImplementationOnce(reply(500, { success: false, error: "acknowledgement lost", [field]: "not_confirmed" }));
++        await invokeScheduled("2026-10-19T10:05:00.000Z");
++        const failed = await invokeScheduled("2026-10-19T10:10:00.000Z");
++        expect(failed.body.termination).toMatchObject({ state: "stopped_on_blocking_failure", resumeRequired: false, reason: "manual_review_required" });
++        expect(nstStageRow()).toMatchObject({ status: "failed", last_error: "nst_persistence_unconfirmed", cursor_game_id: 7 });
++        const held = await invokeScheduled("2026-10-19T10:15:00.000Z");
++        expect(held.body.termination).toMatchObject({ state: "stopped_on_blocking_failure", resumeRequired: false, reason: "manual_review_required" });
++        expect(held.body.failureSummary.terminalStop).toEqual({ code: "nst_persistence_unconfirmed", stageId: "upstream_skater_sources" });
++        expect(updateNstGamelogMock).toHaveBeenCalledTimes(2);
++        expect(updateWgoSkatersMock).not.toHaveBeenCalled();
++        expect(updateRollingPlayerAveragesMock).not.toHaveBeenCalled();
++      });
++
++      it("does not advance when the cursor cannot be stored and holds the abandoned NST call for review", async () => {
+         const original = pipelineStateRpc.getMockImplementation()!;
+         let failedAdvance = false;
+         pipelineStateRpc.mockImplementation(async (name: string, a: any) => {
+@@ -949,10 +1011,12 @@
+           expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+           expect(nstStageRow()).toMatchObject({ status: "running", cursor_game_id: null });
+ 
+-          // After the lease frees, NST repeats from the stored (empty) cursor.
+-          await invokeScheduled("2026-10-19T10:15:00.000Z");
+-          expect(updateNstGamelogMock.mock.calls[1]?.[0]?.query).toEqual(nstQuery("2026-10-19T10:15:00.000Z"));
+-          expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
++          // An acknowledged producer response does not prove why a later
++          // running row was abandoned. Recovery requires receipt review.
++          const held = await invokeScheduled("2026-10-19T10:15:00.000Z");
++          expect(held.body.termination).toMatchObject({ resumeRequired: false, reason: "manual_review_required" });
++          expect(updateNstGamelogMock).toHaveBeenCalledTimes(1);
++          expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+         } finally {
+           pipelineStateRpc.mockImplementation(original);
+         }
+@@ -967,11 +1031,9 @@
+           counts: { rows_persisted: 0, fetch_or_write_failed: 1 } } } };
+       afterEach(() => {
+         updateNstGamelogMock.mockReset();
+-        __testables.nstStepResume.enabled = false;
+-      });
+-
+-      it.each([false, true])("with NST step resume %s: WGO and the later stages run, and the response names the degraded step", async (resumeEnabled) => {
+-        __testables.nstStepResume.enabled = resumeEnabled;
++      });
++
++      it("runs WGO and the later stages, and names the degraded step", async () => {
+         updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => { res.status(200).json(outage); });
+ 
+         const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+@@ -1026,28 +1088,6 @@
+         expect(stageStatus(res, "upstream_skater_sources").status).toBe("failed");
+         expect(res.body.termination).toMatchObject({ state: "stopped_on_blocking_failure" });
+         expect(res.body.failureSummary.degradedSteps).toEqual([]);
+-      });
+-    });
+-
+-    describe("while NST step resume is inactive, today's NST responses behave as before", () => {
+-      afterEach(() => updateNstGamelogMock.mockReset());
+-
+-      it.each([
+-        ["success", 200, { success: true, message: "Done" }, "success"],
+-        ["incomplete work", 200, { success: false, message: "Incomplete NST work; inspect source outcomes and deferred URLs." }, "failed"],
+-        ["an error", 500, { success: false, error: "boom" }, "failed"],
+-        ["a continuation", 207, { success: false, operationStatus: "continuation_required",
+-          resume: { required: true, request: { query: { runMode: "incremental", startDate: "2026-10-18", endDate: "2026-10-18", cursor: "7" } } } }, "failed"],
+-      ])("%s: WGO still runs and nothing is stored", async (_label, status, body, stepStatus) => {
+-        updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => { res.status(status).json(body); });
+-
+-        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+-
+-        expect(stageStatus(res, "upstream_skater_sources").steps.map((step: any) => [step.id, step.status])).toEqual([
+-          ["update-nst-gamelog", stepStatus], ["update-wgo-skaters", "success"], ["update-wgo-totals", "success"],
+-        ]);
+-        expect(updateNstGamelogMock.mock.calls[0]?.[0]?.query).not.toHaveProperty("cursor");
+-        expect(nstStageRow()?.cursor_game_id ?? null).toBeNull();
+       });
+     });
+ 
+@@ -1615,3 +1655,113 @@
+     expect(Number(query.deadlineAt)).toBeLessThanOrEqual(Date.now() + 190_000);
+   });
+ });
++
++// Appended to the unchanged owner's test harness prefix in an isolated test file.
++// Existing candidate source/tests stay byte-identical. All providers are mocked.
++import serverClient from "lib/supabase/server";
++
++describe("NST acquisition and uncertain-persistence regressions", () => {
++  const stageKey = (id: string) => `rolling_forge_pipeline|daily_incremental:2026-10-19|${id}`;
++  const stageRow = () => pipelineStateRows.get(stageKey("upstream_skater_sources"));
++  const originalRpc = pipelineStateRpc.getMockImplementation()!;
++  const originalFrom = vi.mocked(serverClient.from).getMockImplementation()!;
++  const success = async (_req: any, res: any) => res.status(200).json({ success: true });
++  const signal = () => {
++    let resolve!: () => void;
++    const promise = new Promise<void>(done => { resolve = done; });
++    return { promise, resolve };
++  };
++  const invoke = async (query: Record<string, string> = {}) => {
++    const res = createMockRes();
++    await handler({ method: "GET", headers: {}, query: { mode: "daily_incremental", includeAccuracy: "false", ...query } } as any, res);
++    return res;
++  };
++  const seed = (id: string, extras: Record<string, unknown> = {}) => pipelineStateRows.set(stageKey(id), {
++    pipeline_key: "rolling_forge_pipeline", scope_key: "daily_incremental:2026-10-19", operation_key: id,
++    revision: 1, status: "complete", cursor_game_id: null, cursor_date: "2026-10-19",
++    range_start_date: "2026-10-19", range_end_date: "2026-10-19", lease_owner: null,
++    lease_expires_at: null, last_error: null, updated_at: "2026-10-19T10:04:00.000Z", ...extras
++  });
++
++  beforeEach(() => {
++    vi.clearAllMocks();
++    vi.useFakeTimers({ toFake: ["Date"] });
++    vi.setSystemTime(new Date("2026-10-19T10:05:00.000Z"));
++    pipelineStateRows.clear();
++    pipelineStateRpc.mockImplementation(originalRpc);
++    vi.mocked(serverClient.from).mockImplementation(originalFrom);
++    process.env.CRON_SECRET = "test-secret";
++    for (const mock of [updateGamesMock, updateTeamsMock, updatePlayersMock, updateNstGamelogMock,
++      updateWgoSkatersMock, updateWgoTotalsMock, updateWgoAveragesMock, updateLineCombinationsMock,
++      updatePowerPlayCombinationsMock, updateRollingPlayerAveragesMock, ingestProjectionInputsMock,
++      shiftChartsMock, buildProjectionDerivedMock, updateGoalieProjectionsV2Mock, runProjectionV2Mock, runProjectionAccuracyMock]) {
++      mock.mockReset().mockImplementation(success);
++    }
++    seed("core_entity_freshness");
++    seed("upstream_skater_sources", { status: "failed", last_error: "stage_handoff", cursor_game_id: 7 });
++  });
++  afterEach(() => {
++    pipelineStateRpc.mockImplementation(originalRpc);
++    vi.mocked(serverClient.from).mockImplementation(originalFrom);
++    vi.useRealTimers();
++  });
++
++  it("must preserve a durable manual-review hold when another same-version invocation read state before the hold", async () => {
++    const enteredNst = signal(), releaseNst = signal(), readSnapshot = signal(), releaseSnapshot = signal();
++    updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => {
++      enteredNst.resolve();
++      await releaseNst.promise;
++      res.status(500).json({ success: false, error: "audit acknowledgement lost", auditPersistence: "not_confirmed" });
++    });
++    const firstPromise = invoke();
++    await enteredNst.promise;
++    let intercept = true;
++    vi.mocked(serverClient.from).mockImplementation(((table: string) => {
++      const query = originalFrom(table as any);
++      if (table === "projection_pipeline_state" && intercept) {
++        intercept = false;
++        const originalThen = (query as any).then;
++        (query as any).then = (resolve: any, reject: any) => originalThen(async (snapshot: any) => {
++          readSnapshot.resolve();
++          await releaseSnapshot.promise;
++          return resolve(snapshot);
++        }, reject);
++      }
++      return query;
++    }) as any);
++    const observerPromise = invoke();
++    await readSnapshot.promise;
++    releaseNst.resolve();
++    const first = await firstPromise;
++    expect(first.body.termination.reason).toBe("manual_review_required");
++    expect(stageRow().last_error).toBe("nst_persistence_unconfirmed");
++    releaseSnapshot.resolve();
++    const observer = await observerPromise;
++    console.log("REVIEW_RACE_OBSERVED", JSON.stringify({ nstCalls: updateNstGamelogMock.mock.calls.length,
++      observerTermination: observer.body.termination, finalStage: stageRow() }));
++    expect.soft(updateNstGamelogMock).toHaveBeenCalledTimes(1);
++    expect.soft(observer.body.termination.reason).toBe("manual_review_required");
++    expect.soft(stageRow().last_error).toBe("nst_persistence_unconfirmed");
++  });
++
++  it("must not advertise retry when a manual-review hold cannot be saved", async () => {
++    pipelineStateRpc.mockImplementation(async (name: string, args: any) => {
++      if (args.p_transition === "fail" && args.p_last_error === "nst_persistence_unconfirmed") {
++        return { data: null, error: { message: "synthetic hold persistence failure" } };
++      }
++      return originalRpc(name, args);
++    });
++    updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) =>
++      res.status(500).json({ success: false, error: "write acknowledgement lost", writePersistence: "not_confirmed" }));
++    const first = await invoke();
++    console.log("REVIEW_FAILED_HOLD_FIRST", JSON.stringify({ termination: first.body.termination, row: stageRow() }));
++    expect.soft(first.body.termination).toMatchObject({ resumeRequired: false, reason: "manual_review_required" });
++    vi.setSystemTime(new Date("2026-10-19T10:15:00.000Z"));
++    const next = await invoke();
++    console.log("REVIEW_FAILED_HOLD_NEXT", JSON.stringify({ nstCalls: updateNstGamelogMock.mock.calls.length,
++      termination: next.body.termination, row: stageRow() }));
++    expect.soft(updateNstGamelogMock).toHaveBeenCalledTimes(1);
++    expect.soft(updateWgoSkatersMock).not.toHaveBeenCalled();
++  });
++
++});
+--- a/web/lib/rollingForgePipelineRunState.ts
++++ b/web/lib/rollingForgePipelineRunState.ts
+@@ -37,6 +37,9 @@
+ // A partial stage releases its lease with an explicit resumable marker.
+ export const ROLLING_FORGE_HANDOFF_LEASE_MS = 30_000;
+ const HANDOFF_CODE = "stage_handoff";
++export const NST_PERSISTENCE_UNCONFIRMED = "nst_persistence_unconfirmed";
++export class RollingForgeStageReviewRequiredError extends Error {}
++
+ 
+ const FAILURE_ATTEMPT_PATTERN = /^stage_failed:attempt-(\d+)$/;
+ 
+@@ -180,7 +183,22 @@
+     rangeEndDate: args.runDate,
+     initialCursorDate: args.runDate,
+     leaseMs: Math.max(30_000, args.leaseExpiresAtMs - now.getTime()),
+-    now
++    now,
++    assertResumable: args.stageId === "upstream_skater_sources" ? (current) => {
++      if (current.status === "failed" && current.lastError === NST_PERSISTENCE_UNCONFIRMED) {
++        throw new RollingForgeStageReviewRequiredError("NST persistence is unconfirmed; the durable review hold cannot be reacquired.");
++      }
++      // A running row is durable pre-call intent. Without an acknowledged
++      // handoff, even an expired owner may have written data or lost its hold.
++      // Refuse all running takeovers, including expiry between this read and CAS.
++      if (current.status === "running") {
++        const expiresAt = Date.parse(current.leaseExpiresAt ?? "");
++        if (Number.isFinite(expiresAt) && expiresAt > now.getTime()) {
++          throw new Error("PROJECTION_PIPELINE_LEASE_HELD");
++        }
++        throw new RollingForgeStageReviewRequiredError("NST invocation ended without an acknowledged handoff; inspect persistence before retrying.");
++      }
++    } : undefined
+   });
+ }
+ 
+@@ -217,6 +235,7 @@
+   lease: ProjectionPipelineLease;
+   outcome: "complete" | "failed";
+   attempt?: number;
++  failureCode?: string;
+ }) {
+   return finishProjectionPipelineLease({
+     supabase: args.supabase,
+@@ -224,7 +243,7 @@
+     outcome: args.outcome,
+     failureCode:
+       args.outcome === "failed"
+-        ? buildRollingForgeStageFailureCode(args.attempt ?? 1)
++        ? args.failureCode ?? buildRollingForgeStageFailureCode(args.attempt ?? 1)
+         : undefined
+   });
+ }
+--- a/web/lib/projections/projectionPipelineState.ts
++++ b/web/lib/projections/projectionPipelineState.ts
+@@ -324,6 +324,8 @@
+   initialCursorDate: string;
+   leaseMs?: number;
+   now?: Date;
++  /** Guard the same revision used by the acquire CAS; a rejection must not mutate it. */
++  assertResumable?: (current: Readonly<ProjectionPipelineLease>) => void;
+ }): Promise<ProjectionPipelineLease> {
+   const client = args.supabase as unknown as StateClient;
+   const pipelineKey = requirePipelineOrOperationKey(
+@@ -370,6 +372,7 @@
+     }
+     return current;
+   }
++  if (current) args.assertResumable?.(current);
+   const shouldResume =
+     current?.status === "failed" || current?.status === "running";
+   const leaseOwner = randomUUID();
+--- a/web/lib/projections/projectionPipelineState.test.ts
++++ b/web/lib/projections/projectionPipelineState.test.ts
+@@ -107,6 +107,35 @@
+     expect(mocks.like).toHaveBeenCalledWith("operation_key", "canonical:%");
+     expect(mocks.lte).toHaveBeenCalledWith("range_end_date", "2026-07-20");
+     expect(mocks.limit).toHaveBeenCalledWith(1);
++  });
++
++  it("checks resumability against the same freshly read revision used by acquisition", async () => {
++    mocks.maybeSingle.mockResolvedValueOnce({ data: stateRow({
++      revision: 5, status: "failed", lease_owner: null, lease_expires_at: null,
++      last_error: "nst_persistence_unconfirmed",
++    }), error: null });
++    const assertResumable = vi.fn((current: Readonly<ProjectionPipelineLease>) => {
++      expect(current.revision).toBe(5);
++      if (current.lastError === "nst_persistence_unconfirmed") throw new Error("manual review");
++    });
++    await expect(acquireProjectionPipelineLease({ supabase,
++      operationKey: "canonical:2026-07-19:2026-07-19", rangeStartDate: "2026-07-19",
++      rangeEndDate: "2026-07-19", initialCursorDate: "2026-07-19", assertResumable,
++    })).rejects.toThrow("manual review");
++    expect(assertResumable).toHaveBeenCalledTimes(1);
++    expect(mocks.rpc).not.toHaveBeenCalled();
++  });
++
++  it("does not reacquire when the guarded revision changes before the RPC", async () => {
++    mocks.maybeSingle.mockResolvedValueOnce({ data: stateRow({ revision: 5, status: "failed", last_error: "stage_handoff" }), error: null });
++    mocks.rpc.mockResolvedValueOnce({ data: null, error: { message: "PROJECTION_PIPELINE_REVISION_MISMATCH" } });
++    const assertResumable = vi.fn();
++    await expect(acquireProjectionPipelineLease({ supabase,
++      operationKey: "canonical:2026-07-19:2026-07-19", rangeStartDate: "2026-07-19",
++      rangeEndDate: "2026-07-19", initialCursorDate: "2026-07-19", assertResumable,
++    })).rejects.toThrow("PROJECTION_PIPELINE_REVISION_MISMATCH");
++    expect(assertResumable).toHaveBeenCalledWith(expect.objectContaining({ revision: 5 }));
++    expect(mocks.rpc).toHaveBeenCalledWith("advance_projection_pipeline_state_v1", expect.objectContaining({ p_expected_revision: 5 }));
+   });
+ 
+   it("acquires an absent operation with revision zero and a bounded lease", async () => {

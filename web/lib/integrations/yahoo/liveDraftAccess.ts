@@ -1,6 +1,5 @@
-import { getDraftProFeatureFlags } from "lib/draft-pro/features";
 import type { DraftProAccess } from "lib/draft-pro/contracts";
-import { loadDraftProAccess } from "lib/draft-pro/server";
+import { loadProviderSyncAccess } from "lib/integrations/providerSyncAccessServer";
 
 import {
   isYahooLiveDraftEnabled,
@@ -35,7 +34,7 @@ export function isConfirmedYahooLiveDraftAccessLoss(error: unknown) {
 }
 
 export function assertYahooLiveDraftServerAccess(args: {
-  access: DraftProAccess;
+  access: Pick<DraftProAccess, "eligible" | "reason">;
   environment?: YahooLiveDraftEnvironment;
   userId: string;
 }) {
@@ -71,8 +70,8 @@ export function assertYahooLiveDraftServerAccess(args: {
     const unavailable = args.access.reason === "verification_unavailable";
     throw new YahooLiveDraftError(
       unavailable
-        ? "Draft Pro access could not be verified. Yahoo updates will retry."
-        : "Draft Pro access is required for Yahoo live draft sync.",
+        ? "Premium access could not be verified. Yahoo updates will retry."
+        : "Premium access is required for Yahoo live draft sync.",
       unavailable ? 503 : 403,
       unavailable
         ? "yahoo_draft_pro_verification_unavailable"
@@ -85,12 +84,6 @@ export function assertYahooLiveDraftServerAccess(args: {
 }
 
 export async function requireYahooLiveDraftServerAccess(userId: string) {
-  const providerReady = isYahooLiveDraftProviderReady();
-  const access = await loadDraftProAccess(userId, {
-    now: new Date(),
-    flags: getDraftProFeatureFlags(),
-    patreonVerificationAvailable: true,
-    providerReadiness: { yahoo: providerReady },
-  });
+  const access = await loadProviderSyncAccess(userId);
   return assertYahooLiveDraftServerAccess({ access, userId });
 }

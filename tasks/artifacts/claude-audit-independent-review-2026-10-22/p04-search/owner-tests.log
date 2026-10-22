@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts components/StatsPage/PlayerSearchBar.test.tsx
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-mx4zwpjs/isolation/snapshot/web
+
+(node:75638) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/StatsPage/PlayerSearchBar.test.tsx (14 tests) 97ms
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+   Start at  09:20:49
+   Duration  638ms (transform 43ms, setup 10ms, collect 137ms, tests 97ms, environment 295ms, prepare 34ms)
+

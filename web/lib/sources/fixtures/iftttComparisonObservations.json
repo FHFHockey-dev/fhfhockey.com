@@ -1,0 +1,55 @@
+{
+  "format": "ifttt-comparison-observations-v1",
+  "provenance": "Retained source observations from comparison-content-continuation-v1-2026-10-19; source evidence only, not human gold or canonical identity/game adjudication.",
+  "records": [
+    {
+      "id": "S04",
+      "sourceId": "2105364132128240008",
+      "author": "@Sheng_Peng",
+      "publishedAt": "2026-09-30T18:28:19.000Z",
+      "receivedAt": "2026-09-30T18:40:40.937455+00:00",
+      "text": "#SJSharks power play groups same as yesterday, but one wrinkle, see Misa doing some net front, which he did last year...  \n\nPP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg \n\nPP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
+      "typedContract": {
+        "groupRecurrenceQualifier": "same as yesterday",
+        "misaNetFront": "current observation, compared with last year",
+        "ppMembership": "source-listed PP1 and PP2",
+        "forbiddenInferences": ["Misa net-front role yesterday", "permanent net-front role"],
+        "adapterExerciseStatus": "fixture_only_no_typed_interpreter_field"
+      },
+      "gameId": null,
+      "effectiveAt": null
+    },
+    {
+      "id": "S06",
+      "sourceId": "2104971594632454155",
+      "author": "@JasonGregor",
+      "publishedAt": "2026-09-29T16:28:31.000Z",
+      "receivedAt": "2026-09-29T17:00:52.374726+00:00",
+      "text": "Podkolzin will take RNH’s spot on the first unit powerplay… via Babcock.",
+      "gameId": null,
+      "effectiveAt": null
+    },
+    {
+      "id": "S10A",
+      "sourceId": "2104644558701351383",
+      "author": "@DannyWebster21",
+      "publishedAt": "2026-09-28T18:48:59.000Z",
+      "receivedAt": null,
+      "text": "Might be much ado about nothing, but Olofsson is taking PP1 reps with Marner up top.",
+      "gameId": null,
+      "effectiveAt": null
+    },
+    {
+      "id": "S10B",
+      "sourceId": "2104672698786013556",
+      "author": "@DannyWebster21",
+      "publishedAt": "2026-09-28T20:40:48.000Z",
+      "receivedAt": "2026-09-28T20:50:23.060892+00:00",
+      "text": "Turns out this was, in fact, much ado about nothing.\n\nThis was a 5-on-3 drill. At ease.",
+      "targetObservationId": null,
+      "interpretedAt": null,
+      "gameId": null,
+      "effectiveAt": null
+    }
+  ]
+}

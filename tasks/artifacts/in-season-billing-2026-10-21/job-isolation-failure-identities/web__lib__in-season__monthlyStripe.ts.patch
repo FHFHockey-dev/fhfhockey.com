@@ -1,0 +1,20 @@
+--- web/lib/in-season/monthlyStripe.ts (baseline)
++++ web/lib/in-season/monthlyStripe.ts
+@@ -119,6 +119,8 @@
+ /** A signed original failure event supplies the first failure time. A later
+  * attempt alone cannot restart a new 48-hour window. Fresh retrieval still
+  * establishes the subscription/invoice/customer binding before calling this.
++ * Invoice events share one initial-failure identity: their retry-schedule count
++ * does not identify manual attempts, which use durable worker receipts.
+  */
+ export function verifiedMonthlyFailure(binding: MonthlyBinding, event: Stripe.Event, initialPrice?: Stripe.Price): MonthlyEvent {
+   if (event.livemode !== false || !["invoice.payment_failed", "invoice.payment_action_required"].includes(event.type) || !Number.isSafeInteger(event.created) || event.created <= 0) throw new Error("Not a verified monthly failure event.");
+@@ -126,7 +128,7 @@
+   const period = verifyMonthlyInvoice(binding, invoice, initialPrice);
+   if (!invoice.id || !Number.isSafeInteger(invoice.attempt_count) || invoice.attempt_count < 1 || invoice.status !== "open") throw new Error("Invalid failed invoice.");
+   return { kind: "failed", eventId: event.id, userId: binding.userId, subscriptionId: binding.subscriptionId,
+-    invoiceId: invoice.id, period, failedAttempts: invoice.attempt_count,
++    invoiceId: invoice.id, period, failureId: `invoice:${invoice.id}:initial`,
+     firstFailureAt: invoice.attempt_count === 1 ? new Date(event.created * 1000).toISOString() : null };
+ }
+ 

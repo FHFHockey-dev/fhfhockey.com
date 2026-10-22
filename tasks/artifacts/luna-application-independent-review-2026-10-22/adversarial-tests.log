@@ -1,0 +1,43 @@
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-luna-contract-independent-hzqxptn7/web
+
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > uses microsecond knowledge boundaries for canonical identity 3ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > does not let backdated validity override late alias or membership knowledge 1ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > keeps effective membership half-open independently of knowledge time 1ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > does not use a current DB record interval as historical membership 12ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > requires literal true before reading any review payload 0ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > retains preceding conditional context without upgrading the literal statement or allowing effects 3ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > rejects a heading as a matched outgoing player through the existing proposal gate 2ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > rejects conflicting dated membership through the existing proposal gate 1ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > documents an integration constraint: a bare projected snapshot does not bind later request publication time 1ms
+ × lib/sources/review-contracts.test.ts > independent offline contract controls > requires the outgoing occurrence to occupy the grammatical slot, not the repeated noun 4ms
+   → expected 'reviewable_held' to be 'held' // Object.is equality
+ × lib/sources/review-contracts.test.ts > independent offline contract controls > requires the outgoing occurrence to occupy the grammatical slot, not the repeated predicate 1ms
+   → expected 'reviewable_held' to be 'held' // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/sources/review-contracts.test.ts > independent offline contract controls > requires the outgoing occurrence to occupy the grammatical slot, not the repeated noun
+ FAIL  lib/sources/review-contracts.test.ts > independent offline contract controls > requires the outgoing occurrence to occupy the grammatical slot, not the repeated predicate
+AssertionError: expected 'reviewable_held' to be 'held' // Object.is equality
+
+Expected: [32m"held"[39m
+Received: [31m"[7mreviewable_[27mheld"[39m
+
+ ❯ lib/sources/review-contracts.test.ts:112:27
+    110|     const wrong=kind==='noun' ? text.lastIndexOf('spot') : text.indexO…
+    111|     const result=prepareTweetIdentityReplacementReview(fixture(text,wr…
+    112|     expect(result.status).toBe('held');
+       |                           ^
+    113|   });
+    114| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 9 passed (11)
+   Start at  09:26:30
+   Duration  230ms (transform 60ms, setup 0ms, collect 82ms, tests 28ms, environment 0ms, prepare 31ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/artifacts/luna-application-independent-review-2026-10-22/adversarial-tests.json

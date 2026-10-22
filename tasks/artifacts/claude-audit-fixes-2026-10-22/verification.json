@@ -1,0 +1,38 @@
+{
+  "node": "22.11.0",
+  "npm": "10.9.0",
+  "baseline_tests": {
+    "status": "failed_as_expected",
+    "failed": 7
+  },
+  "temporal_bridge": {
+    "status": "passed",
+    "passed": 296
+  },
+  "ledger_pipeline_initial": {
+    "status": "failed_then_corrected",
+    "passed": 64,
+    "failed": 6
+  },
+  "lease_temporal_final": {
+    "status": "passed",
+    "passed": 156
+  },
+  "fixed_edge": {
+    "status": "passed",
+    "passed": 4,
+    "filtered_out": 2
+  },
+  "typecheck": {
+    "status": "passed",
+    "exit_code": 0
+  },
+  "eslint": {
+    "status": "passed",
+    "exit_code": 0
+  },
+  "diff_check": {
+    "status": "passed",
+    "exit_code": 0
+  }
+}
