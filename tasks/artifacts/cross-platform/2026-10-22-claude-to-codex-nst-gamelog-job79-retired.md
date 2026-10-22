@@ -35,3 +35,15 @@ counts equal the WGO skater counts.
 - **Observed today:** a 500 "NST explicit progress read is unconfirmed; admission stopped." at 14:02Z during
   TJ's backfill. The `cron_job_audit` read filtered on `details->nstProgress->>scope` failed; there were 0 NST
   requests and 0 rows, and the rerun resumed. If it recurs, the lookup may need an index or a narrower filter.
+
+## Release coupling (found 2026-10-22 while gating R24, not pushed)
+
+- **The constant change can't ship to master on its own.** On master `6d5664f76`, `resolveSharedSmallDateBurstPlan` still
+  requires `scheduleClearance.allowed` to burst. Removing the 07:25 entry there would pin `update-nst-gamelog` to
+  21 s spacing, which also slows the pipeline's nightly NST step and every backfill.
+  `__tests__/pages/api/v1/db/update-nst-gamelog.test.ts` catches this: 4 failures.
+- **Ship it together with octoberBranch's advisory clearance** (`e89dfdde5`, "Fix NST bounded bursts…").
+  `cron-schedule.md` (job 79 inactive, job 399 added) and the cron count tests go in the same release.
+- **Until then,** master's schedule doc still lists job 79 as active and lacks job 399. Production is unaffected,
+  because the job state lives in pg_cron.
+
