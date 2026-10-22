@@ -5,8 +5,9 @@
 .workspace {
   display: grid;
   gap: v.$space-sm;
+  max-width: v.$page-max-width;
+  margin-inline: auto;
   padding: v.$space-sm;
-  background: v.$draft-canvas;
   color: v.$text-primary;
   font-family: v.$font-family-primary;
   min-width: 0;
