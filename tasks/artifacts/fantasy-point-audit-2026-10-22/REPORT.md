@@ -382,3 +382,55 @@ order by 1, 2;
 - **Analysis:** `analyze.py`, `analyze2.py`, `multipliers.py`, `bootstrap.py` (game-clustered, 2,000 reps, seed 1). Outputs are in `analysis-out*.txt`.
 - **Goalie check:** per game, P(win) summed across the two teams' `forge_goalie_projections` rows in the same captures.
 - **Not run:** tests, tsc, any production read. The production flag value comes from a diary note, not a direct read.
+
+## Appendix C: production results (run 2026-10-22, read-only, TJ-approved)
+
+Q1, Q2, Q5 and Q6 were run once each against production. Q3 and Q4 wait until the served-forecast ledger holds about a week of settled games.
+
+**Q1: stored Yahoo weights.**
+- TJ's main league stores G 3, A 2, PPP 1, SOG 0.2, HIT 0.2, BLK 0.25, W 4, GA −1, SV 0.2, SHO 3. These are the FHFH defaults, and the GA sign is negative. **Step 11 is confirmed.**
+- One other of TJ's leagues also scores shorthanded points (Yahoo stat 11). FORGE does not project those, so F5 costs more in that league.
+
+**Q2: structural totals, 10-13..10-20 (2,231 skater-games).**
+
+| | F | D | all |
+|---|---|---|---|
+| goals (PP / SH / empty-net) | 336 (74 / 12 / 16) | 56 (10 / 2 / 1) | 392 (84 / 14 / 17) |
+| assists (PP / SH) | 465 (122 / 9) | 186 (32 / 10) | 651 (154 / 19) |
+| shots (PP / SH) | 2,476 (435 / 81) | 973 (87 / 27) | 3,449 (522 / 108) |
+
+- Actual PP assists per PP goal: 154 / 84 = **1.83**.
+- Shorthanded goals and assists are 3.6% of goals and 2.9% of assists. They are worth 0.036 FP per skater-game, plus at most 0.010 from SH shots. **F5 is about −0.04 FP per game**, the top of its estimated range.
+
+**Q5: production rolling inputs (ev rows, latest per game date).**
+
+| game date | ev rows | null last-5 rates | zero hits | zero blocks |
+|---|---|---|---|---|
+| 10-07..10-11 | 1,224 | 10 (1%) | 260 (21%) | 357 (29%) |
+| 10-12 | 108 | 33 | 20 | 43 |
+| 10-13 | 575 | 227 (39%) | 114 | 168 |
+| 10-14..10-16 | 258 | 228 (88%) | 9 | 11 |
+| 10-17 | 504 | 398 (79%) | 29 | 49 |
+| 10-18 | 72 | 61 (85%) | 2 | 3 |
+| 10-19..10-21 | 505 | 0 | 194 (38%) | 246 (49%) |
+
+- **F3 is a production problem, not a reconstruction artefact.**
+- The null band (10-12..10-18) lines up with the NST gamelog gap now being backfilled.
+- From 10-19 the nulls are gone, but zero last-5 hit and block rates jump from about 21–29% to 38–49%. That is consistent with last-5 windows that span the NST gap counting the missing games as zero (inferred, not traced).
+- Re-run Q5 after the backfill and the bounded rolling recompute.
+
+**Q6: production FORGE h1 rows.**
+
+| as-of | git SHA | rows | mean FP | PP A per PP G | zero hits | zero blocks | mean hits | mean blocks |
+|---|---|---|---|---|---|---|---|---|
+| 10-18 | (none) | 72 | 1.923 | 0.80 | 16 | 15 | 1.239 | 0.862 |
+| 10-19 | (none) | 141 | 1.782 | 0.84 | 4 | 12 | 1.372 | 0.780 |
+| 10-20 | `986144844` | 391 | 1.279 | 0.91 | 19 | 37 | 0.546 | 0.281 |
+| 10-20 | `local:unk` | 391 | 1.787 | 0.85 | 0 | 0 | 1.245 | 0.899 |
+| 10-21 | `7baa91407` | 140 | 1.180 | 0.90 | 4 | 10 | 0.538 | 0.219 |
+| 10-22 | `248df9923` (R20) | 427 | 1.648 | 0.95 | 139 | 168 | 1.170 | 0.720 |
+
+- **F2 is confirmed in production.** Every run projects 0.80–0.95 PP assists per PP goal against an actual 1.83.
+- The 10-20 and 10-21 production runs sit in the null-fallback regime: about 0.5 hits and 0.2–0.3 blocks per player, and mean FP 1.18–1.28.
+- The 10-22 run (R20) recovered to a mean of 1.65 FP. But 33% of skaters are projected 0 hits and 39% 0 blocks, which is the zero-rate path from Q5.
+- A `local:unk` run is recorded as succeeded for 10-20, alongside the production run for that date.
