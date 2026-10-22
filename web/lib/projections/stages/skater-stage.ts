@@ -309,11 +309,13 @@ import {
 import {
   ANALYTICS_MODEL_NAME,
   ANALYTICS_MODEL_VERSION,
-  buildModelMarketFlagRow,
+  buildModelMarketProbabilityFlagRow,
+  compareModelWithMarket,
+  forgePropOverProbability,
   GAME_MARKET_EDGE_THRESHOLDS,
   getConsensusLineValue,
   getProjectionValueForPropMarket,
-  PLAYER_MARKET_EDGE_THRESHOLDS,
+  quotesFromMarketSummary,
 } from "../utils/market-output-builders";
 
 function assertSupabase() {
@@ -1579,8 +1581,12 @@ export async function runPerGameSkaterStage(args: {
       let totals: LeaguePhysicalTotals | null = null;
       try {
         totals = await fetchLeaguePhysicalTotals(currentSeasonId, asOfDate);
-      } catch {
-        metrics.data_quality.physical_league_totals_unavailable += 1;
+      } catch (error) {
+        metrics.data_quality.physical_league_totals_unavailable =
+          (metrics.data_quality.physical_league_totals_unavailable ?? 0) + 1;
+        if (error instanceof Error && "reason" in error && error.reason === "rpc_missing") {
+          metrics.warnings.push("physical_league_totals_rpc_missing:without_league_rescale");
+        }
       }
       leaguePhysicalTotalsCache.set(leaguePhysicalKey, totals);
     }
@@ -2897,6 +2903,10 @@ export async function runPerGameSkaterStage(args: {
           })),
         ),
         p.trendAdjustment?.uncertaintyVolatilityMultiplier ?? 1,
+        {
+          negativeBinomial: true,
+          position: playerMetaById.get(playerId)?.position ?? null,
+        },
       );
       const scenarioMetadata = buildSkaterScenarioMetadata({
         scenarios: p.roleScenarios,
@@ -3411,35 +3421,27 @@ export async function runPerGameSkaterStage(args: {
           },
         });
 
-        const consensusLineValue = getConsensusLineValue(marketSummary);
-        const edgeThreshold = PLAYER_MARKET_EDGE_THRESHOLDS[marketType] ?? 0.25;
-        if (consensusLineValue != null) {
-          const edgeValue = expectedValue - consensusLineValue;
-          if (Math.abs(edgeValue) >= edgeThreshold) {
-            modelMarketFlagRows.push(
-              buildModelMarketFlagRow({
-                asOfDate,
-                entityType: "player",
-                entityId: playerId,
-                gameId: game.id,
-                marketType,
-                flagType: edgeValue > 0 ? "model_over" : "model_under",
-                edgeValue,
-                reasons: [
-                  {
-                    expected_value: expectedValue,
-                    line_value: consensusLineValue,
-                    sportsbook_count: marketSummary.sportsbookKeys.length,
-                  },
-                ],
-                provider: marketSummary.sourceNames[0] ?? null,
-                metadata: {
-                  horizon_games: horizonGames,
-                  run_id: runId,
-                },
-              }),
-            );
-          }
+        const comparison = compareModelWithMarket({
+          marketType,
+          expectedValue,
+          quotes: quotesFromMarketSummary(marketSummary),
+          overProbability: forgePropOverProbability(
+            playerMetaById.get(playerId)?.position ?? null,
+          ),
+        });
+        if (comparison) {
+          const outputRow = playerPredictionOutputRows[playerPredictionOutputRows.length - 1];
+          outputRow.probability_over = Number(comparison.model.over.toFixed(4));
+          const flagRow = buildModelMarketProbabilityFlagRow({
+            asOfDate,
+            entityType: "player",
+            entityId: playerId,
+            gameId: game.id,
+            comparison,
+            provider: marketSummary.sourceNames[0] ?? null,
+            metadata: { horizon_games: horizonGames, run_id: runId },
+          });
+          if (flagRow) modelMarketFlagRows.push(flagRow);
         }
       }
     }

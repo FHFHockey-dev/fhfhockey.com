@@ -833,8 +833,13 @@ async function runProjectionCalculations(
       pendingGames: slateGames.filter((game) => !completedGameIds.has(game.id)).length,
     });
 
+    // A resumable run pauses cheaply, so after its first game it starts another
+    // only while the slowest game so far still fits before the deadline. The
+    // deadline then bounds when games end, not just when they start.
+    let slowestGameMs = 0;
     gamesLoop: for (const game of pendingGames) {
-      if (Date.now() > deadlineMs) {
+      const gameStartedAt = Date.now();
+      if (gameStartedAt > deadlineMs || (claim && gameStartedAt + slowestGameMs > deadlineMs)) {
         timedOut = true;
         break gamesLoop;
       }
@@ -983,6 +988,7 @@ async function runProjectionCalculations(
         selectedGoalieByTeamId,
         playerPredictionOutputRows,
         modelMarketFlagRows,
+        gameMarketSummary: gameMarketContextByGameId.get(game.id),
         metrics: metrics as { warnings: string[] },
       });
       goalieRowsUpserted += goalieStageResult.goalieRowsUpserted;
@@ -1137,6 +1143,7 @@ async function runProjectionCalculations(
           leaseExpiresAt: resumableRunLeaseExpiresAt(opts?.deadlineMs),
         });
       }
+      slowestGameMs = Math.max(slowestGameMs, Date.now() - gameStartedAt);
     }
 
     if (claim && checkpoint && timedOut) {

@@ -14,13 +14,23 @@
  *   resumeFrom=<n>, with the scope pinned from resume.request.
  * - next_start_date: the route reports unfinished work (complete=false or
  *   stoppedEarly=true) and nextStartDate; the next call passes startDate.
+ * - projection_resume: run-projection-v2 for one date. 200 success completes;
+ *   207 operationStatus "partial" with resume.reason "runtime_budget" replays
+ *   the same query (the route resumes its running run); "run_in_progress_
+ *   elsewhere" waits 150 s (the route's takeover grace) and replays.
+ *   Progress is resume.completedGames, so replays are not stalls while it rises.
  * - once: one call; 2xx without success=false completes.
+ *
+ * The contract lives here, not on the job row: route_runner_jobs.contract
+ * only accepts the first four values, so newer contracts are stored as null
+ * (store.ts) and the tick always reads spec.contract.
  */
 
 export type RouteRunnerContract =
   | "nst_resume"
   | "rolling_resume_from"
   | "next_start_date"
+  | "projection_resume"
   | "once";
 
 export type RouteRunnerRouteSpec = {
@@ -34,6 +44,15 @@ export type RouteRunnerRouteSpec = {
   maxRuntimeParam?: string;
   /** Claim budget counted from the tick start. */
   maxRuntimeMs?: number;
+  /**
+   * Relative runtime-budget query param (ms after the route starts), set so
+   * the route stops by the step deadline minus deadlineHeadroomMs.
+   */
+  budgetParam?: string;
+  /** Params a queued run must carry. */
+  requiredParams?: readonly string[];
+  /** Params a queued run must not carry, with the reason shown. */
+  rejectedParams?: { keys: readonly string[]; reason: string };
   /**
    * Params the runner owns. They are dropped from a pasted query and from
    * every continuation, and the runtime ones are set fresh on each step.
@@ -72,6 +91,24 @@ export const ROUTE_RUNNER_ROUTES = {
       "/api/v1/db/update-rolling-player-averages?startDate=2025-10-07&endDate=2026-04-16&fastMode=true&executionProfile=overnight",
     notes:
       "Each step stops claiming players at maxRuntimeMs and abandons in-flight ones at deadlineAt (both set by the runner), then continues with resumeFrom=nextResumeFrom. Use explicit startDate/endDate; windows over 15 days also need executionProfile=overnight, confirmBroadRun=true or maxPlayers. Freshness blockers answer 422 unless bypassFreshnessBlockers=true."
+  },
+  "/api/v1/db/run-projection-v2": {
+    label: "FORGE projections (one date)",
+    contract: "projection_resume",
+    budgetParam: "maxDurationMs",
+    // The route checks its budget between games, then writes its receipts;
+    // 40 s covers the game in flight and the response.
+    deadlineHeadroomMs: 40_000,
+    runnerParams: ["maxDurationMs"],
+    requiredParams: ["date"],
+    rejectedParams: {
+      keys: ["startDate", "endDate"],
+      reason:
+        "run-projection-v2 resumes single-date runs only: use date=YYYY-MM-DD instead of startDate/endDate, one job per date."
+    },
+    example: "/api/v1/db/run-projection-v2?date=2026-10-22",
+    notes:
+      "One date per job. Each step gets maxDurationMs to fit the step (set by the runner); a 207 runtime_budget replays the same date and the route continues its run. 207 run_in_progress_elsewhere waits 150 s and replays. Progress is completed games; three steps without a newly completed game stop the job."
   },
   "/api/v1/db/update-nst-team-daily": {
     label: "NST team daily",
@@ -118,6 +155,20 @@ export const ROUTE_RUNNER_ROUTES = {
       "No continuation contract or runtime bound: runs once. season=all is a multi-season run and may not fit one step."
   }
 } as const satisfies Record<string, RouteRunnerRouteSpec>;
+
+// route_runner_jobs.contract has a check constraint listing these four
+// (migration 20261022133743). Newer contracts are stored as null; the tick
+// and the page read the contract from the registry by route_path.
+const STORED_CONTRACTS: readonly RouteRunnerContract[] = [
+  "nst_resume",
+  "rolling_resume_from",
+  "next_start_date",
+  "once"
+];
+
+export function storedContract(contract: RouteRunnerContract): RouteRunnerContract | null {
+  return STORED_CONTRACTS.includes(contract) ? contract : null;
+}
 
 export type RouteRunnerPath = keyof typeof ROUTE_RUNNER_ROUTES;
 

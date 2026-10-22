@@ -3,6 +3,7 @@
  * semantics of the Supabase store (lease and status guards).
  */
 import { isActiveStatus, type RouteQuery } from "./core";
+import { storedContract } from "./registry";
 import type {
   RouteRunnerEventRow,
   RouteRunnerJobRow,
@@ -112,7 +113,7 @@ export function createMemoryRouteRunnerStore(initial: RouteRunnerJobRow[] = []) 
     },
     async createJob(input) {
       const id = `00000000-0000-4000-8000-${String(nextJobNumber++).padStart(12, "0")}`;
-      const job = makeJob({ ...input, id, status: "queued" });
+      const job = makeJob({ ...input, contract: storedContract(input.contract), id, status: "queued" });
       jobs.set(id, job);
       return { ...job };
     },

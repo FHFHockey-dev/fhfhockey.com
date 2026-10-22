@@ -183,6 +183,63 @@ describe("runRouteRunnerTick", () => {
     expect(jobs.get(makeJob().id)).toMatchObject({ status: "failed", lease_until: null });
   });
 
+  it("replays a projection date while games complete and fails when they stop", async () => {
+    const path = "/api/v1/db/run-projection-v2";
+    const memory = createMemoryRouteRunnerStore([
+      makeJob({ route_path: path, contract: null, next_query: { date: "2026-10-22" } })
+    ]);
+    const partial = (completedGames: number) =>
+      responder(207, {
+        success: false,
+        operationStatus: "partial",
+        resume: { required: true, reason: "runtime_budget", runId: "r", completedGames, totalGames: 12, request: { date: "2026-10-22" } }
+      });
+    const first = partial(4);
+    await tick(memory.store, { [path]: first });
+    expect((first as any).mock.calls[0][0].query).toEqual({
+      date: "2026-10-22",
+      maxDurationMs: String(ROUTE_RUNNER_STEP_DEADLINE_MS - 40_000)
+    });
+    for (const done of [8, 12 - 1]) await tick(memory.store, { [path]: partial(done) });
+    expect(memory.jobs.get(makeJob().id)).toMatchObject({ status: "queued", steps: 3, next_query: { date: "2026-10-22" } });
+    expect(memory.jobs.get(makeJob().id)!.progress).toMatchObject({ done: 11, total: 12, unit: "games", stalls: 0 });
+
+    // Another call holds the run: wait 150 s without counting a stall.
+    await tick(memory.store, {
+      [path]: responder(207, { success: false, operationStatus: "partial", resume: { required: true, reason: "run_in_progress_elsewhere", completedGames: null, totalGames: null, request: { date: "2026-10-22" } } })
+    });
+    expect(memory.jobs.get(makeJob().id)).toMatchObject({ status: "waiting", not_before: new Date(NOW + 150_000).toISOString() });
+    memory.jobs.get(makeJob().id)!.not_before = null;
+
+    for (let step = 0; step < 3; step += 1) await tick(memory.store, { [path]: partial(11) });
+    expect(memory.jobs.get(makeJob().id)).toMatchObject({ status: "failed", steps: 7 });
+    expect(memory.jobs.get(makeJob().id)!.last_error).toBe("No progress: completed games stayed at 11 for 3 steps in a row.");
+  });
+
+  it("fails a freshness-blocked rolling step but keeps its continuation for a re-queue", async () => {
+    const rolling = "/api/v1/db/update-rolling-player-averages";
+    const memory = createMemoryRouteRunnerStore([
+      makeJob({ route_path: rolling, contract: "rolling_resume_from", next_query: { startDate: "2026-01-01", endDate: "2026-01-31" } })
+    ]);
+    await tick(memory.store, {
+      [rolling]: responder(422, {
+        success: false,
+        operationStatus: "blocked",
+        freshnessGate: { status: "FAIL", blockerCount: 1 },
+        resume: { required: true, nextResumeFrom: 8478402, request: { startDate: "2026-01-01", endDate: "2026-01-31", resumeFrom: 8478402 } }
+      })
+    });
+    const job = memory.jobs.get(makeJob().id)!;
+    expect(job).toMatchObject({
+      status: "failed",
+      last_status_code: 422,
+      last_operation_status: "blocked",
+      next_query: { startDate: "2026-01-01", endDate: "2026-01-31", resumeFrom: "8478402" }
+    });
+    expect(job.last_error).toContain("Blocked by freshness checks");
+    expect(job.progress).toMatchObject({ blockedBy: "freshness" });
+  });
+
   it("fails a job whose route keeps asking for the same query", async () => {
     const rolling = "/api/v1/db/update-rolling-player-averages";
     const memory = createMemoryRouteRunnerStore([

@@ -1,3 +1,10 @@
+import {
+  STARTER_DECISION_SHARE,
+  posteriorSavePct,
+  shutoutProbability as shotsMixtureShutoutProbability,
+  teamWinProbability
+} from "./goalie/goalieOutcomes";
+
 type ConfidenceTier = "LOW" | "MEDIUM" | "HIGH";
 type QualityTier = "ELITE" | "ABOVE_AVERAGE" | "AVERAGE" | "BELOW_AVERAGE";
 type ReliabilityTier = "STABLE" | "AVERAGE" | "VOLATILE";
@@ -23,7 +30,15 @@ export type GoalieModelInput = {
   starterProbability: number;
   projectedGoalsFor: number | null;
   evidence: GoalieEvidence;
+  /** Season-current league save % (the beta prior mean). */
   leagueSavePct?: number;
+  /** Additive game-context save % adjustment (B2B, workload, damped context terms). */
+  savePctAdjustment?: number;
+  /**
+   * P(team wins | this goalie starts), paired per game so both teams sum to 1. When omitted,
+   * an unpaired Poisson race of projectedGoalsFor vs this goalie's goals allowed is used.
+   */
+  teamWinProbabilityIfStarts?: number | null;
 };
 
 export type GoalieModelOutput = {
@@ -42,12 +57,6 @@ export type GoalieModelOutput = {
 
 function clamp(n: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, n));
-}
-
-function safeRate(numerator: number, denominator: number, fallback: number): number {
-  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0)
-    return fallback;
-  return numerator / denominator;
 }
 
 function normalizePct(value: number | null | undefined): number | null {
@@ -109,6 +118,25 @@ function recommendationFromProfile(args: {
   return "SIT";
 }
 
+export function computeModeledSavePct(args: {
+  evidence: GoalieEvidence;
+  leagueSavePct?: number;
+  savePctAdjustment?: number;
+}): number {
+  const leagueSavePct = clamp(args.leagueSavePct ?? 0.9, 0.84, 0.94);
+  const baselineShots = Math.max(0, args.evidence.baselineShotsAgainst);
+  const seasonShots = Math.max(0, args.evidence.seasonShotsAgainst ?? 0);
+  // The baseline window (last 200 GP) contains the season and recent windows: use it once.
+  const useBaseline = baselineShots >= seasonShots;
+  const posterior = posteriorSavePct({
+    shots: useBaseline ? baselineShots : seasonShots,
+    goals: Math.max(0, useBaseline ? args.evidence.baselineGoalsAllowed : args.evidence.seasonGoalsAllowed),
+    priorMean: leagueSavePct
+  });
+  const adjustment = Number.isFinite(args.savePctAdjustment) ? Number(args.savePctAdjustment) : 0;
+  return clamp(posterior + adjustment, 0.85, 0.94);
+}
+
 export function computeGoalieProjectionModel(
   input: GoalieModelInput
 ): GoalieModelOutput {
@@ -121,22 +149,11 @@ export function computeGoalieProjectionModel(
   const projectedGoalsFor = input.projectedGoalsFor;
 
   const recentShots = Math.max(0, input.evidence.recentShotsAgainst);
-  const recentGoals = Math.max(0, input.evidence.recentGoalsAllowed);
   const seasonShots = Math.max(
     0,
     input.evidence.seasonShotsAgainst ?? input.evidence.baselineShotsAgainst
   );
-  const seasonGoals = Math.max(
-    0,
-    input.evidence.seasonGoalsAllowed ?? input.evidence.baselineGoalsAllowed
-  );
   const baselineShots = Math.max(0, input.evidence.baselineShotsAgainst);
-  const baselineGoals = Math.max(0, input.evidence.baselineGoalsAllowed);
-
-  const recentSvPct = 1 - safeRate(recentGoals, recentShots, 1 - leagueSavePct);
-  const seasonSvPct = 1 - safeRate(seasonGoals, seasonShots, 1 - leagueSavePct);
-  const baselineSvPct =
-    1 - safeRate(baselineGoals, baselineShots, 1 - leagueSavePct);
 
   const lowRecentSamplePenalty = clamp((140 - recentShots) / 140, 0, 1);
   const lowSeasonSamplePenalty = clamp((420 - seasonShots) / 420, 0, 1);
@@ -146,27 +163,12 @@ export function computeGoalieProjectionModel(
     1
   );
 
-  // Multi-layer prior blending:
-  // 1) season towards career baseline, 2) recency towards season anchor, 3) league shrinkage by total evidence.
-  const seasonWeight = clamp(seasonShots / (seasonShots + 900), 0, 1) * (1 - 0.35 * smallSamplePenalty);
-  const seasonAnchor = baselineSvPct + seasonWeight * (seasonSvPct - baselineSvPct);
-
-  const recentWeight = clamp(recentShots / (recentShots + 300), 0, 1) * (1 - 0.55 * smallSamplePenalty);
-  const recencyAdjusted = seasonAnchor + recentWeight * (recentSvPct - seasonAnchor);
-
-  const totalEvidenceShots = baselineShots + seasonShots + recentShots;
-  const priorShots = clamp(
-    1100 - totalEvidenceShots * 0.2 + smallSamplePenalty * 220,
-    350,
-    1250
-  );
-  const priorSaves = priorShots * leagueSavePct;
-  const posteriorSvPct = safeRate(
-    recencyAdjusted * Math.max(1, totalEvidenceShots) + priorSaves,
-    Math.max(1, totalEvidenceShots) + priorShots,
-    leagueSavePct
-  );
-  const modeledSavePct = clamp(posteriorSvPct, 0.85, 0.94);
+  // One beta-binomial over all evidence toward the season-current league mean (no recency layer).
+  const modeledSavePct = computeModeledSavePct({
+    evidence: input.evidence,
+    leagueSavePct,
+    savePctAdjustment: input.savePctAdjustment
+  });
 
   const projectedGoalsAllowed = projectedShotsAgainst * (1 - modeledSavePct);
   const projectedSaves = Math.max(0, projectedShotsAgainst - projectedGoalsAllowed);
@@ -190,10 +192,17 @@ export function computeGoalieProjectionModel(
     1
   );
 
-  const winProbability = projectedGoalsFor === null ? null
-    : clamp((1 / (1 + Math.exp(-(projectedGoalsFor - projectedGoalsAllowed) / 1.25))) * starterProbability, 0, 1);
-  const shutoutBase = Math.exp(-projectedGoalsAllowed);
-  const shutoutProbability = clamp(shutoutBase * starterProbability, 0, 1);
+  const teamWinIfStarts = input.teamWinProbabilityIfStarts !== undefined
+    ? input.teamWinProbabilityIfStarts
+    : projectedGoalsFor === null ? null : teamWinProbability(projectedGoalsFor, projectedGoalsAllowed);
+  const winProbability = teamWinIfStarts == null ? null
+    : clamp(clamp(teamWinIfStarts, 0, 1) * STARTER_DECISION_SHARE * starterProbability, 0, 1);
+  const shutoutProbability = clamp(
+    shotsMixtureShutoutProbability({ expectedShotsAgainst: projectedShotsAgainst, savePct: modeledSavePct }) *
+      starterProbability,
+    0,
+    1
+  );
 
   const baselineSampleConfidence = clamp(baselineShots / 1400, 0, 1);
   const seasonSampleConfidence = clamp(seasonShots / 900, 0, 1);

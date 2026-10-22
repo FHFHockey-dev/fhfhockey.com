@@ -11,7 +11,7 @@ import {
   type RouteQuery,
   type RouteRunnerStatus
 } from "./core";
-import type { RouteRunnerContract } from "./registry";
+import { storedContract, type RouteRunnerContract } from "./registry";
 
 export type RouteRunnerJobRow = {
   id: string;
@@ -258,7 +258,7 @@ export function createSupabaseRouteRunnerStore(
     async createJob(job) {
       const { data, error } = await client
         .from(JOBS)
-        .insert({ ...job, status: "queued" })
+        .insert({ ...job, contract: storedContract(job.contract), status: "queued" })
         .select("*")
         .single();
       if (error || !data) fail("job insert", error);

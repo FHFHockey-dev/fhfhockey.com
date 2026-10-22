@@ -32,6 +32,7 @@ vi.mock("../../../../../pages/api/v1/db/update-nst-current-season", routeHandler
 vi.mock("../../../../../pages/api/v1/db/update-wgo-skaters", routeHandler);
 vi.mock("../../../../../pages/api/v1/db/update-wgo-goalies", routeHandler);
 vi.mock("../../../../../pages/api/v1/db/update-wgo-totals", routeHandler);
+vi.mock("../../../../../pages/api/v1/db/run-projection-v2", routeHandler);
 
 import { createMemoryRouteRunnerStore, makeJob } from "lib/routeRunner/memoryStore.testHelper";
 import jobsHandler from "../../../../../pages/api/v1/db/route-runner/jobs";
@@ -117,6 +118,30 @@ describe("route runner jobs API", () => {
       }
     });
     expect(mocks.memory.events[0].message).toContain("Ignored deadlineAt");
+  });
+
+  it("queues a single-date projection run with a null stored contract and rejects ranges", async () => {
+    const res = createRes();
+    await jobsHandler(
+      request("POST", "Bearer admin-token", { body: { path: "/api/v1/db/run-projection-v2?date=2026-10-22&maxDurationMs=5" } }),
+      res
+    );
+    expect(res.statusCode).toBe(201);
+    // route_runner_jobs.contract only accepts the original four contracts.
+    expect(res.body).toMatchObject({
+      ignoredParams: ["maxDurationMs"],
+      job: { route_path: "/api/v1/db/run-projection-v2", contract: null, next_query: { date: "2026-10-22" } }
+    });
+
+    const range = createRes();
+    await jobsHandler(
+      request("POST", "Bearer admin-token", {
+        body: { path: "/api/v1/db/run-projection-v2?startDate=2026-10-20&endDate=2026-10-22" }
+      }),
+      range
+    );
+    expect(range.statusCode).toBe(400);
+    expect(range.body.error).toContain("single-date runs only");
   });
 
   it("rejects routes off the allowlist and malformed bodies", async () => {

@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  ROUTE_RUNNER_PROJECTION_ELSEWHERE_WAIT_MS,
   ROUTE_RUNNER_SOURCE_DOWN_WAIT_MS,
   ROUTE_RUNNER_STEP_DEADLINE_MS,
   applyStallGuard,
+  buildBypassRequeuePath,
   buildStepQuery,
   buildTimeline,
   classifyStepResult,
@@ -17,6 +19,26 @@ import { ROUTE_RUNNER_ROUTES } from "./registry";
 
 const NST = ROUTE_RUNNER_ROUTES["/api/v1/db/update-nst-gamelog"];
 const ROLLING = ROUTE_RUNNER_ROUTES["/api/v1/db/update-rolling-player-averages"];
+const PROJECTION = ROUTE_RUNNER_ROUTES["/api/v1/db/run-projection-v2"];
+
+function projectionPartial(reason: string, completedGames: number | null, date = "2026-10-22") {
+  return {
+    statusCode: 207,
+    body: {
+      success: false,
+      operationStatus: "partial",
+      resume: {
+        required: true,
+        reason,
+        runId: "run-1",
+        completedGames,
+        totalGames: completedGames == null ? null : 12,
+        pendingGames: completedGames == null ? null : 12 - completedGames,
+        request: { date, horizonGames: "1" }
+      }
+    }
+  };
+}
 
 describe("parseRunnerInput", () => {
   it("accepts an allowlisted path with its query", () => {
@@ -58,6 +80,20 @@ describe("parseRunnerInput", () => {
       error: 'Repeated parameter "season" is not supported.'
     });
   });
+
+  it("accepts single-date projection runs only", () => {
+    expect(parseRunnerInput("/api/v1/db/run-projection-v2?date=2026-10-22&gameIds=1,2&maxDurationMs=9")).toEqual({
+      ok: true,
+      routePath: "/api/v1/db/run-projection-v2",
+      query: { date: "2026-10-22", gameIds: "1,2" },
+      contract: "projection_resume",
+      ignoredParams: ["maxDurationMs"]
+    });
+    const range = parseRunnerInput("/api/v1/db/run-projection-v2?date=2026-10-22&endDate=2026-10-24");
+    expect(!range.ok && range.error).toContain("single-date runs only");
+    const missing = parseRunnerInput("/api/v1/db/run-projection-v2?gameIds=1");
+    expect(!missing.ok && missing.error).toBe("/api/v1/db/run-projection-v2 needs date.");
+  });
 });
 
 describe("buildStepQuery", () => {
@@ -72,6 +108,13 @@ describe("buildStepQuery", () => {
   it("gives the rolling route a claim budget that shrinks with tick time", () => {
     const query = buildStepQuery(ROLLING, { startDate: "2026-01-01", disableRuntimeBudget: "true" }, 0, 10_000);
     expect(query).toEqual({ startDate: "2026-01-01", deadlineAt: "210000", maxRuntimeMs: "170000" });
+  });
+
+  it("fits the projection budget inside the step deadline", () => {
+    expect(buildStepQuery(PROJECTION, { date: "2026-10-22", maxDurationMs: "999999" }, 0, 5_000)).toEqual({
+      date: "2026-10-22",
+      maxDurationMs: String(ROUTE_RUNNER_STEP_DEADLINE_MS - 40_000 - 5_000)
+    });
   });
 });
 
@@ -179,6 +222,62 @@ describe("classifyStepResult", () => {
     expect(classifyStepResult("next_start_date", { statusCode: 200, body: { success: true, complete: true } }, {}).kind).toBe("complete");
   });
 
+  it("blocks rolling on a 422 freshness gate and keeps the continuation", () => {
+    const decision = classifyStepResult(
+      "rolling_resume_from",
+      {
+        statusCode: 422,
+        body: {
+          success: false,
+          operationStatus: "blocked",
+          freshnessGate: { status: "FAIL", blockerCount: 2 },
+          resume: { required: true, nextResumeFrom: 8478402, request: { startDate: "2026-01-01", endDate: "2026-01-31", resumeFrom: 8478402 } }
+        }
+      },
+      { startDate: "2026-01-01", endDate: "2026-01-31", fastMode: "true" },
+      ROLLING.runnerParams
+    );
+    expect(decision).toMatchObject({
+      kind: "fail",
+      blockedBy: "freshness",
+      nextQuery: { startDate: "2026-01-01", endDate: "2026-01-31", fastMode: "true", resumeFrom: "8478402" }
+    });
+    expect(decision.reason).toContain("Blocked by freshness checks (HTTP 422, 2 blocker(s))");
+    // The broad-window 422 is also "blocked" but has no freshness gate: a plain failure.
+    expect(
+      classifyStepResult("rolling_resume_from", { statusCode: 422, body: { success: false, operationStatus: "blocked", message: "Window too broad" } }, {})
+    ).toEqual({ kind: "fail", reason: "HTTP 422: Window too broad" });
+  });
+
+  it("replays projection runtime-budget stops, waits when another call holds the run, and fails the rest", () => {
+    const sent = { date: "2026-10-22", gameIds: "1,2" };
+    expect(classifyStepResult("projection_resume", projectionPartial("runtime_budget", 5), sent)).toEqual({
+      kind: "continue",
+      nextQuery: sent,
+      progressDone: 5,
+      reason: "Projection: 5 of 12 games done; stopped at the runtime budget, replaying the same date."
+    });
+    expect(classifyStepResult("projection_resume", projectionPartial("run_in_progress_elsewhere", null), sent)).toMatchObject({
+      kind: "wait",
+      delayMs: ROUTE_RUNNER_PROJECTION_ELSEWHERE_WAIT_MS
+    });
+    expect(ROUTE_RUNNER_PROJECTION_ELSEWHERE_WAIT_MS).toBeGreaterThanOrEqual(150_000);
+    expect(
+      classifyStepResult("projection_resume", { statusCode: 200, body: { success: true, gamesProcessed: 12, asOfDate: "2026-10-22" } }, sent)
+    ).toEqual({ kind: "complete", reason: "Projection: 12 game(s) projected for 2026-10-22." });
+    expect(classifyStepResult("projection_resume", projectionPartial("runtime_budget", 5, "2026-10-21"), sent).kind).toBe("fail");
+    expect(classifyStepResult("projection_resume", projectionPartial("other", 5), sent).kind).toBe("fail");
+    expect(classifyStepResult("projection_resume", { statusCode: 200, body: { success: false, error: "Timed out" } }, sent)).toEqual({
+      kind: "fail",
+      reason: "HTTP 200: Timed out"
+    });
+    expect(classifyStepResult("projection_resume", { statusCode: 422, body: { success: false, error: "Preflight blocked" } }, sent)).toEqual({
+      kind: "fail",
+      reason: "HTTP 422: Preflight blocked"
+    });
+    expect(classifyStepResult("projection_resume", { statusCode: 207, body: { success: false } }, sent).kind).toBe("fail");
+  });
+
   it("runs once routes once", () => {
     expect(classifyStepResult("once", { statusCode: 200, body: { success: true, message: "Done" } }, {})).toEqual({ kind: "complete", reason: "HTTP 200: Done" });
     expect(classifyStepResult("once", { statusCode: 207, body: { success: false } }, {}).kind).toBe("fail");
@@ -192,6 +291,19 @@ describe("applyStallGuard", () => {
     expect(applyStallGuard(same, { a: "1" }, 0)).toMatchObject({ stalls: 1, decision: { kind: "continue" } });
     expect(applyStallGuard(same, { a: "1" }, 2)).toMatchObject({ stalls: 3, decision: { kind: "fail" } });
     expect(applyStallGuard(same, { a: "0" }, 2)).toEqual({ decision: same, stalls: 0 });
+  });
+
+  it("measures same-query replays by progressDone and keeps the count across waits", () => {
+    const replay = (done: number) => ({ ...same, progressDone: done });
+    expect(applyStallGuard(replay(5), { a: "1" }, 2, 3)).toEqual({ decision: replay(5), stalls: 0 });
+    expect(applyStallGuard(replay(5), { a: "1" }, 0, null)).toMatchObject({ stalls: 0 });
+    expect(applyStallGuard(replay(5), { a: "1" }, 1, 5)).toMatchObject({ stalls: 2, decision: { kind: "continue" } });
+    expect(applyStallGuard(replay(5), { a: "1" }, 2, 5)).toMatchObject({
+      stalls: 3,
+      decision: { kind: "fail", reason: "No progress: completed games stayed at 5 for 3 steps in a row." }
+    });
+    const wait = { kind: "wait" as const, delayMs: 1, reason: "w" };
+    expect(applyStallGuard(wait, { a: "1" }, 2, 5)).toEqual({ decision: wait, stalls: 2 });
   });
 });
 
@@ -212,6 +324,24 @@ describe("progress", () => {
     expect(afterFirst).toMatchObject({ done: 50, total: 900 });
     const second = extractStepProgress({ runSummary: { rowsUpserted: 10, remainingPlayerCount: 800, totalPlayersAfterResumeFilter: 850 } });
     expect(mergeJobProgress(afterFirst, second, 0)).toMatchObject({ done: 100, total: 900 });
+  });
+
+  it("reads projection completed games", () => {
+    expect(extractStepProgress(projectionPartial("runtime_budget", 5).body)).toMatchObject({ done: 5, total: 12, unit: "games", operationStatus: "partial" });
+  });
+
+  it("re-queues only freshness-blocked failed jobs, with the bypass and resumeFrom", () => {
+    const job = {
+      route_path: "/api/v1/db/update-rolling-player-averages",
+      status: "failed",
+      next_query: { startDate: "2026-01-01", endDate: "2026-01-31", resumeFrom: "8478402" },
+      progress: { blockedBy: "freshness" }
+    };
+    expect(buildBypassRequeuePath(job)).toBe(
+      "/api/v1/db/update-rolling-player-averages?startDate=2026-01-01&endDate=2026-01-31&resumeFrom=8478402&bypassFreshnessBlockers=true"
+    );
+    expect(buildBypassRequeuePath({ ...job, progress: {} })).toBeNull();
+    expect(buildBypassRequeuePath({ ...job, status: "queued" })).toBeNull();
   });
 
   it("reads team-daily dataset rows and generic row counts", () => {

@@ -324,12 +324,18 @@ export async function runRouteRunnerTick(args: {
     spec.runnerParams ?? []
   );
   const previous = readJobProgress(job.progress);
-  const guarded = applyStallGuard(classified, sentQuery, previous?.stalls ?? 0);
+  const guarded = applyStallGuard(
+    classified,
+    sentQuery,
+    previous?.stalls ?? 0,
+    previous?.done ?? null
+  );
   const decision = guarded.decision;
   const stepProgress = extractStepProgress(result.body);
   const rowsTotal = Number(job.rows_total ?? 0) + (stepProgress.rows ?? 0);
   const progress = {
     ...mergeJobProgress(previous, stepProgress, guarded.stalls),
+    ...(decision.kind === "fail" && decision.blockedBy ? { blockedBy: decision.blockedBy } : {}),
     rowsTotal,
     lastStepMs: result.durationMs
   };
@@ -353,7 +359,13 @@ export async function runRouteRunnerTick(args: {
           }
         : decision.kind === "complete"
           ? { status: "completed", finished_at: finishedIso, not_before: null, last_error: null }
-          : { status: "failed", finished_at: finishedIso, last_error: decision.reason };
+          : {
+              status: "failed",
+              finished_at: finishedIso,
+              last_error: decision.reason,
+              // Kept so the page can re-queue it (freshness block).
+              ...(decision.nextQuery ? { next_query: decision.nextQuery } : {})
+            };
 
   events.push({
     job_id: job.id,
