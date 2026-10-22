@@ -590,10 +590,8 @@ export async function fetchEspnNhlOdds(dates: string[]): Promise<EspnGameOdds[]>
       const response = await fetch(
         espnScoreboardUrlForDate(date),
         {
-          headers: {
-            Accept: "application/json",
-            "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",
-          },
+          // ESPN answers 403 to a bot-style "(+url)" User-Agent; keep the runtime default.
+          headers: { Accept: "application/json" },
         },
       );
       if (!response.ok) {
