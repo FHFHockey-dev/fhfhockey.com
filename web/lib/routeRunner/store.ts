@@ -124,25 +124,72 @@ function unleasedFilter(nowIso: string) {
   return `lease_until.is.null,lease_until.lt.${nowIso}`;
 }
 
+function sameInstant(left: string | null, right: string | null) {
+  if (left == null || right == null) return left === right;
+  return Date.parse(left) === Date.parse(right);
+}
+
+/*
+ * PostgREST filters the rows a write returns by the request's own filters,
+ * so a write that changes a filtered column (status, lease_until) returns no
+ * rows even when it applied (production, 2026-10-22: every claim read back
+ * empty). Writes here check the affected-row count instead, and a claim is
+ * confirmed by reading the job back.
+ */
 export function createSupabaseRouteRunnerStore(
   client: SupabaseClient<any>
 ): RouteRunnerStore {
+  async function readJob(id: string) {
+    const { data, error } = await client
+      .from(JOBS)
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) fail("job read", error);
+    return (data as RouteRunnerJobRow | null) ?? null;
+  }
+
+  /** Applies `patch` only while the job keeps the status and lease it was read with. */
+  async function updateIfUnchanged(
+    action: string,
+    job: RouteRunnerJobRow,
+    patch: RouteRunnerJobPatch,
+    expiry: { op: "gt" | "lte"; at: string }
+  ) {
+    let query = client
+      .from(JOBS)
+      .update(patch, { count: "exact" })
+      .eq("id", job.id)
+      .eq("status", job.status);
+    query = expiry.op === "gt" ? query.gt("expires_at", expiry.at) : query.lte("expires_at", expiry.at);
+    query = job.lease_until == null ? query.is("lease_until", null) : query.eq("lease_until", job.lease_until);
+    const { count, error } = await query;
+    if (error) fail(action, error);
+    return (count ?? 0) > 0;
+  }
+
   return {
     async expireJobs(nowIso) {
       const { data, error } = await client
         .from(JOBS)
-        .update({
-          status: "failed",
-          finished_at: nowIso,
-          lease_until: null,
-          last_error: "Expired: the job passed its expires_at before finishing."
-        })
+        .select("*")
         .in("status", [...ROUTE_RUNNER_ACTIVE_STATUSES])
         .lte("expires_at", nowIso)
-        .or(unleasedFilter(nowIso))
-        .select("*");
-      if (error) fail("expire", error);
-      return (data ?? []) as RouteRunnerJobRow[];
+        .or(unleasedFilter(nowIso));
+      if (error) fail("expire list", error);
+      const patch = {
+        status: "failed",
+        finished_at: nowIso,
+        lease_until: null,
+        last_error: "Expired: the job passed its expires_at before finishing."
+      } satisfies RouteRunnerJobPatch;
+      const expired: RouteRunnerJobRow[] = [];
+      for (const job of (data ?? []) as RouteRunnerJobRow[]) {
+        if (await updateIfUnchanged("expire", job, patch, { op: "lte", at: nowIso })) {
+          expired.push({ ...job, ...patch });
+        }
+      }
+      return expired;
     },
 
     async findLeaseHolder(nowIso, excludeId) {
@@ -168,28 +215,28 @@ export function createSupabaseRouteRunnerStore(
     },
 
     async claimJob(job, leaseUntilIso, nowIso) {
-      const { data, error } = await client
-        .from(JOBS)
-        .update({ status: "running", lease_until: leaseUntilIso })
-        .eq("id", job.id)
-        .eq("status", job.status)
-        .gt("expires_at", nowIso)
-        .or(unleasedFilter(nowIso))
-        .select("*");
-      if (error) fail("claim", error);
-      return ((data ?? [])[0] as RouteRunnerJobRow | undefined) ?? null;
+      if (job.lease_until != null && Date.parse(job.lease_until) >= Date.parse(nowIso)) return null;
+      const applied = await updateIfUnchanged(
+        "claim",
+        job,
+        { status: "running", lease_until: leaseUntilIso },
+        { op: "gt", at: nowIso }
+      );
+      if (!applied) return null;
+      const claimed = await readJob(job.id);
+      return claimed && sameInstant(claimed.lease_until, leaseUntilIso) ? claimed : null;
     },
 
     async updateLeasedJob(id, leaseUntilIso, patch, options) {
       let query = client
         .from(JOBS)
-        .update(patch)
+        .update(patch, { count: "exact" })
         .eq("id", id)
         .eq("lease_until", leaseUntilIso);
       if (options?.unlessCancelled) query = query.neq("status", "cancelled");
-      const { data, error } = await query.select("id");
+      const { count, error } = await query;
       if (error) fail("leased update", error);
-      return (data ?? []).length > 0;
+      return (count ?? 0) > 0;
     },
 
     async insertEvents(events) {
@@ -218,15 +265,7 @@ export function createSupabaseRouteRunnerStore(
       return data as RouteRunnerJobRow;
     },
 
-    async getJob(id) {
-      const { data, error } = await client
-        .from(JOBS)
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-      if (error) fail("job read", error);
-      return (data as RouteRunnerJobRow | null) ?? null;
-    },
+    getJob: readJob,
 
     async listEvents(jobId, afterId, limit) {
       const { data, error } = await client
@@ -241,14 +280,13 @@ export function createSupabaseRouteRunnerStore(
     },
 
     async updateJobIfStatus(id, statuses, patch) {
-      const { data, error } = await client
+      const { count, error } = await client
         .from(JOBS)
-        .update(patch)
+        .update(patch, { count: "exact" })
         .eq("id", id)
-        .in("status", [...statuses])
-        .select("*");
+        .in("status", [...statuses]);
       if (error) fail("job update", error);
-      return ((data ?? [])[0] as RouteRunnerJobRow | undefined) ?? null;
+      return (count ?? 0) > 0 ? readJob(id) : null;
     }
   };
 }

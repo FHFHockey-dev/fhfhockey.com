@@ -4,7 +4,7 @@ import { makeJob } from "./memoryStore.testHelper";
 import { createSupabaseRouteRunnerStore } from "./store";
 
 /** Records a supabase-js query chain and resolves it to `result`. */
-function recordingClient(result: { data: unknown; error: unknown }) {
+function recordingClient(result: { data: unknown; error: unknown; count?: number | null }) {
   const calls: Array<[string, ...unknown[]]> = [];
   const builder: any = new Proxy(
     {},
@@ -27,25 +27,75 @@ const NOW = "2026-10-22T10:00:00.000Z";
 const LEASE = "2026-10-22T10:04:20.000Z";
 
 describe("createSupabaseRouteRunnerStore", () => {
-  it("claims with one conditional update on id, unchanged status, expiry and a lapsed lease", async () => {
+  it("claims a lapsed job with one conditional update, then confirms its lease by reading it back", async () => {
     const job = makeJob({ status: "running", lease_until: "2026-10-22T09:59:00.000Z" });
-    const { client, calls } = recordingClient({ data: [{ ...job, lease_until: LEASE }], error: null });
+    // PostgREST returns no rows from a write that changes a filtered column,
+    // so the store relies on the count and the read-back.
+    const { client, calls } = recordingClient({ data: { ...job, status: "running", lease_until: LEASE }, count: 1, error: null });
     const claimed = await createSupabaseRouteRunnerStore(client).claimJob(job, LEASE, NOW);
     expect(claimed?.lease_until).toBe(LEASE);
     expect(calls).toEqual([
       ["from", "route_runner_jobs"],
-      ["update", { status: "running", lease_until: LEASE }],
+      ["update", { status: "running", lease_until: LEASE }, { count: "exact" }],
       ["eq", "id", job.id],
       ["eq", "status", "running"],
       ["gt", "expires_at", NOW],
-      ["or", `lease_until.is.null,lease_until.lt.${NOW}`],
-      ["select", "*"]
+      ["eq", "lease_until", "2026-10-22T09:59:00.000Z"],
+      ["from", "route_runner_jobs"],
+      ["select", "*"],
+      ["eq", "id", job.id],
+      ["maybeSingle"]
     ]);
   });
 
   it("returns null when another tick won the claim", async () => {
-    const { client } = recordingClient({ data: [], error: null });
+    const { client } = recordingClient({ data: [], count: 0, error: null });
     await expect(createSupabaseRouteRunnerStore(client).claimJob(makeJob(), LEASE, NOW)).resolves.toBeNull();
+    const job = makeJob();
+    const raced = recordingClient({ data: { ...job, lease_until: "2026-10-22T10:04:21.000Z" }, count: 1, error: null });
+    await expect(createSupabaseRouteRunnerStore(raced.client).claimJob(job, LEASE, NOW)).resolves.toBeNull();
+  });
+
+  it("never claims a job whose lease is still live", async () => {
+    const { client, calls } = recordingClient({ data: null, count: 1, error: null });
+    const job = makeJob({ status: "running", lease_until: "2026-10-22T10:01:00.000Z" });
+    await expect(createSupabaseRouteRunnerStore(client).claimJob(job, LEASE, NOW)).resolves.toBeNull();
+    expect(calls).toEqual([]);
+  });
+
+  it("expires only jobs still unchanged since they were listed", async () => {
+    const job = makeJob({ status: "waiting" });
+    const { client, calls } = recordingClient({ data: [job], count: 1, error: null });
+    const expired = await createSupabaseRouteRunnerStore(client).expireJobs(NOW);
+    expect(expired).toMatchObject([{ id: job.id, status: "failed", lease_until: null, finished_at: NOW }]);
+    expect(calls.slice(0, 5)).toEqual([
+      ["from", "route_runner_jobs"],
+      ["select", "*"],
+      ["in", "status", ["queued", "running", "waiting"]],
+      ["lte", "expires_at", NOW],
+      ["or", `lease_until.is.null,lease_until.lt.${NOW}`]
+    ]);
+    expect(calls.slice(6)).toEqual([
+      ["update", expect.objectContaining({ status: "failed", lease_until: null }), { count: "exact" }],
+      ["eq", "id", job.id],
+      ["eq", "status", "waiting"],
+      ["lte", "expires_at", NOW],
+      ["is", "lease_until", null]
+    ]);
+  });
+
+  it("reads a cancel or run-now back after a counted status update", async () => {
+    const job = makeJob({ status: "cancelled" });
+    const { client, calls } = recordingClient({ data: job, count: 1, error: null });
+    await expect(
+      createSupabaseRouteRunnerStore(client).updateJobIfStatus(job.id, ["queued", "running", "waiting"], { status: "cancelled" })
+    ).resolves.toMatchObject({ id: job.id, status: "cancelled" });
+    expect(calls.slice(0, 4)).toEqual([
+      ["from", "route_runner_jobs"],
+      ["update", { status: "cancelled" }, { count: "exact" }],
+      ["eq", "id", job.id],
+      ["in", "status", ["queued", "running", "waiting"]]
+    ]);
   });
 
   it("lists runnable jobs oldest first", async () => {
@@ -63,18 +113,19 @@ describe("createSupabaseRouteRunnerStore", () => {
     ]);
   });
 
-  it("guards step writes by this tick's lease and, when asked, by not-cancelled", async () => {
-    const { client, calls } = recordingClient({ data: [], error: null });
-    const updated = await createSupabaseRouteRunnerStore(client).updateLeasedJob("job-1", LEASE, { steps: 1 }, { unlessCancelled: true });
-    expect(updated).toBe(false);
+  it("guards step writes by this tick's lease and, when asked, by not-cancelled, using the affected count", async () => {
+    const { client, calls } = recordingClient({ data: null, count: 1, error: null });
+    const store = createSupabaseRouteRunnerStore(client);
+    await expect(store.updateLeasedJob("job-1", LEASE, { lease_until: null }, { unlessCancelled: true })).resolves.toBe(true);
     expect(calls).toEqual([
       ["from", "route_runner_jobs"],
-      ["update", { steps: 1 }],
+      ["update", { lease_until: null }, { count: "exact" }],
       ["eq", "id", "job-1"],
       ["eq", "lease_until", LEASE],
-      ["neq", "status", "cancelled"],
-      ["select", "id"]
+      ["neq", "status", "cancelled"]
     ]);
+    const lost = recordingClient({ data: null, count: 0, error: null });
+    await expect(createSupabaseRouteRunnerStore(lost.client).updateLeasedJob("job-1", LEASE, { steps: 1 })).resolves.toBe(false);
   });
 
   it("throws on a database error", async () => {
