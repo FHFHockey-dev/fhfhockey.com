@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { tables, readMock } = vi.hoisted(() => ({ tables: {} as Record<string, Record<string, any>[]>, readMock: vi.fn() }));
+const { tables, readMock, selectMock, flags } = vi.hoisted(() => ({ tables: {} as Record<string, Record<string, any>[]>, readMock: vi.fn(), selectMock: vi.fn(),
+  flags: { market: false } }));
+
+vi.mock("lib/player-forecasts/servedForecastLedger", async importOriginal => {
+  const actual = await importOriginal<any>();
+  return { ...actual, get LEDGER_MARKET_ENABLED() { return flags.market; } };
+});
 
 vi.mock("lib/supabase/server", () => ({
   default: {
@@ -8,7 +14,7 @@ vi.mock("lib/supabase/server", () => ({
       readMock(table);
       const filters: Array<(row: any) => boolean> = [];
       const builder: any = {
-        select: () => builder, order: () => builder, range: () => builder,
+        select: (columns: string) => { selectMock(columns); return builder; }, order: () => builder, range: () => builder,
         eq: (column: string, value: unknown) => { filters.push(row => row[column] === value); return builder; },
         not: (column: string) => { filters.push(row => row[column] !== null); return builder; },
         lte: (column: string, value: string) => { filters.push(row => row[column] <= value); return builder; },
@@ -41,6 +47,7 @@ const row = (served_date: string, player_id: number, source: string, exp: number
 describe("/api/v1/forge/scoreboard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    flags.market = false;
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-22T16:00:00Z"));
     tables.forge_served_forecast_ledger = [row("2026-10-20", 1, "bridge_exact", 0.5, 1), row("2026-10-20", 1, "naive_season", 0.2, 1),
@@ -66,6 +73,31 @@ describe("/api/v1/forge/scoreboard", () => {
     expect(out.body.data[0].paired.comparisons.find((s: any) => s.source === "bridge_exact" && s.reference === "naive_season").pairing.matched).toBe(1);
     expect(out.body.pooledPaired.invalidIdentityRows).toBe(0);
     expect(out.body.limitations).toMatchObject({ position: "unavailable_skater_position_not_captured", opportunityRate: "unavailable_expected_and_actual_toi_pp_toi_not_captured" });
+  });
+
+  it("keeps the market source unread until its migration is applied", async () => {
+    const out = res();
+    await handler({ method: "GET", query: {} } as any, out);
+    expect(out.body.marketStatus).toBe("disabled_pending_migration");
+    expect(out.body.pooledMarket).toBeUndefined();
+    expect(out.body.data[0].market).toBeUndefined();
+    expect(selectMock.mock.calls[0][0]).not.toContain("market_lines");
+  });
+
+  it("scores model versus market probabilities once enabled", async () => {
+    flags.market = true;
+    const shots = { market_type: "player_shots_on_goal", line: 1.5, market_p_over: 0.6, implied_mean: 2.1, books: 2, two_way_books: 2, yes_only_books: 0,
+      devig_method: "shin", observed_at: null, model_p_over: { bridge_exact: 0.7 } };
+    tables.forge_served_forecast_ledger.push({ ...row("2026-10-20", 1, "market", 0, 1), exp_goals: null, exp_shots: "2.1", exp_fantasy_points: null,
+      market_lines: { props: { shots }, team_win: null } });
+    const out = res();
+    await handler({ method: "GET", query: {} } as any, out);
+    expect(selectMock.mock.calls[0][0]).toContain(",market_lines");
+    expect(out.body.marketStatus).toBe("enabled");
+    expect(out.body.pooledMarket.comparisons).toEqual([{ player_class: "skater", event: "shots", model: "bridge_exact", n: 1,
+      market: { brier: 0.16, logLoss: 0.5108 }, source: { brier: 0.09, logLoss: 0.3567 }, brierSkill: 0.4375 }]);
+    const paired = out.body.pooledPaired.comparisons.find((s: any) => s.source === "bridge_exact" && s.reference === "market");
+    expect(paired.heads.shots).toMatchObject({ source: { n: 1, bias: 0 }, reference: { n: 1, bias: 0.1 } });
   });
 
   it("returns 200 empty when nothing is settled", async () => {

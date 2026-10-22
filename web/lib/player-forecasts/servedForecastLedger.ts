@@ -1,10 +1,12 @@
 import { computeGoalieFantasyPoints, computeSkaterFantasyPoints } from "lib/projections/accuracy/fantasyPoints";
 import { DEFAULT_GOALIE_FANTASY_POINTS, DEFAULT_SKATER_FANTASY_POINTS } from "lib/projectionsConfig/fantasyPointsConfig";
 import type { GameForecast } from "lib/rosterScheduleOptimizer/planningTypes";
+import { devigTwoWayAmerican, median, type DevigMethod } from "lib/projections/utils/devig";
+import { compareModelWithMarket, forgePropOverProbability, getModelLineProbabilities, type MarketPriceQuote, type OverProbabilityFn } from "lib/projections/utils/market-output-builders";
 import type { GameExpectation } from "./gameExpectations";
 
 /** Served-forecast ledger (S-B): what the RSO was shown per player-game, beside naive controls. Pure, no I/O. */
-export const LEDGER_SOURCES = ["bridge_exact", "bridge_reaimed", "native", "naive_last5", "naive_season"] as const;
+export const LEDGER_SOURCES = ["bridge_exact", "bridge_reaimed", "native", "naive_last5", "naive_season", "market"] as const;
 export type LedgerSource = typeof LEDGER_SOURCES[number];
 export const NAIVE_METHOD_VERSION = "served-ledger-naive-v1";
 type Row = Record<string, any>;
@@ -22,6 +24,8 @@ export type LedgerRow = {
   act_goals: Num; act_assists: Num; act_pp_points: Num; act_shots: Num; act_hits: Num; act_blocks: Num;
   act_saves: Num; act_goals_against: Num; act_shots_against: Num; act_win: Num; act_shutout: Num; act_fantasy_points: Num;
   dressed: boolean | null; started: boolean | null; settled_at: string | null; outcome_source: string | null;
+  /** Market rows only; other sources never send the column. */
+  market_lines?: MarketLines | null;
 };
 export type LedgerGame = { gameId: number; date: string; scheduledAt: string | null; status: string; homeTeamId: number; awayTeamId: number };
 /** `planningId` is the bridge forecast's `playerId` (identity id); `nhlId` keys WGO rows and the ledger. */
@@ -158,6 +162,104 @@ export function buildLedgerRows(input: BuildLedgerInput): { rows: LedgerRow[]; u
     }
   }
   return { rows, universe, skippedGameIds };
+}
+
+/** Task 6.3 market source. Off until the migration that allows source 'market' and adds `market_lines` is applied:
+ * the snapshot writes no market rows and the scoreboard does not read the column while this is false. */
+export const LEDGER_MARKET_ENABLED = false;
+export const MARKET_METHOD_VERSION = "served-ledger-market-v1";
+/** Ledger head ← prop markets in preference order; goals prefer the two-way market over the "Yes"-only anytime scorer. */
+const MARKET_HEADS: Record<Class, Array<[string, string[]]>> = {
+  skater: [["goals", ["player_goals", "player_goal_scorer_anytime"]], ["assists", ["player_assists"]], ["pp_points", ["player_power_play_points"]],
+    ["shots", ["player_shots_on_goal"]], ["blocks", ["player_blocked_shots"]]],
+  goalie: [["saves", ["player_total_saves"]]],
+};
+/** One prop line: the de-vigged market P(over | no push), its implied mean, and each served source's P(over | no push) at that line. */
+export type MarketLine = { market_type: string; line: number; market_p_over: number; implied_mean: Num; books: number; two_way_books: number;
+  yes_only_books: number; devig_method: DevigMethod; observed_at: string | null; model_p_over: Partial<Record<LedgerSource, number>> };
+/** De-vigged moneyline team win, conditional on the team only; scored on the goalie's start, never against unconditional exp_win_prob. */
+export type MarketTeamWin = { market_p_win: number; books: number; observed_at: string | null; model_p_win: { bridge_team_xg?: number } };
+export type MarketLines = { props: Record<string, MarketLine>; team_win: MarketTeamWin | null };
+export type LedgerMarketQuote = MarketPriceQuote & { game_id: number; player_id?: number | null; market_type: string; source_observed_at: string | null };
+export type BuildMarketInput = {
+  date: string; now: Date; /** Rows from buildLedgerRows: the served forecasts and naive controls to compare. */ rows: LedgerRow[];
+  /** prop_market_prices_daily and market_prices_daily (h2h) rows for the served date. */ propQuotes: LedgerMarketQuote[]; gameQuotes: LedgerMarketQuote[];
+  /** NHL id → position (C/LW/RW/D/G) for FORGE's fitted count distributions; unknown falls back to Poisson. */ positions?: Map<number, string>;
+  /** `${gameId}:${teamId}` → abbreviation (h2h outcomes are `team:ABBR`). */ teamAbbreviations: Map<string, string>;
+  teamWin?: Map<string, number>;
+};
+
+/** Mean whose P(over | no push) at `line` equals the market's, under the same distribution the model is scored with. */
+export function impliedMeanFromMarket(marketType: string, line: number, pOver: number, overProbability?: OverProbabilityFn): Num {
+  if (!(pOver > 0 && pOver < 1) || !finite(line)) return null;
+  const at = (mean: number) => getModelLineProbabilities({ marketType, mean, line, overProbability })?.overGivenNoPush ?? NaN;
+  let lo = 0, hi = Math.max(1, line * 4 + 10);
+  if (!(at(hi) > pOver)) return null;
+  for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (at(mid) < pOver) lo = mid; else hi = mid; }
+  return round((lo + hi) / 2);
+}
+
+/** One `market` row per served player-game with usable prices: quotes observed before both the snapshot and puck drop.
+ * Invalid prices (decimal odds stored as American, out-of-band books) are dropped by devig.ts before any probability is formed. */
+export function buildMarketLedgerRows(input: BuildMarketInput): LedgerRow[] {
+  const nowMs = input.now.getTime(), nowIso = input.now.toISOString();
+  const group = <T,>(list: T[], key: (value: T) => string) => {
+    const out = new Map<string, T[]>();
+    for (const value of list) out.set(key(value), [...(out.get(key(value)) ?? []), value]);
+    return out;
+  };
+  const served = group(input.rows.filter(row => row.source !== "market"), row => `${row.player_id}:${row.game_id}`);
+  const props = group(input.propQuotes, quote => `${quote.player_id}:${quote.game_id}:${quote.market_type}`);
+  const moneylines = group(input.gameQuotes.filter(quote => quote.market_type === "h2h"), quote => String(quote.game_id));
+  const out: LedgerRow[] = [];
+  for (const sources of served.values()) {
+    const first = sources[0], scheduledMs = Date.parse(first.scheduled_at);
+    const usable = (quote: LedgerMarketQuote) => { const at = Date.parse(quote.source_observed_at ?? ""); return Number.isFinite(at) && at <= nowMs && at < scheduledMs; };
+    const latest = (quotes: LedgerMarketQuote[]) => quotes.map(quote => new Date(quote.source_observed_at!).toISOString()).sort().at(-1) ?? null;
+    const overProbability = forgePropOverProbability(input.positions?.get(first.player_id) ?? (first.player_class === "goalie" ? "G" : null));
+    const lines: Record<string, MarketLine> = {}, used: LedgerMarketQuote[] = [];
+    for (const [head, marketTypes] of MARKET_HEADS[first.player_class]) for (const marketType of marketTypes) {
+      const quotes = (props.get(`${first.player_id}:${first.game_id}:${marketType}`) ?? []).filter(usable);
+      const model: Partial<Record<LedgerSource, number>> = {};
+      let market: ReturnType<typeof compareModelWithMarket> = null;
+      for (const row of quotes.length ? sources : []) {
+        const mean = (row as Row)[`exp_${head}`];
+        const comparison = finite(mean) ? compareModelWithMarket({ marketType, expectedValue: mean, quotes, overProbability }) : null;
+        if (comparison) { market = comparison; model[row.source] = round(comparison.model.overGivenNoPush)!; }
+      }
+      if (!market) continue;
+      lines[head] = { market_type: marketType, line: market.line, market_p_over: round(market.marketProbabilityOver)!,
+        implied_mean: impliedMeanFromMarket(marketType, market.line, market.marketProbabilityOver, overProbability), books: market.bookCount,
+        two_way_books: market.twoWayBookCount, yes_only_books: market.yesOnlyBookCount, devig_method: market.devigMethod, observed_at: latest(quotes), model_p_over: model };
+      used.push(...quotes);
+      break;
+    }
+    let teamWin: MarketTeamWin | null = null;
+    const own = input.teamAbbreviations.get(`${first.game_id}:${first.team_id}`), opponent = input.teamAbbreviations.get(`${first.game_id}:${first.opponent_team_id}`);
+    if (first.player_class === "goalie" && own && opponent) {
+      const quotes = (moneylines.get(String(first.game_id)) ?? []).filter(usable), fair: number[] = [];
+      for (const book of group(quotes, quote => quote.sportsbook_key).values()) {
+        const price = (abbreviation: string) => book.find(quote => quote.outcome_key === `team:${abbreviation}`)?.price_american;
+        const pair = devigTwoWayAmerican(price(own), price(opponent));
+        if (pair) fair.push(pair.fairA);
+      }
+      const win = median(fair), model = input.teamWin?.get(`${first.game_id}:${first.team_id}`);
+      if (win !== null) {
+        teamWin = { market_p_win: round(win)!, books: fair.length, observed_at: latest(quotes), model_p_win: finite(model) ? { bridge_team_xg: round(model)! } : {} };
+        used.push(...quotes);
+      }
+    }
+    if (!Object.keys(lines).length && !teamWin) continue;
+    const row: LedgerRow = { ...EMPTY, served_date: first.served_date, season_id: first.season_id, player_id: first.player_id, game_id: first.game_id,
+      player_class: first.player_class, team_id: first.team_id, opponent_team_id: first.opponent_team_id, is_home: first.is_home, scheduled_at: first.scheduled_at,
+      team_rest_days: first.team_rest_days, opponent_rest_days: first.opponent_rest_days, source: "market", method_version: MARKET_METHOD_VERSION,
+      source_watermark: `market_prices:${input.date}:${used.length}`, cutoff_at: nowIso, issued_at: latest(used), expires_at: first.scheduled_at,
+      market_lines: { props: lines, team_win: teamWin } };
+    for (const [head, line] of Object.entries(lines)) (row as Row)[`exp_${head}`] = line.implied_mean;
+    row.exp_fantasy_points = ledgerFantasyPoints(row.player_class, expHeads(row));
+    out.push(row);
+  }
+  return out;
 }
 
 export type LedgerActuals = {
@@ -408,4 +510,57 @@ export function scorePairedLedger(rows: LedgerRow[], weights?: FantasyWeights): 
     rmseSkillDefinition: "1 - RMSE(source) / RMSE(reference); null when reference RMSE is zero or no pairs",
     binning: "ascending source expected FP, tied values share midpoint-rank decile; head-specific missing pairs remain excluded",
     limitations: LEDGER_SCORING_LIMITATIONS, invalidIdentityRows, comparisons };
+}
+
+export type ProbabilityScore = { brier: Num; logLoss: Num };
+export type MarketComparison = { player_class: Class; event: string; model: LedgerSource | "bridge_team_xg"; n: number;
+  market: ProbabilityScore; source: ProbabilityScore; brierSkill: Num };
+const LOG_LOSS_EPSILON = 1e-6;
+function probabilityScore(pairs: Array<[number, number]>): ProbabilityScore {
+  if (!pairs.length) return { brier: null, logLoss: null };
+  const clamp = (p: number) => Math.min(1 - LOG_LOSS_EPSILON, Math.max(LOG_LOSS_EPSILON, p));
+  return { brier: round(pairs.reduce((s, [p, y]) => s + (p - y) ** 2, 0) / pairs.length),
+    logLoss: round(-pairs.reduce((s, [p, y]) => s + (y ? Math.log(clamp(p)) : Math.log(1 - clamp(p))), 0) / pairs.length) };
+}
+
+/** Model versus market in probability space on the same settled events. A prop event is act > line on a dressed player
+ * (pushes and DNP voids excluded); team_win is act_win on a goalie's known start. Each model is scored only on events
+ * where it has a probability, against the market on exactly those events. Paired mean errors versus the market's
+ * implied means come from scorePairedLedger with `market` as the reference. */
+export function scoreMarketLedger(rows: LedgerRow[]): {
+  eventDefinition: string; brierSkillDefinition: string; logLossEpsilon: number; pushes: number; missingOutcome: number; notStarted: number; comparisons: MarketComparison[];
+} {
+  const events = new Map<string, Array<[number, number, number]>>();
+  const add = (key: string, market: number, model: unknown, outcome: number) => {
+    if (!probability(model)) return;
+    events.set(key, [...(events.get(key) ?? []), [market, model, outcome]]);
+  };
+  let pushes = 0, missingOutcome = 0, notStarted = 0;
+  for (const row of scoringRows(rows).unique) {
+    const lines = row.source === "market" ? row.market_lines : null;
+    if (!lines) continue;
+    for (const [head, line] of Object.entries(lines.props ?? {})) {
+      const actual = (row as Row)[`act_${head}`];
+      if (row.dressed !== true || !finite(actual) || !probability(line.market_p_over)) { missingOutcome++; continue; }
+      if (actual === line.line) { pushes++; continue; }
+      for (const [model, p] of Object.entries(line.model_p_over ?? {})) add(`${row.player_class}|${head}|${model}`, line.market_p_over, p, actual > line.line ? 1 : 0);
+    }
+    const win = lines.team_win;
+    if (win) {
+      const outcome = binaryOutcome(row.act_win);
+      if (row.started === false) notStarted++;
+      else if (row.started !== true || outcome === null || !probability(win.market_p_win)) missingOutcome++;
+      else for (const [model, p] of Object.entries(win.model_p_win ?? {})) add(`${row.player_class}|team_win|${model}`, win.market_p_win, p, outcome);
+    }
+  }
+  const comparisons = [...events].sort((a, b) => a[0].localeCompare(b[0])).map(([key, list]): MarketComparison => {
+    const [playerClass, event, model] = key.split("|");
+    const market = probabilityScore(list.map(([m, , y]) => [m, y])), source = probabilityScore(list.map(([, p, y]) => [p, y]));
+    const marketSse = list.reduce((s, [m, , y]) => s + (m - y) ** 2, 0), sourceSse = list.reduce((s, [, p, y]) => s + (p - y) ** 2, 0);
+    return { player_class: playerClass as Class, event, model: model as MarketComparison["model"], n: list.length, market, source,
+      brierSkill: marketSse > 0 ? round(1 - sourceSse / marketSse) : null };
+  });
+  return { eventDefinition: "prop: act > line on a dressed player, pushes excluded; team_win: act_win on a known start",
+    brierSkillDefinition: "1 - Brier(source) / Brier(market) on the same events; positive means the model beat the market",
+    logLossEpsilon: LOG_LOSS_EPSILON, pushes, missingOutcome, notStarted, comparisons };
 }
