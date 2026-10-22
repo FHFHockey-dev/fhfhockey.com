@@ -31,7 +31,7 @@ describe("SlotWeekGrid", () => {
       { playerId: "a", name: "Sidney Crosby", position: "BN", slotId: null, points: 3.4 },
       { playerId: null, name: "Gone Player", position: "BN", slotId: null, points: null }] }];
     render(<SlotWeekGrid dates={dates} slots={slots} assignments={assignments} games={games} players={players} roster={roster}
-      forecasts={forecasts} pointsFor={() => 2.34} today="2026-10-21" pastLineups={pastLineups} onSelectPlayer={vi.fn()} />);
+      forecasts={forecasts} pointsFor={() => ({ expected: 2.34, ifStarts: null })} today="2026-10-21" pastLineups={pastLineups} onSelectPlayer={vi.fn()} />);
     const day = (name: RegExp) => screen.getByRole("button", { name });
     expect(day(/Jack Hughes, C, 2026-10-19, recorded lineup, 7\.2 actual points/).textContent).toContain("7.2");
     expect(day(/Tristan Jarry, G, 2026-10-19, recorded lineup, 0\.0 actual points/)).toBeTruthy();
@@ -43,7 +43,7 @@ describe("SlotWeekGrid", () => {
   it("renders the position-first week", () => {
     const onSelectPlayer = vi.fn();
     render(<SlotWeekGrid dates={dates} slots={slots} assignments={assignments} games={games} players={players} roster={roster}
-      forecasts={forecasts} pointsFor={() => 2.34} onSelectPlayer={onSelectPlayer} />);
+      forecasts={forecasts} pointsFor={() => ({ expected: 2.34, ifStarts: null })} onSelectPlayer={onSelectPlayer} />);
     expect(screen.getByRole("table", { name: "Lineup by position" })).toBeTruthy();
     expect(screen.getByText("C")).toBeTruthy();
     expect(screen.getByText("G")).toBeTruthy();
@@ -55,7 +55,8 @@ describe("SlotWeekGrid", () => {
     expect(screen.getAllByText("@PHI")).toHaveLength(2);
     expect(screen.getAllByText("vsMTL")).toHaveLength(1);
     expect(screen.getAllByText("Empty")).toHaveLength(2);
-    expect(screen.getAllByText("—")).toHaveLength(3);
+    expect(screen.getAllByText("—").filter(node => !node.hasAttribute("aria-label"))).toHaveLength(3);
+    expect(screen.getByLabelText("Fantasy points if starts: unavailable")).toBeTruthy();
     const benchRow = screen.getByText("BN").closest("tr")!;
     const cells = within(benchRow).getAllByRole("cell");
     expect(within(cells[0]).getByText("Hughes")).toBeTruthy();
@@ -72,8 +73,24 @@ describe("SlotWeekGrid", () => {
     expect(screen.getAllByText("2.3").every(node => ["high", "mid", "low"].includes(node.getAttribute("data-tier") ?? ""))).toBe(true);
     fireEvent.focus(screen.getByRole("button", { name: "About the lineup grid" }));
     expect(screen.getByText(/projected fantasy points for that game/)).toBeTruthy();
+    expect(screen.getByText(/if-starts FP assumes a start/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Sidney Crosby/ }));
     expect(onSelectPlayer).toHaveBeenCalledWith("a");
+  });
+
+  it("ranks goalie cells by complete expected FP only, separately from if-starts FP", () => {
+    const goalies = ["one", "two", "three", "missing"].map(id => p(id, `Goalie ${id}`, "PIT", "goalie"));
+    const goalieSlots: ActiveSlotInstance[] = goalies.map((_, index) => ({ id: `G${index + 1}`, type: "G", index }));
+    const values = new Map(goalies.map((player, index) => [player.id, { expected: index === 3 ? null : index + 1, ifStarts: 40 - 10 * index }]));
+    render(<SlotWeekGrid dates={[dates[0]]} slots={goalieSlots} games={[games[0]]} players={goalies}
+      roster={goalies.map(player => ({ playerId: player.id, position: "active" }))}
+      assignments={goalies.map((player, index) => ({ date: dates[0], playerId: player.id, gameId: "1", slotId: goalieSlots[index].id, locked: false }))}
+      pointsFor={playerId => values.get(playerId)!} onSelectPlayer={vi.fn()} />);
+    for (const [index, expectedTier] of ["low", "mid", "high", null].entries()) {
+      const cell = within(screen.getByRole("button", { name: `Goalie ${goalies[index].id}, G, ${dates[0]}` }));
+      expect(cell.getByLabelText(/Expected fantasy points:/).getAttribute("data-tier")).toBe(expectedTier);
+      expect(cell.getByLabelText(/Fantasy points if starts:/).getAttribute("data-tier")).toBeNull();
+    }
   });
 
   it("replays Optimize day by day: current lineup first, then the optimized one, pulsing each day", () => {

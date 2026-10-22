@@ -3,8 +3,10 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import { fallbackTeamLogo, getLocalTeamLogoPath } from "lib/images";
 import { canEligibilityOccupySlot, normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
 import type { ActiveSlotInstance } from "lib/rosterScheduleOptimizer/types";
+import type { GameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
 import type { GameForecast, PastLineup, PlanningAssignment, PlanningGame, PlanningPlayer, RosterEntry } from "lib/rosterScheduleOptimizer/planningTypes";
 import InfoTooltip from "./InfoTooltip";
+import ForecastPoints from "./ForecastPoints";
 import styles from "./SlotWeekGrid.module.scss";
 
 export type Props = {
@@ -15,7 +17,7 @@ export type Props = {
   players: PlanningPlayer[];
   roster: RosterEntry[];
   forecasts?: GameForecast[];
-  pointsFor?: (playerId: string, gameId: string) => number | null;
+  pointsFor?: (playerId: string, gameId: string) => GameForecastPoints;
   focusedDate?: string | null;
   onSelectPlayer?: (playerId: string) => void;
   /** Each new value replays the optimize animation: every day from `today` moves from the current lineup to the optimized one. */
@@ -199,7 +201,8 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
             {mark && <span className={styles.start} title={mark.text} aria-label={mark.text}>{mark.glyph}</span>}
           </span>
           {game ? <span className={styles.opp}>{game.home ? `vs${game.opponent}` : `@${game.opponent}`}</span> : <span className={styles.noGameTag}>No game</span>}
-          {typeof points === "number" && <span className={styles.points} data-tier={tier(player.playerClass, points)} title={`Projected fantasy points for this game (${tier(player.playerClass, points)} for your lineup this week)`}>{points.toFixed(1)}</span>}
+          {points && <ForecastPoints points={points} goalie={player.playerClass === "goalie"}
+            tier={typeof points.expected === "number" ? tier(player.playerClass, points.expected) : undefined} />}
         </>, !game)}
       </td>
     );
@@ -211,7 +214,7 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
     const values: Record<string, number[]> = { skater: [], goalie: [] };
     for (const assignment of assignments) {
       const player = playerById.get(assignment.playerId), game = player ? gameFor(player, assignment.date, assignment.gameId) : undefined;
-      const value = player && game ? pointsFor(player.id, game.id) : null;
+      const value = player && game ? pointsFor(player.id, game.id).expected : null;
       if (player && typeof value === "number" && Number.isFinite(value)) values[player.playerClass].push(value);
     }
     for (const [playerClass, list] of Object.entries(values)) if (list.length >= 3) {
@@ -230,7 +233,7 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
       <table className={styles.grid} aria-label="Lineup by position" style={{ "--day-count": dates.length } as CSSProperties}>
         <thead role="rowgroup">
           <tr role="row" className={`${styles.row} ${styles.headRow}`}>
-            <th scope="col" role="columnheader" className={styles.corner}><InfoTooltip label="About the lineup grid"><span className={styles.legend}>Numbers are each player&apos;s projected fantasy points for that game, using your league&apos;s scoring: <span className={styles.points} data-tier="high">high</span> <span className={styles.points} data-tier="mid">mid</span> <span className={styles.points} data-tier="low">low</span> for your lineup this week. <b>✓</b> confirmed starter · <b>~</b> likely starter · <span className={styles.dust} aria-hidden="true" /> game on the bench · grey: no game that night. Past days show the lineup Yahoo recorded and each player&apos;s <span className={styles.points} data-actual="">actual</span> points.</span></InfoTooltip></th>
+            <th scope="col" role="columnheader" className={styles.corner}><InfoTooltip label="About the lineup grid"><span className={styles.legend}>Numbers are each player&apos;s projected fantasy points for that game, using your league&apos;s scoring: <span className={styles.points} data-tier="high">high</span> <span className={styles.points} data-tier="mid">mid</span> <span className={styles.points} data-tier="low">low</span> for your lineup this week. Goalie expected FP includes participation probability; if-starts FP assumes a start. These are alternative views of the same game, not values to add. — means complete approved scoring inputs are unavailable. <b>✓</b> confirmed starter · <b>~</b> likely starter · <span className={styles.dust} aria-hidden="true" /> game on the bench · grey: no game that night. Past days show the lineup Yahoo recorded and each player&apos;s <span className={styles.points} data-actual="">actual</span> points.</span></InfoTooltip></th>
             {dates.map(date => {
               const { weekday, label } = dateParts(date);
               return <th key={date} scope="col" role="columnheader" {...columnAttrs(date)}>

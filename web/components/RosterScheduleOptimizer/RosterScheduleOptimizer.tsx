@@ -9,6 +9,7 @@ import { cachedYahooPlayer, withCachedYahooEligibility } from "lib/rosterSchedul
 import { comparePlanSensitivity } from "lib/player-forecasts/planComparison";
 import { capacityPlanningSnapshot, type CurrentPlanningOptions } from "lib/rosterScheduleOptimizer/currentPlanningRead";
 import { contributionLedger } from "lib/rosterScheduleOptimizer/contributionLedger";
+import { gameForecastPoints, type GameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
 import { expandActiveSlots } from "lib/rosterScheduleOptimizer/slots";
 import { localDate } from "lib/rosterScheduleOptimizer/planningDates";
 import { acquisitionEffectiveAt } from "lib/rosterScheduleOptimizer/planningTimeline";
@@ -838,19 +839,12 @@ export default function RosterScheduleOptimizer() {
   // A readback of the no-move lineup (open slots, weakest droppable player); it runs no search of its own.
   const gapReport = useMemo(() => snapshot && result ? lineupGapReport(snapshot, workspace.intent, result.baseline) : null, [snapshot, result, workspace.intent]);
   const pointsFor = useMemo(() => {
-    if (rules.scoring.mode !== "points" || !result?.selected.forecastInputs?.length) return undefined;
-    const byGame = new Map(result.selected.forecastInputs.map(row => [`${row.playerId}:${row.gameId}`, row]));
-    return (playerId: string, gameId: string) => {
-      const forecast = byGame.get(`${playerId}:${gameId}`);
-      if (!forecast) return null;
-      let total = 0, known = false;
-      for (const [key, weight] of Object.entries(rules.scoring.weights)) {
-        const value = forecast.stats[key];
-        if (weight && typeof value === "number" && Number.isFinite(value)) { total += value * weight; known = true; }
-      }
-      return known ? total : null;
-    };
-  }, [result, rules.scoring]);
+    if (rules.scoring.mode !== "points" || !displaySnapshot || !result) return undefined;
+    const byGame = new Map((result.selected.forecastInputs ?? []).map(row =>
+      [`${row.playerId}:${row.gameId}`, gameForecastPoints(displaySnapshot, row)]));
+    return (playerId: string, gameId: string): GameForecastPoints =>
+      byGame.get(`${playerId}:${gameId}`) ?? { expected: null, ifStarts: null };
+  }, [result, rules.scoring, displaySnapshot]);
   const goalieMinimum = result?.selected.goalie.required ?? rules.goalieMinimum.required;
   const addsLeft = rules.periods.find(period => typeof period.remaining === "number")?.remaining ?? null;
   const nameOf = (id: string) => players.find((player) => player.id === id)?.name ?? id;
