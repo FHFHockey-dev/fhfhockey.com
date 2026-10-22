@@ -35,6 +35,12 @@
 -- is partial; this inventory correction does not establish complete ownership
 -- coverage or change the live schedule. Older SQL snippets remain historical.
 
+-- 2026-10-22: job 79 update-nst-gamelog (07:25 UTC) was unscheduled by explicit
+-- TJ approval. It was capped at 6 NST URLs per run (a day is 20), failed daily
+-- and duplicated the 10:05Z pipeline's upstream_skater_sources step, which
+-- fetches the previous day's NST gamelogs. Its 07:25 slot left
+-- NST_ACTIVE_DIRECT_CRON_STARTS. Gap repair is a manual /db/runner job.
+
 # ALL CRON JOBS:
 ```json
 [
@@ -114,9 +120,10 @@
     "jobname": "update-nst-gamelog",
     "schedule": "25 7 * * *",
     "run_time_utc": "07:25 UTC",
-    "active": true,
+    "active": false,
     "method": "GET",
-    "route": "/api/v1/db/update-nst-gamelog"
+    "route": "/api/v1/db/update-nst-gamelog",
+    "verification": "Unscheduled 2026-10-22 (cron.unschedule(79)) by explicit TJ approval after the 10-07..10-18 NST backfill was confirmed. The 10:05Z run-rolling-forge-pipeline upstream_skater_sources step fetches the previous day's NST gamelogs. Rollback: reschedule the same Vault-bearer GET at 25 7 * * *."
   },
   {
     "jobid": 9,
@@ -661,6 +668,17 @@
     "active": false,
     "method": "GET",
     "route": "/api/v1/db/update-power-rankings"
+  },
+  {
+    "jobid": 399,
+    "jobname": "route-runner-tick",
+    "schedule": "* * * * *",
+    "run_time_utc": null,
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/route-runner-tick",
+    "auth": "Supabase Vault cron_secret",
+    "verification": "Scheduled 2026-10-22 by explicit TJ approval after release R21 (master 99c9e56b7, deployment dpl_7ZG28acCKCeHXn7tgL6x5eDEeQEi) was READY and smoke-tested. Calls the route only when a route_runner_jobs row is runnable and no lease is live; idle minutes make no HTTP call."
   }
 ]
 ```
@@ -2426,3 +2444,46 @@ curl -i -sS -m 180 \
 -- stale assertions with the shared fail-closed Unauthorized. response.
 -- This local evidence does not resolve the Production job-392 HTTP-401
 -- current-secret parity gate; keep NEW 9.0 open and credential values unread.
+
+----------------------------------------------------------------------------------
+-- APPLIED 2026-10-22 as job 399 (route-runner-tick), by explicit TJ approval, after release R21
+-- (master 99c9e56b7) was READY and smoke-tested. Migration 98 (route_runner tables) applied first.
+--
+-- Worker for the /db/runner long-run route runner (web/pages/api/v1/db/route-runner-tick.ts).
+-- Every minute it calls the worker only when a route_runner_jobs row is runnable and no job holds
+-- an unexpired lease, so idle and busy minutes make zero Vercel calls. Each call runs one step of
+-- one job (concurrency 1) inside the 240 s maxDuration; the inner routes write their own audits and
+-- the tick writes one small cron_job_audit row (job_name route-runner-tick).
+-- Prerequisites (met): migration 98 (supabase/migrations/20261022133743_route_runner_tables.sql)
+-- and release R21 with the route live. Listed in the JSON inventory above as job 399.
+--
+-- SELECT cron.schedule(
+--   'route-runner-tick',
+--   '* * * * *',
+--   $$
+--     SELECT net.http_get(
+--       url := 'https://fhfhockey.com/api/v1/db/route-runner-tick',
+--       headers := jsonb_build_object(
+--         'Authorization', 'Bearer ' || (
+--           SELECT decrypted_secret FROM vault.decrypted_secrets
+--           WHERE name = 'cron_secret'
+--         )
+--       ),
+--       timeout_milliseconds := 300000
+--     )
+--     WHERE EXISTS (
+--       SELECT 1 FROM public.route_runner_jobs
+--       WHERE status IN ('queued', 'running', 'waiting')
+--         AND coalesce(not_before, now()) <= now()
+--         AND coalesce(lease_until, now() - interval '1 second') < now()
+--         AND expires_at > now()
+--     )
+--     AND NOT EXISTS (
+--       SELECT 1 FROM public.route_runner_jobs WHERE lease_until > now()
+--     );
+--   $$
+-- );
+--
+-- Rollback: SELECT cron.unschedule('route-runner-tick');
+-- Queued jobs stop advancing and keep their next_query; they resume if the job is rescheduled
+-- before their expires_at (72 h after creation).

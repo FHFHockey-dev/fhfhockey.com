@@ -22,6 +22,8 @@ export interface NstRateLimitAssessment {
   }>;
 }
 
+// All four unique-URL windows apply across participating jobs. Only a complete
+// job below40 URLs may burst;21s spacing safely accommodates larger jobs.
 export const NST_RATE_LIMIT_WINDOWS: readonly NstRateLimitWindow[] = [
   { label: "1m_burst", windowMs: 60_000, maxRequests: 40 },
   { label: "5m_burst", windowMs: 300_000, maxRequests: 80 },
@@ -94,7 +96,11 @@ export function assessNstRequestPlan(
   return {
     requestCount,
     intervalMs,
-    isCompliant: windowCounts.every((window) => window.compliant),
+    isCompliant:
+      Number.isInteger(input.requestCount) && input.requestCount >= 0 &&
+      Number.isFinite(input.intervalMs) && input.intervalMs >= 0 &&
+      (requestCount <= NST_MAX_BURST_REQUESTS || intervalMs >= NST_MIN_REQUEST_INTERVAL_MS) &&
+      windowCounts.every((window) => window.compliant),
     windowCounts
   };
 }

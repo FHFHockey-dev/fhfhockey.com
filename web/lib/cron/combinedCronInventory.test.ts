@@ -270,6 +270,12 @@ SELECT cron.schedule(
       inventory.jobs.filter((job) => job.provider === "vercel"),
     ).toHaveLength(30);
     expect(inventory.jobs).toHaveLength(86);
+    // Isolated job79/job399 overlay: one retired, one added; other records unchanged.
+    expect(inventory.jobs.some((job) => job.provider === "pg_cron" && job.name === "update-nst-gamelog")).toBe(false);
+    expect(inventory.jobs).toContainEqual(expect.objectContaining({
+      provider: "pg_cron", name: "route-runner-tick",
+      routePath: "/api/v1/db/route-runner-tick", normalizedCronExpression: "* * * * *",
+    }));
     expect(inventory.jobs).toContainEqual(
       expect.objectContaining({
         provider: "vercel",

@@ -1,11 +1,12 @@
 import {
   assessNstRequestPlan,
   canBurstNstRequests,
+  NST_MIN_REQUEST_INTERVAL_MS,
   selectNstSafeInterval
 } from "./nstRateLimitPolicy";
 import { getNstCronBurstClearance } from "./nstCoordination";
 
-export const NST_SAFE_INTERVAL_MS = 21_000;
+export const NST_SAFE_INTERVAL_MS = NST_MIN_REQUEST_INTERVAL_MS;
 export const NST_GOALIES_REQUEST_INTERVAL_MS = NST_SAFE_INTERVAL_MS;
 export const DEFAULT_MAX_PENDING_URLS_PER_RUN = 20;
 export const NST_STRICT_MAX_URLS_PER_RUN = 6;
@@ -18,22 +19,21 @@ function resolveSharedSmallDateBurstPlan(options: {
   safeIntervalMs?: number;
   explicitRequestIntervalMs?: number;
 }) {
-  const safeIntervalMs = options.safeIntervalMs ?? NST_SAFE_INTERVAL_MS;
+  const safeIntervalMs = Math.max(options.safeIntervalMs ?? NST_SAFE_INTERVAL_MS, NST_SAFE_INTERVAL_MS);
   const burstEligibleByRequestCount = canBurstNstRequests(
     options.requestCount
   );
   const scheduleClearance = getNstCronBurstClearance(options.jobName);
-  const burstAllowedByPolicy =
-    burstEligibleByRequestCount && scheduleClearance.allowed;
+  // Scheduler clearance is advisory. Dispatch must still obtain shared ledger
+  // headroom, using the full job count rather than a per-invocation chunk.
   const candidateIntervalsMs =
     options.explicitRequestIntervalMs !== undefined
-      ? burstAllowedByPolicy ||
-        options.explicitRequestIntervalMs >= safeIntervalMs
+      ? Number.isFinite(options.explicitRequestIntervalMs) &&
+        (options.explicitRequestIntervalMs >= safeIntervalMs ||
+          (options.explicitRequestIntervalMs === 0 && burstEligibleByRequestCount))
         ? [options.explicitRequestIntervalMs, safeIntervalMs]
         : [safeIntervalMs]
-      : burstAllowedByPolicy
-        ? [0, safeIntervalMs]
-        : [safeIntervalMs];
+      : burstEligibleByRequestCount ? [0, safeIntervalMs] : [safeIntervalMs];
 
   const selectedPlan = selectNstSafeInterval(
     options.requestCount,

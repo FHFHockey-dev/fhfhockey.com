@@ -12,7 +12,17 @@ import {
   NST_SHARED_KEY_SERIAL_SPACING_MS
 } from "lib/cron/nstCoordination";
 
+import { resolveNstGamelogRequestPlan } from "./nstBurstPlans";
+
 describe("nstCoordination", () => {
+  it("keeps retired job79 clearance advisory while preserving full-job pacing", () => {
+    expect(NST_ACTIVE_DIRECT_CRON_STARTS.map((job) => job.jobName)).not.toContain("update-nst-gamelog");
+    expect(getNstCronBurstClearance("update-nst-gamelog").allowed).toBe(false);
+    expect(resolveNstGamelogRequestPlan({ queuedDates: 1, requestCount: 20 }))
+      .toMatchObject({ burstAllowed: true, requestIntervalMs: 0 });
+    expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 40 }))
+      .toMatchObject({ burstAllowed: false, requestIntervalMs: 21_000 });
+  });
   it("returns a shared-key serialization policy for direct NST jobs", () => {
     expect(getNstCoordinationPolicy("update-nst-gamelog")).toMatchObject({
       coordinationScope: "shared_nst_key",
@@ -28,7 +38,6 @@ describe("nstCoordination", () => {
 
   it("confirms every active NST cron start has ten minutes of clearance", () => {
     for (const jobName of [
-      "update-nst-gamelog",
       "update-nst-goalies",
       "update-nst-current-season",
       "update-nst-team-daily-incremental",

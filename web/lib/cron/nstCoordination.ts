@@ -17,7 +17,6 @@ export type NstCoordinationPolicy = {
 export const NST_MIN_CRON_BURST_GAP_MS = 10 * 60 * 1000;
 
 export const NST_ACTIVE_DIRECT_CRON_STARTS = [
-  { jobName: "update-nst-gamelog", minuteOfDayUtc: 7 * 60 + 25 },
   { jobName: "update-nst-goalies", minuteOfDayUtc: 8 * 60 + 30 },
   { jobName: "update-nst-current-season", minuteOfDayUtc: 8 * 60 + 45 },
   { jobName: "update-nst-team-stats-all", minuteOfDayUtc: 9 * 60 + 15 },

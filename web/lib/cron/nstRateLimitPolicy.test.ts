@@ -58,13 +58,13 @@ describe("nstRateLimitPolicy", () => {
     );
   });
 
-  it("accepts a modest delay when it brings the plan under every limit", () => {
+  it("requires 21 seconds for a full job of 40 or more even when shorter pacing fits the windows", () => {
     const assessment = assessNstRequestPlan({
       requestCount: 81,
       intervalMs: 4_000
     });
 
-    expect(assessment.isCompliant).toBe(true);
+    expect(assessment.isCompliant).toBe(false);
     expect(assessment.windowCounts).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -100,7 +100,7 @@ describe("nstRateLimitPolicy", () => {
     const assessment = selectNstSafeInterval(81, [0, 1_000, 4_000, 21_000]);
 
     expect(assessment).not.toBeNull();
-    expect(assessment?.intervalMs).toBe(4_000);
+    expect(assessment?.intervalMs).toBe(21_000);
     expect(assessment?.isCompliant).toBe(true);
   });
 

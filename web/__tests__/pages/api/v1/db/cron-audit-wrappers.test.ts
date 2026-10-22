@@ -43,7 +43,6 @@ describe("scheduled cron audit coverage", () => {
     );
 
     expect(manualRoutes).toEqual([
-      "/api/v1/db/update-nst-gamelog",
       "/api/v1/db/update-wgo-goalies",
       "/api/v1/db/update-wgo-skaters",
       "/api/v1/db/update-wgo-totals",
@@ -82,8 +81,8 @@ describe("scheduled cron audit coverage", () => {
     expect(callerCounts).toEqual({
       "browser-admin": 5,
       "browser-admin-and-internal": 4,
-      "cron-only": 26,
-      "internal-server": 12,
+      "cron-only": 27,
+      "internal-server": 11,
     });
     expect(authFindings.filter((finding) => !finding.filePath)).toEqual([]);
 

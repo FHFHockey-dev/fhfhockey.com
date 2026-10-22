@@ -5,10 +5,10 @@ import {
   GOALIE_URLS_PER_DATE,
   NST_GOALIES_REQUEST_INTERVAL_MS,
   NST_SAFE_INTERVAL_MS,
-  resolveGoalieNstRequestPlan
+  resolveGoalieNstRequestPlan,
+  resolveNstGamelogRequestPlan
 } from "./nstBurstPlans";
 import {
-  NST_TEAM_DAILY_BURST_INTERVAL_MS,
   NST_TEAM_DAILY_SAFE_INTERVAL_MS,
   TEAM_DAILY_URLS_PER_DATE,
   resolveTeamDailyNstRequestPlan
@@ -18,8 +18,15 @@ import {
   resolveNstTeamStatsRequestPlan
 } from "./nstBurstPlans";
 
-describe("NST route burst plans", () => {
-  it("allows update-nst-goalies to burst when two or fewer dates are queued", () => {
+describe("NST full-job pacing plans", () => {
+  it("bursts only full gamelog jobs below 40 URLs, independently of date aperture", () => {
+    expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 39 })).toMatchObject({ burstAllowed: true, requestIntervalMs: 0 });
+    expect(resolveNstGamelogRequestPlan({ queuedDates: 1, requestCount: 1 }).requestIntervalMs).toBe(0);
+    expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 40 })).toMatchObject({ burstAllowed: false, requestIntervalMs: 21_000 });
+    expect(resolveNstGamelogRequestPlan({ queuedDates: 3, requestCount: 3 }).requestIntervalMs).toBe(0);
+    expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 41 }).burstAllowed).toBe(false);
+  });
+  it("bursts update-nst-goalies when its full queue is below 40 URLs", () => {
     const plan = resolveGoalieNstRequestPlan({
       queuedDates: 2,
       totalQueuedUrls: GOALIE_URLS_PER_DATE * 2,
@@ -32,7 +39,7 @@ describe("NST route burst plans", () => {
     expect(plan.requestIntervalMs).toBe(0);
   });
 
-  it("allows update-nst-goalies to burst when its full queue remains below 40 URLs", () => {
+  it("bursts a full goalie queue below 40 URLs independently of date count", () => {
     const plan = resolveGoalieNstRequestPlan({
       queuedDates: 3,
       totalQueuedUrls: GOALIE_URLS_PER_DATE * 3,
@@ -47,7 +54,7 @@ describe("NST route burst plans", () => {
     expect(plan.requestIntervalMs).toBe(0);
   });
 
-  it("keeps update-nst-team-daily on burst for one or two queued dates", () => {
+  it("bursts update-nst-team-daily for one or two queued dates", () => {
     const oneDayPlan = resolveTeamDailyNstRequestPlan(["2026-03-21"]);
     const twoDayPlan = resolveTeamDailyNstRequestPlan([
       "2026-03-20",
@@ -55,21 +62,21 @@ describe("NST route burst plans", () => {
     ]);
 
     expect(oneDayPlan.requestCount).toBe(TEAM_DAILY_URLS_PER_DATE);
-    expect(oneDayPlan.requestIntervalMs).toBe(NST_TEAM_DAILY_BURST_INTERVAL_MS);
+    expect(oneDayPlan.requestIntervalMs).toBe(0);
     expect(oneDayPlan.burstAllowed).toBe(true);
 
     expect(twoDayPlan.requestCount).toBe(TEAM_DAILY_URLS_PER_DATE * 2);
-    expect(twoDayPlan.requestIntervalMs).toBe(NST_TEAM_DAILY_BURST_INTERVAL_MS);
+    expect(twoDayPlan.requestIntervalMs).toBe(0);
     expect(twoDayPlan.burstAllowed).toBe(true);
   });
 
-  it("allows update-nst-team-daily to burst while the full queue is below 40 URLs", () => {
+  it("bursts update-nst-team-daily while the full queue is below 40 URLs", () => {
     const dates = ["2026-03-19", "2026-03-20", "2026-03-21"];
     const plan = resolveTeamDailyNstRequestPlan(dates);
 
     expect(plan.requestCount).toBe(TEAM_DAILY_URLS_PER_DATE * dates.length);
     expect(plan.burstAllowed).toBe(true);
-    expect(plan.requestIntervalMs).toBe(NST_TEAM_DAILY_BURST_INTERVAL_MS);
+    expect(plan.requestIntervalMs).toBe(0);
   });
 
   it("keeps update-nst-team-daily on the safe interval for larger queued date counts", () => {
@@ -95,7 +102,7 @@ describe("NST route burst plans", () => {
     expect(plan.burstAllowed).toBe(false);
   });
 
-  it("allows nst-team-stats to burst when the run is within two queued dates", () => {
+  it("bursts nst-team-stats when its full run is below 40 URLs", () => {
     const plan = resolveNstTeamStatsRequestPlan({
       queuedDates: 1,
       dateRequestCount: 4,
@@ -107,7 +114,7 @@ describe("NST route burst plans", () => {
     expect(plan.requestIntervalMs).toBe(0);
   });
 
-  it("uses URL count rather than date count to decide nst-team-stats bursts", () => {
+  it("bursts small nst-team-stats jobs independently of date count", () => {
     const plan = resolveNstTeamStatsRequestPlan({
       queuedDates: 3,
       dateRequestCount: 12,
@@ -128,6 +135,28 @@ describe("NST route burst plans", () => {
     expect(plan.burstEligibleByRequestCount).toBe(false);
     expect(plan.burstAllowed).toBe(false);
     expect(plan.requestIntervalMs).toBe(NST_TEAM_STATS_SAFE_INTERVAL_MS);
+  });
+
+  it.each([-1, 20_999, NaN, Infinity])("rejects unsafe explicit goalie spacing %s", (interval) => {
+    const plan = resolveGoalieNstRequestPlan({ queuedDates: 1, totalQueuedUrls: 1,
+      maxPendingUrls: 1, explicitRequestIntervalMs: interval });
+    expect(plan).toMatchObject({ requestIntervalMs: NST_SAFE_INTERVAL_MS, burstAllowed: false,
+      explicitIntervalRejected: true, usedExplicitInterval: false });
+  });
+
+  it("allows explicit zero only for a full job below 40 URLs", () => {
+    expect(resolveGoalieNstRequestPlan({ queuedDates: 1, totalQueuedUrls: 39,
+      maxPendingUrls: 1, explicitRequestIntervalMs: 0 })).toMatchObject({
+      requestIntervalMs: 0, burstAllowed: true, usedExplicitInterval: true });
+    expect(resolveGoalieNstRequestPlan({ queuedDates: 1, totalQueuedUrls: 40,
+      maxPendingUrls: 1, explicitRequestIntervalMs: 0 })).toMatchObject({
+      requestIntervalMs: NST_SAFE_INTERVAL_MS, burstAllowed: false, explicitIntervalRejected: true });
+  });
+
+  it("retains a longer explicit goalie interval", () => {
+    expect(resolveGoalieNstRequestPlan({ queuedDates: 1, totalQueuedUrls: 1,
+      maxPendingUrls: 1, explicitRequestIntervalMs: 30_000 })).toMatchObject({
+      requestIntervalMs: 30_000, usedExplicitInterval: true, explicitIntervalRejected: false });
   });
 
   it("does not hide a large goalie backlog behind a small per-run cap", () => {
