@@ -16,6 +16,7 @@ const producer = vi.hoisted(() => ({
   countsAvailable: true,
   rollingStrengths: [] as string[],
   leagueReads: 0,
+  leagueMissing: false,
   playerWrites: vi.fn(async (rows: unknown[]) => rows.length),
   teamWrites: vi.fn(async (_row: unknown) => 1),
 }));
@@ -46,10 +47,14 @@ vi.mock("./queries/skater-queries", () => ({
     return { player_id: id, game_id: game.id, game_date: game.date, season: game.seasonId, strength_state: strength,
       aligned_count_support: support, toi_seconds_avg_all: 800, sog_per_60_all: 6, shots_total_all: 8 };
   }) : [],
-  fetchLeaguePhysicalTotals: async () => (producer.leagueReads += 1, {
-    F: { toDate: { hits: 490, blocks: 210, toiSeconds: 360_000 }, prior: { hits: 4900, blocks: 2100, toiSeconds: 3_600_000 } },
-    D: { toDate: { hits: 280, blocks: 440, toiSeconds: 360_000 }, prior: { hits: 3200, blocks: 4400, toiSeconds: 3_600_000 } },
-  }),
+  fetchLeaguePhysicalTotals: async () => {
+    producer.leagueReads += 1;
+    if (producer.leagueMissing) throw Object.assign(new Error("Missing physical totals RPC"), { reason: "rpc_missing" });
+    return {
+      F: { toDate: { hits: 490, blocks: 210, toiSeconds: 360_000 }, prior: { hits: 4900, blocks: 2100, toiSeconds: 3_600_000 } },
+      D: { toDate: { hits: 280, blocks: 440, toiSeconds: 360_000 }, prior: { hits: 3200, blocks: 4400, toiSeconds: 3_600_000 } },
+    };
+  },
   fetchSkaterRecencyEvents: async (rows: any[]) => new Map(rows.map(row => [row.player_id, { date: row.game_date, seasonId: row.season, type: 2 }])) ,
   fetchLatestWgoSkaterDeploymentProfiles: async () => new Map(),
   fetchLatestSkaterContextProfiles: async () => ({ shotQuality: new Map(), onIceContext: new Map() }),
@@ -323,6 +328,8 @@ describe("native skater-stage accounting integration", () => {
       expectedPpp: 0, rawRoundedPpp: 0, teamPp: 0, teamGoals: 5.994, playerGoals: 0.333 },
     { label: "unavailable conversion heads", goalsPp: 0.1114, assistsPp: 0.2004, ppHead: null, assistHead: null,
       expectedPpp: null, rawRoundedPpp: 0.312, teamPp: null, teamGoals: null, playerGoals: null, countsAvailable: false },
+    { label: "missing physical totals RPC uses unscaled F/D priors", goalsPp: 0.1114, assistsPp: 0.2004, ppHead: 0.111, assistHead: 0.2,
+      expectedPpp: 0.311, rawRoundedPpp: 0.312, teamPp: 1.998, teamGoals: 7.992, playerGoals: 0.444, leagueMissing: true },
   ])("writes reconciled serialized goals and PPP for $label without qualifying full-game means", async fixture => {
     producer.playerWrites.mockClear();
     producer.teamWrites.mockClear();
@@ -330,6 +337,7 @@ describe("native skater-stage accounting integration", () => {
     producer.countsAvailable = fixture.countsAvailable !== false;
     producer.rollingStrengths.length = 0;
     producer.leagueReads = 0;
+    producer.leagueMissing = fixture.leagueMissing === true;
     const asOfDate = "2026-10-07";
     const cached = <T>(value: T) => new Map([10, 11].map(teamId => [`${teamId}:${asOfDate}`, value]));
     const teamGoalsByTeamId = new Map<number, number>();
@@ -339,6 +347,7 @@ describe("native skater-stage accounting integration", () => {
       observedAt: evidenceCutoffAt, freshnessExpiresAt: null, outcomes: [] };
     const playerPropContextByGamePlayerKey = new Map([10, 11].flatMap(teamId => producer.roster(teamId)
       .map(playerId => [`2026020002:${playerId}`, { [marketType]: marketSummary }] as const)));
+    const metrics = { data_quality: {} as Record<string, number>, warnings: [] as string[] };
     const result = await runPerGameSkaterStage({
       seasonBootstrap: true, asOfDate, runId: "synthetic-native-goal-accounting", horizonGames: 1,
       game: { id: 2026020002, date: asOfDate, homeTeamId: 10, awayTeamId: 11 },
@@ -356,7 +365,7 @@ describe("native skater-stage accounting integration", () => {
       leaguePhysicalTotalsCache: new Map(),
       teamFiveOnFiveProfileCache: cached(null), teamNstExpectedGoalsCache: cached(null), teamLineComboGoaliePriorCache: cached(new Map()),
       currentTeamGoalieIdsCache: cached(new Set()), playerPropContextByGamePlayerKey, playerPredictionOutputRows, modelMarketFlagRows: [],
-      goalieCandidates: [], learningCounters: { players: 0, goalRecent: 0, assistRecent: 0 }, metrics: { data_quality: {}, warnings: [] },
+      goalieCandidates: [], learningCounters: { players: 0, goalRecent: 0, assistRecent: 0 }, metrics,
       dailyBoardEvidence: { informationCutoffAt: evidenceCutoffAt, assertions: [assertion({ gameId: 2026020002, playerId: 1018, value: "L4" })],
         conflicts: [{ gameId: 2026020002, teamId: 10, playerId: 1018, dimension: "pp", evidenceIds: ["synthetic-pp-conflict"] }] },
     });
@@ -366,6 +375,11 @@ describe("native skater-stage accounting integration", () => {
     expect(reads("all")).toBe(reads("ev"));
     // Both teams share one league totals read per run and date.
     expect(producer.leagueReads).toBe(1);
+    if (fixture.leagueMissing) {
+      expect(metrics.data_quality.physical_league_totals_unavailable).toBe(1);
+      expect(metrics.warnings.filter(warning => warning === "physical_league_totals_rpc_missing:without_league_rescale")).toHaveLength(1);
+    }
+    producer.leagueMissing = false;
     expect(producer.playerWrites).toHaveBeenCalledTimes(2);
     const added = producer.playerWrites.mock.calls[0][0].find((row: any) => row.player_id === 1018) as any;
     expect(added.uncertainty.model.skater_selection).toMatchObject({ participation_probability: 1, participation_reason: null });

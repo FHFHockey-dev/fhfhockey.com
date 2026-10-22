@@ -500,8 +500,16 @@ export function computeSkaterPhysicalEventRates(args: {
     const historySeconds = nonNegative(toiSeconds3ya);
     let baseline = reference.per60;
     if (events != null && events >= 0 && historySeconds > 0) {
-      const seasonEvents = sameSeason ? Math.min(events, nonNegative(eventsSeason)) : 0;
-      const seasonSeconds = sameSeason ? Math.min(historySeconds, nonNegative(toiSecondsSeason)) : 0;
+      const seasonCount = finiteOrNull(eventsSeason);
+      const seasonExposure = finiteOrNull(toiSecondsSeason);
+      // Split only an observed count/exposure pair. Partial season support is
+      // unknown: retain the existing unsplit, half-weight history fallback.
+      const seasonSplit = sameSeason && seasonCount != null && seasonCount >= 0
+        && seasonExposure != null && seasonExposure >= 0
+        ? { events: Math.min(events, seasonCount), seconds: Math.min(historySeconds, seasonExposure) }
+        : null;
+      const seasonEvents = seasonSplit?.events ?? 0;
+      const seasonSeconds = seasonSplit?.seconds ?? 0;
       const weightedEvents = seasonEvents + SKATER_PHYSICAL_PRIOR_SEASON_WEIGHT * reference.scale * (events - seasonEvents);
       const weightedMinutes = (seasonSeconds + SKATER_PHYSICAL_PRIOR_SEASON_WEIGHT * (historySeconds - seasonSeconds)) / 60;
       baseline = (weightedEvents * 60 + priorMinutes * reference.per60) / (weightedMinutes + priorMinutes);

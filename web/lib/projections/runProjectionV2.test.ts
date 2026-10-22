@@ -857,6 +857,32 @@ describe("skater physical event rates", () => {
     expect(rates.hitsPer60).toBeLessThan(unscaled.hitsPer60);
   });
 
+  it.each([
+    ["C", "hits", 4.9, 50], ["D", "hits", 3.2, 50],
+    ["C", "blocks", 2.1, 300], ["D", "blocks", 4.4, 300],
+  ] as const)("keeps partial current-season %s %s count/exposure pairs unknown", (position, metric, prior, priorMinutes) => {
+    const row = allRow({
+      [`${metric}_per_60_last5`]: null, [`${metric}_per_60_${metric}_3ya`]: 200,
+      [`${metric}_per_60_toi_seconds_3ya`]: 240000,
+    });
+    const rate = (events: number | null | undefined, seconds: number | null | undefined) => computeSkaterPhysicalEventRates({
+      all: { ...row, [`${metric}_per_60_${metric}_season`]: events, [`${metric}_per_60_toi_seconds_season`]: seconds },
+      position, esPpToiSeconds: 1200, currentSeasonId: 20262027, league: null,
+    })[`${metric}Per60`];
+    const unsplit = (0.5 * 200 * 60 + priorMinutes * prior) / (0.5 * 4000 + priorMinutes);
+    for (const missing of [null, undefined]) {
+      // Either missing member invalidates the split, without inventing its partner.
+      expect(rate(missing, 120000)).toBeCloseTo(unsplit, 12);
+      expect(rate(40, missing)).toBeCloseTo(unsplit, 12);
+      expect(rate(0, missing)).toBeCloseTo(unsplit, 12);
+      expect(rate(missing, 0)).toBeCloseTo(unsplit, 12);
+    }
+    const observedZero = (0.5 * 200 * 60 + priorMinutes * prior) / (2000 + 0.5 * 2000 + priorMinutes);
+    expect(rate(0, 120000)).toBeCloseTo(observedZero, 12);
+    expect(rate(null, 120000)).not.toBe(rate(0, 120000));
+    expect(rate(40, 120000)).toBeCloseTo(((40 + 0.5 * 160) * 60 + priorMinutes * prior) / (3000 + priorMinutes), 12);
+  });
+
   it("treats a row from an earlier season as all prior history", () => {
     const seasonFields = { hits_per_60_hits_season: 40, hits_per_60_toi_seconds_season: 60000 };
     const stale = computeSkaterPhysicalEventRates({ all: allRow({ season: 20252026, ...seasonFields }), position: "D",

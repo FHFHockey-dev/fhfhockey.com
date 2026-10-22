@@ -176,7 +176,7 @@ export class SkaterRollingReadIncompleteError extends Error {
   }
 }
 
-/** Migration supabase/migrations/20261021180242_forge_latest_rolling_rows.sql. */
+/** Migration supabase/migrations/20261021182129_forge_latest_rolling_rows.sql. */
 const LATEST_ROLLING_ROWS_RPC = "forge_latest_rolling_rows";
 const ROLLING_ROW_COLUMNS = ROLLING_ROW_SELECT_CLAUSE.split(",");
 const ROLLING_IDENTITY_FIELDS = ["player_id", "game_id", "game_date", "season", "strength_state"];
@@ -436,7 +436,7 @@ async function fetchRollingRowsByLegacyWindowScan(
 }
 
 export class LeaguePhysicalTotalsReadError extends Error {
-  constructor(readonly reason: "invalid_scope" | "read_failed" | "invalid_rows", cause?: unknown) {
+  constructor(readonly reason: "invalid_scope" | "rpc_missing" | "read_only_reconstruction" | "read_failed" | "invalid_rows", cause?: unknown) {
     super(`League physical totals read failed: ${reason}`, { cause });
     this.name = "LeaguePhysicalTotalsReadError";
   }
@@ -450,15 +450,25 @@ export async function fetchLeaguePhysicalTotals(
 ): Promise<LeaguePhysicalTotals> {
   if (!db) throw new Error("Supabase server client not available");
   if (!Number.isSafeInteger(seasonId) || seasonId % 10000 !== Math.floor(seasonId / 10000) + 1
-    || !/^\d{4}-\d{2}-\d{2}$/.test(cutoffDate) || Number.isNaN(Date.parse(cutoffDate))) {
+    || !isIsoDate(cutoffDate)) {
     throw new LeaguePhysicalTotalsReadError("invalid_scope");
+  }
+  // Offline reconstruction has no league-totals table contract and forbids RPCs.
+  // Select the unscaled fallback before dispatch, rather than swallowing a fence violation.
+  if (isReadOnlyProjectionReconstruction()) {
+    throw new LeaguePhysicalTotalsReadError("read_only_reconstruction");
   }
   let result: { data: unknown; error: unknown };
   try {
     // Not in the generated types until the migration is applied and types are regenerated.
-    result = await (db as any).rpc("forge_league_skater_physical_totals", { p_season_id: seasonId, p_cutoff: cutoffDate });
+    result = await (db as any).rpc("forge_league_skater_physical_totals", { p_season_id: seasonId, p_cutoff: cutoffDate }, { get: true });
   } catch (cause) {
     throw new LeaguePhysicalTotalsReadError("read_failed", cause);
+  }
+  // Migration 88 is optional for this candidate. Missing RPC means constant F/D
+  // priors with scale=1; do not replace the bounded RPC with a league-wide scan.
+  if ((result.error as { code?: unknown } | null)?.code === "PGRST202") {
+    throw new LeaguePhysicalTotalsReadError("rpc_missing", result.error);
   }
   if (result.error) throw new LeaguePhysicalTotalsReadError("read_failed", result.error);
   const rows = Array.isArray(result.data) ? result.data : [];

@@ -18,9 +18,6 @@ vi.mock("lib/supabase/client", () => ({ default: {} }));
 vi.mock("lib/supabase", () => ({ default: {} }));
 const input = () => {
   const inputs = JSON.parse(JSON.stringify(fixture)) as OfflinePlayerInputs;
-  inputs.tables.rolling_player_metric_support_payloads = structuredClone(inputs.tables.wgo_skater_stats);
-  inputs.tables.rolling_player_metric_support_payloads.receipt.revision = "synthetic-v1:rolling_player_metric_support_payloads";
-  inputs.tables.rolling_player_metric_support_payloads.receipt.scope = "Fictional empty aligned-count support for the current native reader";
   return inputs;
 };
 function updateRows(inputs: OfflinePlayerInputs, table: string, rows: any[]) {

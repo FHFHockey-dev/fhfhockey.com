@@ -32,6 +32,7 @@ import { ROLLING_ROW_SELECT_CLAUSE, fetchRollingRows, fetchCurrentRosterPlayerId
   fetchLeaguePhysicalTotals } from "./skater-queries";
 import { captureProjectionInputs, interceptProjectionQuery, replayProjectionInputs } from "../inputCapture";
 import { pickLatestByPlayer } from "../utils/collection-utils";
+import { computeSkaterPhysicalEventRates } from "../calculators/skater-adjustments";
 
 describe("native skater recency event identity", () => {
   const rows = [{ player_id: 7, game_id: 2026020025, season: 20262027, game_date: "2026-10-03" }] as any;
@@ -488,6 +489,29 @@ describe("latest rolling row per player (forge_latest_rolling_rows)", () => {
     expect(db.from).not.toHaveBeenCalled();
   });
 
+  it("hydrates all-strength physical totals from the exact sidecar and computes F/D priors without league rescaling", async () => {
+    const row = wide(7, "2026-10-06", 2026020030, { strength_state: "all", hits_per_60_last5: 0, blocks_per_60_last5: 0 });
+    const history = { toi_seconds_total_last5: 6000, hits_per_60_hits_3ya: 200, hits_per_60_toi_seconds_3ya: 240000,
+      hits_per_60_hits_season: 10, hits_per_60_toi_seconds_season: 6000,
+      blocks_per_60_blocks_3ya: 300, blocks_per_60_toi_seconds_3ya: 240000,
+      blocks_per_60_blocks_season: 12, blocks_per_60_toi_seconds_season: 6000 };
+    const support = sidecar(row, { historicalCompatibility: history });
+    const db = backend(latestRowsRpc([row], [support]));
+    const [hydrated] = await fetchRollingRows([7], "all", cutoff);
+    expect(hydrated).toMatchObject(history);
+    expect(row.hits_per_60_hits_3ya).toBeNull();
+    for (const [position, hitsPrior, blocksPrior] of [["C", 4.9, 2.1], ["D", 3.2, 4.4]] as const) {
+      const rates = computeSkaterPhysicalEventRates({ all: hydrated, position, esPpToiSeconds: 1200,
+        currentSeasonId: 20262027, league: null });
+      const weightedMinutes = (6000 + 0.5 * (240000 - 6000)) / 60;
+      expect(rates.hitsPer60).toBeCloseTo((1 - 100 / 340) * ((10 + 0.5 * 190) * 60 + 50 * hitsPrior) / (weightedMinutes + 50), 12);
+      expect(rates.blocksPer60).toBeCloseTo((1 - 100 / 1100) * ((12 + 0.5 * 288) * 60 + 300 * blocksPrior) / (weightedMinutes + 300), 12);
+      expect(rates).toMatchObject({ hitsLeagueScale: 1, blocksLeagueScale: 1 });
+    }
+    expect(db.rpc).toHaveBeenCalledTimes(1);
+    expect(db.from).not.toHaveBeenCalled();
+  });
+
   const entry = (rolling_row: unknown = { ...history[0] }, support_row: unknown = null, player_id = 7) => ({ player_id, rolling_row, support_row });
   const support7 = (changed: Row = {}) => ({ ...sidecar(history[0], { historicalCompatibility: { goals_total_all: 12 } }), ...changed });
 
@@ -632,11 +656,12 @@ describe("league physical totals", () => {
       D: { toDate: { hits: 280, blocks: 440, toiSeconds: 360_000 }, prior: { hits: 3200, blocks: 4400, toiSeconds: 3_600_000 } },
     });
     expect(db.rpc).toHaveBeenCalledTimes(1);
-    expect(db.rpc).toHaveBeenCalledWith("forge_league_skater_physical_totals", { p_season_id: 20262027, p_cutoff: "2026-10-20" });
+    expect(db.rpc).toHaveBeenCalledWith("forge_league_skater_physical_totals", { p_season_id: 20262027, p_cutoff: "2026-10-20" }, { get: true });
   });
 
   it("rejects an invalid scope before reading, and missing, extra, duplicate or negative rows", async () => {
-    for (const [season, cutoff] of [[20262026, "2026-10-20"], [2026, "2026-10-20"], [20262027, "10/20/2026"]] as const) {
+    for (const [season, cutoff] of [[20262026, "2026-10-20"], [2026, "2026-10-20"], [20262027, "10/20/2026"],
+      [20262027, "2026-02-30"]] as const) {
       const db = client(rows);
       await expect(fetchLeaguePhysicalTotals(season, cutoff, db as any)).rejects.toMatchObject({ reason: "invalid_scope" });
       expect(db.rpc).not.toHaveBeenCalled();
@@ -646,7 +671,27 @@ describe("league physical totals", () => {
       [{ ...rows[0], scope: "career" }, ...rows.slice(1)], null]) {
       await expect(fetchLeaguePhysicalTotals(20262027, "2026-10-20", client(data) as any)).rejects.toMatchObject({ reason: "invalid_rows" });
     }
-    await expect(fetchLeaguePhysicalTotals(20262027, "2026-10-20", client(null, { code: "PGRST202" }) as any))
-      .rejects.toMatchObject({ reason: "read_failed" });
+  });
+
+  it("distinguishes the unapplied RPC from provider and transport failures without a table-scan fallback", async () => {
+    for (const [code, reason] of [["PGRST202", "rpc_missing"], ["42501", "read_failed"], ["57014", "read_failed"]]) {
+      const error = { code };
+      const db = { ...client(null, error), from: vi.fn(() => { throw new Error("League scan forbidden"); }) };
+      await expect(fetchLeaguePhysicalTotals(20262027, "2026-10-20", db as any)).rejects.toMatchObject({ reason, cause: error });
+      expect(db.rpc).toHaveBeenCalledTimes(1);
+      expect(db.from).not.toHaveBeenCalled();
+    }
+    const cause = new Error("offline transport interruption");
+    const db = { rpc: vi.fn().mockRejectedValue(cause) };
+    await expect(fetchLeaguePhysicalTotals(20262027, "2026-10-20", db as any)).rejects.toMatchObject({ reason: "read_failed", cause });
+  });
+
+  it("selects the unscaled fallback in offline reconstruction before any RPC dispatch", async () => {
+    const db = client(rows);
+    await captureProjectionInputs(async () => {
+      await expect(fetchLeaguePhysicalTotals(20262027, "2026-10-20", db as any))
+        .rejects.toMatchObject({ reason: "read_only_reconstruction" });
+    }, { suppressWrites: true });
+    expect(db.rpc).not.toHaveBeenCalled();
   });
 });
