@@ -25,6 +25,9 @@ Local change on octoberBranch; a release (R22) only with TJ's approval.
   session and fixture jobs (all Supabase calls intercepted); desktop 1440 and mobile 390 screenshots
   in the session scratchpad. Dev server stopped.
 
+- Commits `1cf7bf424` (builder + restyle) and `964ac2aee` (TJ: no edge-to-edge; `$page-max-width: 90%`
+  token in vars.scss, runner workspace centred, own canvas removed).
+
 ## Next
 - TJ decides on R22 (this page alone on master `99c9e56b7`): gate, push, smoke, octoberBranch sync.
 
