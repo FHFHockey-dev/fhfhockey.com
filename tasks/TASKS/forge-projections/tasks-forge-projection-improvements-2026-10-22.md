@@ -42,6 +42,22 @@
     - `lib/projections/{consumerRevisionAdmission,calibrationEligibility,evidenceTime,gameRevisions,issuedContext,starterBoardScoring}.ts`.
   - **Not pinned by Codex:** `skater-stage.ts`, `skater-adjustments.ts`, `goalieModel.ts`, `goalie-stage.ts`, `uncertainty.ts`, `market-output-builders.ts`, the backtest scripts, `run-projection-v2.ts`, `run-forge-projections.ts`, `lib/routeRunner/*`.
   - **The FORGE audit session** (`local_f4058d3f`, idle since 10-21 23:50Z) last held the hydration + F3/F4 port (export "c"). Hand that lane to whoever takes task 2.
+- **Ownership update 2026-10-22 evening** (Codex reply `tasks/artifacts/cross-platform/2026-10-22-codex-to-claude-forge-leases.md`; Codex engineering paused):
+  - **Codex FPI lanes hold, uncommitted:**
+    - task 1 (implemented, independently reviewed);
+    - task 2 (`skater-queries.ts` and its test; `computeSkaterPhysicalEventRates` in `skater-adjustments.ts`);
+    - tasks 3/4/5/9 (offline candidates only);
+    - task 10 (implemented; RSO component files);
+    - task 11.4 (nine-file job 79 overlay, reviewed).
+  - **Free to Claude, but coordinate first:**
+    - task 7.3 (bridge): its test carries the unresolved P07 planner regression; the fix is unassigned;
+    - task 6.3: needs an explicit ledger handoff from task 1;
+    - snapshot/settle routes: free from P08, but declare them before editing.
+  - **Claude fix requested:** `goalie/leagueSavePct.ts` caches the league save % at module level, so a warm second run skips the read. The reconstruction capture then records 99 of 100 inputs, which blocks task 2's reproducibility gate.
+  - **Codex review concerns on Claude's sprint:**
+    - 6.2: the 8% Yes-only overround assumption;
+    - 7.2: keeping the team win probability separate from the player's unconditional win;
+    - 11.3: who may use the bypass re-queue.
 - **Leases:**
   - **Only one worker edits `skater-stage.ts` at a time.** Tasks 2–5 and 9 all touch it, so they're sequenced: 2 first, then 3 and 4 (the order is TJ's call), then 5 and 9.
   - **Tasks 1, 6, 7, 8 and 11 own separate files** and can run beside the `skater-stage.ts` lane once their Codex pins clear.
