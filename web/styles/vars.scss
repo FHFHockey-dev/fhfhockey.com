@@ -333,6 +333,7 @@ $space-xxl: 48px;
 $space-xxxl: 64px;
 
 // Panel & layout helpers
+$page-max-width: 90%; // Page workspaces never run edge-to-edge; centre them at most this wide
 $panel-gap: $space-lg; // Standard vertical gap between stacked dashboard panels
 
 $border-radius-md: 8px;

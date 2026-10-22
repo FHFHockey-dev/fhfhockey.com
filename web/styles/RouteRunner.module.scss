@@ -1,0 +1,842 @@
+@use "styles/vars" as v;
+
+// /db/runner: dashboard workspace in the RSO language (fhfh-styles.md 6.1, 9.x).
+
+.workspace {
+  display: grid;
+  gap: v.$space-sm;
+  max-width: v.$page-max-width;
+  margin-inline: auto;
+  padding: v.$space-sm;
+  color: v.$text-primary;
+  font-family: v.$font-family-primary;
+  min-width: 0;
+}
+
+.workspace :is(button, input, select, summary):focus-visible {
+  outline: 2px solid v.$focus-color;
+  outline-offset: 2px;
+}
+
+// Title strip
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-md;
+  padding: v.$space-sm v.$space-md;
+  background: v.$draft-surface;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-card;
+}
+
+.topbar h1 {
+  margin: 0;
+  color: v.$color-white;
+  font-family: v.$font-family-accent;
+  font-size: clamp(v.$font-size-xl, 2vw, v.$font-size-xxl);
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.topbar p {
+  margin: 2px 0 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: v.$space-xs;
+  color: v.$primary-color;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.topActions {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+  flex-shrink: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+// Panels
+.panel {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: v.$draft-surface;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-card;
+  overflow: clip;
+}
+
+// Canonical top accent rail for the one emphasized panel.
+.panelAccent::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  border-radius: v.$radius-card v.$radius-card 0 0;
+  background: v.$primary-color;
+  pointer-events: none;
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  min-height: 42px;
+  padding: v.$space-sm v.$space-md;
+  background: v.$draft-surface-raised;
+  border-bottom: 1px solid v.$draft-border;
+}
+
+.panelHead h2 {
+  margin: 0;
+  color: v.$text-primary;
+  font-size: v.$font-size-sm;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.panelHead span {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.panelBody {
+  display: grid;
+  gap: v.$space-sm;
+  padding: v.$space-sm v.$space-md v.$space-md;
+  min-width: 0;
+}
+
+// Route picker: left-accent cards
+.routeGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: v.$space-xs;
+}
+
+.routeCard {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: v.$space-xs v.$space-sm v.$space-xs calc(#{v.$space-sm} + 3px);
+  text-align: left;
+  background: v.$draft-input;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-control;
+  color: v.$text-primary;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color v.$transition-duration v.$transition-easing;
+}
+
+.routeCard::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: v.$radius-control 0 0 v.$radius-control;
+  background: v.$draft-border;
+}
+
+.routeCard:hover {
+  border-color: v.$primary-color;
+}
+
+.routeCard[aria-pressed="true"] {
+  border-color: v.$primary-color;
+  background: rgba(v.$primary-color, 0.12);
+}
+
+.routeCard[aria-pressed="true"]::before {
+  background: v.$primary-color;
+}
+
+.routeCard strong {
+  font-size: v.$font-size-sm;
+  color: v.$color-white;
+}
+
+.routeCard span {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xxs;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.routeNotes {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  line-height: 1.45;
+}
+
+// Option groups
+.optionGroup {
+  display: grid;
+  gap: v.$space-xs;
+  min-width: 0;
+  margin: 0;
+  padding: v.$space-sm;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-control;
+  background: v.$draft-canvas;
+}
+
+.optionGroup legend,
+.advanced summary {
+  padding: 0 v.$space-xs;
+  color: v.$primary-color;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.optionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: v.$space-sm v.$space-md;
+  align-items: start;
+}
+
+.option {
+  display: grid;
+  gap: v.$space-xs;
+  min-width: 0;
+}
+
+.optionWide {
+  grid-column: 1 / -1;
+}
+
+.optionSpan2 {
+  grid-column: span 2;
+}
+
+.optionLabel {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+}
+
+.optionLabel code {
+  margin-left: v.$space-xs;
+  color: rgba(v.$text-secondary, 0.7);
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-xxs;
+  font-weight: 400;
+}
+
+.optionHelp {
+  margin: 0;
+  color: rgba(v.$text-secondary, 0.8);
+  font-size: v.$font-size-xxs;
+  line-height: 1.4;
+}
+
+.field {
+  width: 100%;
+  min-height: v.$control-height-sm;
+  padding: 0 v.$space-sm;
+  box-sizing: border-box;
+  background: v.$draft-input;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-control;
+  color: v.$text-primary;
+  font: inherit;
+  font-size: v.$font-size-sm;
+  color-scheme: dark;
+}
+
+.field:hover {
+  border-color: rgba(v.$primary-color, 0.6);
+}
+
+.field:focus-visible {
+  border-color: v.$primary-color;
+  box-shadow: 0 0 0 3px rgba(v.$primary-color, 0.2);
+}
+
+.field::placeholder {
+  color: rgba(v.$text-secondary, 0.55);
+  font-style: italic;
+  opacity: 1;
+}
+
+// Segmented rail (GameGrid anatomy, compact)
+.segmentRail {
+  display: flex;
+  flex-wrap: wrap;
+  width: fit-content;
+  max-width: 100%;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(v.$background-dark, 0.9);
+  border: 1px solid rgba(v.$color-white, 0.08);
+  border-radius: v.$radius-control;
+}
+
+.segment {
+  flex: 0 0 auto;
+  min-height: 26px;
+  padding: 0 v.$space-sm;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: v.$border-radius-sm;
+  color: v.$secondary-color;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.segment:hover {
+  color: v.$primary-color;
+  background: rgba(v.$primary-color, 0.1);
+}
+
+.segment[aria-pressed="true"] {
+  border-color: v.$primary-color;
+  background: v.$primary-color-opaque;
+  color: v.$color-white;
+}
+
+.segmentDefault {
+  color: v.$text-secondary;
+  font-style: italic;
+  font-weight: 400;
+}
+
+// Flag checkbox
+.flag {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-sm;
+  min-height: v.$control-height-sm;
+  color: v.$text-primary;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+}
+
+.flag input {
+  appearance: none;
+  display: grid;
+  place-content: center;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  background: v.$draft-input;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  cursor: pointer;
+}
+
+.flag input::after {
+  content: "";
+  width: 9px;
+  height: 5px;
+  border: solid v.$background-dark;
+  border-width: 0 0 2px 2px;
+  transform: rotate(-45deg) translate(1px, -1px);
+  opacity: 0;
+}
+
+.flag input:checked {
+  background: v.$primary-color;
+  border-color: v.$primary-color;
+}
+
+.flag input:checked::after {
+  opacity: 1;
+}
+
+.advanced {
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-control;
+  background: v.$draft-canvas;
+}
+
+.advanced summary {
+  display: flex;
+  align-items: center;
+  min-height: v.$control-height-sm;
+  padding: 0 v.$space-sm;
+  cursor: pointer;
+}
+
+.advanced[open] summary {
+  border-bottom: 1px solid v.$draft-border;
+}
+
+.advanced .optionGrid {
+  padding: v.$space-sm;
+}
+
+// URL bar
+.urlBar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: end;
+  gap: v.$space-sm;
+  padding: v.$space-sm;
+  background: v.$draft-surface-raised;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-control;
+}
+
+.urlField {
+  min-height: v.$control-height-md;
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-xs;
+}
+
+.urlMeta {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.urlMeta strong {
+  color: v.$text-primary;
+}
+
+.error {
+  margin: 0;
+  padding: v.$space-xs v.$space-sm;
+  border: 1px solid rgba(v.$danger-color, 0.5);
+  border-radius: v.$radius-control;
+  background: rgba(v.$danger-color, 0.08);
+  color: v.$danger-color;
+  font-size: v.$font-size-sm;
+}
+
+// Buttons
+.buttonPrimary,
+.buttonSecondary,
+.buttonDanger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: v.$space-xs;
+  min-height: v.$control-height-md;
+  padding: 0 v.$space-md;
+  border-radius: v.$border-radius-sm;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all v.$transition-duration v.$transition-easing;
+}
+
+.buttonPrimary {
+  border: 2px solid v.$primary-color;
+  background: rgba(v.$primary-color, 0.18);
+  color: v.$secondary-color;
+}
+
+.buttonPrimary:hover:not(:disabled) {
+  background: rgba(v.$primary-color, 0.3);
+  color: v.$color-white;
+  box-shadow: 0 8px 16px rgba(v.$primary-color, 0.22);
+}
+
+.buttonSecondary {
+  border: 1px solid v.$border-secondary;
+  background: transparent;
+  color: v.$text-secondary;
+}
+
+.buttonSecondary:hover:not(:disabled) {
+  border-color: v.$primary-color;
+  color: v.$primary-color;
+}
+
+.buttonDanger {
+  border: 1px solid rgba(v.$danger-color, 0.6);
+  background: transparent;
+  color: v.$danger-color;
+}
+
+.buttonDanger:hover:not(:disabled) {
+  background: rgba(v.$danger-color, 0.12);
+}
+
+.buttonPrimary:disabled,
+.buttonSecondary:disabled,
+.buttonDanger:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.link {
+  color: v.$primary-color;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+// Jobs + detail workspace
+.panels {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.32fr) minmax(0, 1fr);
+  gap: v.$space-sm;
+  align-items: start;
+}
+
+.jobList {
+  display: grid;
+  gap: v.$space-xs;
+  max-height: 760px;
+  margin: 0;
+  padding: v.$space-sm;
+  overflow: auto;
+  list-style: none;
+}
+
+.jobRow {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: v.$space-xs v.$space-sm v.$space-xs calc(#{v.$space-sm} + 3px);
+  text-align: left;
+  background: v.$draft-input;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-control;
+  color: v.$text-primary;
+  font: inherit;
+  cursor: pointer;
+}
+
+.jobRow:hover {
+  border-color: v.$primary-color;
+}
+
+.jobRow[aria-pressed="true"] {
+  border-color: v.$primary-color;
+  background: rgba(v.$primary-color, 0.1);
+}
+
+.jobRow[aria-pressed="true"]::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: v.$radius-control 0 0 v.$radius-control;
+  background: v.$primary-color;
+}
+
+.jobRowTitle {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+  min-width: 0;
+  font-size: v.$font-size-sm;
+}
+
+.jobRowMeta {
+  color: v.$text-secondary;
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-xxs;
+}
+
+.empty {
+  display: grid;
+  gap: v.$space-xs;
+  margin: v.$space-sm;
+  padding: v.$space-md;
+  border: 1px dashed v.$border-soft;
+  border-radius: v.$radius-control;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+}
+
+// Status pill
+.statusPill {
+  --status: #{v.$text-secondary};
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border: 1px solid var(--status);
+  border-radius: v.$border-radius-sm;
+  background: color-mix(in srgb, var(--status) 14%, transparent);
+  color: var(--status);
+  font-size: v.$font-size-xxs;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.statusPill[data-status="running"] {
+  --status: #{v.$primary-color};
+}
+
+.statusPill[data-status="waiting"] {
+  --status: #{v.$warning-color};
+}
+
+.statusPill[data-status="completed"] {
+  --status: #{v.$success-color};
+}
+
+.statusPill[data-status="failed"] {
+  --status: #{v.$danger-color};
+}
+
+.contractPill {
+  padding: 1px 6px;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$border-radius-sm;
+  color: v.$text-secondary;
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-xxs;
+}
+
+// Job detail
+.detailTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: v.$space-sm;
+}
+
+.detailTitle h2 {
+  margin: 0;
+  color: v.$color-white;
+  font-size: v.$font-size-md;
+}
+
+.query {
+  margin: 0;
+  color: v.$text-secondary;
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-xxs;
+  word-break: break-all;
+}
+
+.reason {
+  margin: 0;
+  font-size: v.$font-size-sm;
+}
+
+.reasonFailed {
+  color: v.$danger-color;
+}
+
+.nextStep {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.progress {
+  display: grid;
+  gap: v.$space-xs;
+}
+
+.progressHead {
+  display: flex;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.progressHead strong {
+  color: v.$text-primary;
+  font-family: v.$font-family-numbers;
+  font-weight: 600;
+}
+
+.track {
+  position: relative;
+  height: 6px;
+  overflow: hidden;
+  background: v.$draft-input;
+  border: 1px solid v.$draft-border;
+  border-radius: 999px;
+}
+
+.trackFill {
+  height: 100%;
+  background: v.$primary-color;
+  border-radius: inherit;
+}
+
+.trackIndeterminate {
+  width: 30%;
+  animation: runnerSweep 1.2s ease-in-out infinite;
+}
+
+@keyframes runnerSweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(340%);
+  }
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: v.$space-xs;
+}
+
+.metric {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding: v.$space-xs v.$space-sm;
+  background: v.$draft-canvas;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-control;
+}
+
+.metric span {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xxs;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.metric strong {
+  color: v.$color-white;
+  font: 600 v.$font-size-md v.$font-family-numbers;
+}
+
+.charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: v.$space-sm;
+}
+
+.chartFrame {
+  display: grid;
+  gap: v.$space-xs;
+  padding: v.$space-sm;
+  background: v.$draft-canvas;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-control;
+}
+
+.chartFrame h3,
+.terminalHead h3 {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xxs;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.chartBody {
+  height: 180px;
+}
+
+.terminalHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-sm;
+}
+
+.terminal {
+  height: 340px;
+  overflow: auto;
+  padding: v.$space-sm;
+  background: v.$background-darker;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-control;
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-xxs;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.line {
+  color: v.$text-secondary;
+}
+
+.line[data-level="success"] {
+  color: v.$success-color;
+}
+
+.line[data-level="warn"] {
+  color: v.$warning-color;
+}
+
+.line[data-level="error"] {
+  color: v.$danger-color;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-sm;
+}
+
+@media (max-width: v.$screen-medium-max) {
+  .routeGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .panels,
+  .charts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .urlBar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .urlBar > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .optionSpan2 {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: v.$screen-small-max) {
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .panelHead {
+    flex-wrap: wrap;
+  }
+
+  .segmentRail {
+    flex-wrap: wrap;
+  }
+
+  .routeGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
