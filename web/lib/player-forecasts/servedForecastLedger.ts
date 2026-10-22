@@ -164,9 +164,9 @@ export function buildLedgerRows(input: BuildLedgerInput): { rows: LedgerRow[]; u
   return { rows, universe, skippedGameIds };
 }
 
-/** Task 6.3 market source. Off until the migration that allows source 'market' and adds `market_lines` is applied:
- * the snapshot writes no market rows and the scoreboard does not read the column while this is false. */
-export const LEDGER_MARKET_ENABLED = false;
+/** Task 6.3 market source. Requires migration 99 (source 'market', column `market_lines`; applied 2026-10-22, ledger
+ * 20261022181002). While false the snapshot writes no market rows and the scoreboard does not read the column. */
+export const LEDGER_MARKET_ENABLED = true;
 export const MARKET_METHOD_VERSION = "served-ledger-market-v1";
 /** Ledger head ← prop markets in preference order; goals prefer the two-way market over the "Yes"-only anytime scorer. */
 const MARKET_HEADS: Record<Class, Array<[string, string[]]>> = {

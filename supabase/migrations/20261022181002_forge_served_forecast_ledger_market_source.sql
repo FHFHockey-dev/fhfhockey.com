@@ -1,5 +1,6 @@
 -- Migration authority order 99: forge_served_forecast_ledger market source (FORGE improvements task 6.3).
--- Drafted 2026-10-22; apply only with TJ's explicit approval. Widens the source check to allow 'market' and adds the
+-- Applied 2026-10-22 as ledger version 20261022181002 by explicit TJ approval (Ledger lane, Chef session local_08a0bf1c);
+-- drafted as 20261022175519 and renamed to the ledger version when filed, as for 92, 95 and 97. Widens the source check to allow 'market' and adds the
 -- nullable jsonb market_lines (per prop head: line, de-vigged market P(over | no push), implied mean, books, and each
 -- served source's P(over | no push) at that line; plus the de-vigged moneyline team win for goalies).
 -- Readers and writers (web/): pages/api/v1/db/forge-served-forecast-snapshot.ts (market rows, upsert on the PK),

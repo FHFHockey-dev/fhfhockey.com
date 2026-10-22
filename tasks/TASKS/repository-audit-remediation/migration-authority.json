@@ -994,13 +994,13 @@
     },
     {
       "order": 99,
-      "path": "supabase/migrations/20261022175519_forge_served_forecast_ledger_market_source.sql",
-      "sha256": "353c7b5a7d170ad5f4a8d4db2eded17dfb60010bd2b817fe8b9fca8b5c7de89a",
+      "path": "supabase/migrations/20261022181002_forge_served_forecast_ledger_market_source.sql",
+      "sha256": "8a4cdcb3d58afcf1ca36cb6cfecebdc9455109bbb8f05695389a8f6a734b6fa3",
       "sourceStatus": "source-authorized",
-      "deploymentState": "pending",
+      "deploymentState": "applied",
       "migrationClass": "feature",
-      "rolloutGate": "Drafted 2026-10-22 for FORGE improvements task 6.3 (Ledger lane, Chef session local_08a0bf1c): widens forge_served_forecast_ledger's source check to add 'market' and adds the nullable jsonb column market_lines. Apply only with TJ's explicit approval, and before releasing LEDGER_MARKET_ENABLED = true (lib/player-forecasts/servedForecastLedger.ts); with the flag false no code reads or writes the column or the new source. Readers/writers: forge-served-forecast-snapshot (market rows, upserted after the other sources) and /api/v1/forge/scoreboard (select of market_lines). Grants are table-level from migration 97; the scoreboard view is unaffected. Rollback: delete market rows, drop market_lines, restore the five-source check.",
-      "stateEvidence": "Local source only; no hosted ledger or apply receipt."
+      "rolloutGate": "FORGE improvements task 6.3 (TJ approved 2026-10-22 in Ledger lane session, Chef local_08a0bf1c: apply migration 99, then turn LEDGER_MARKET_ENABLED on for the next release): widens forge_served_forecast_ledger's source check to add 'market' and adds the nullable jsonb column market_lines. Readers/writers: forge-served-forecast-snapshot (market rows, upserted after the other sources) and /api/v1/forge/scoreboard (select of market_lines), both behind LEDGER_MARKET_ENABLED (lib/player-forecasts/servedForecastLedger.ts). Grants are table-level from migration 97; the scoreboard view is unaffected. Rollback: delete market rows, drop market_lines, restore the five-source check.",
+      "stateEvidence": "Production ledger version 20261022181002 name forge_served_forecast_ledger_market_source (applied 2026-10-22 by explicit TJ approval). Pre-check: check constraint forge_served_forecast_ledger_source_check held the five sources; market_lines absent; 1,596 rows. Readback: six-source check including 'market'; market_lines jsonb nullable; 1,596 rows; grants service_role INSERT/SELECT/UPDATE only, no anon or authenticated."
     }
   ],
   "sourceExtensionApproval": {
