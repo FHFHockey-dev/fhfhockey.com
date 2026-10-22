@@ -32,8 +32,10 @@
   - Gotcha: `supportedBaselineMigration.test.ts` fails at octoberBranch HEAD because `20261021210000_in_season_sandbox_billing.sql` (committed in `fd58ba245` by another session) has no migration-authority record. Not mine.
   - R22 `f8c874a6c` live (`dpl_5GUANvUtWoqaWa38PTAgM6PYaD4j` READY; smoke 5/5): /db/runner URL builder + restyle, `$page-max-width` 90% token. Runner-builder diary retired. octoberBranch synced (`878dbc9e3`).
   - NST backfill 10-07..10-18 complete (TJ, 14:19Z) and counted (6.1 done). Job 79 unscheduled by TJ's approval (5.5 done, `0b6ef82e2`).
+  - R23 `6d5664f76` live: route-runner store checks writes by affected count (PostgREST returned no rows from writes that changed filtered columns, so every claim looked lost). Rolling recompute 10-07..10-21 done on /db/runner (6.2/6.3 done). octoberBranch synced `81575246c`.
+  - R24 (job 79 constant + cron doc on master) built as `2f039e98` but NOT pushed: master still gates gamelog bursts on the 07:25 slot, so it must ship with `e89dfdde5`'s advisory clearance (Codex note updated).
 - **Next**
-  0. TJ queues the bounded rolling recompute on /db/runner: `/api/v1/db/update-rolling-player-averages?startDate=2026-10-07&endDate=2026-10-21&fastMode=true&executionProfile=overnight`; then 6.3 (re-run audit Q5 for null/zero last-5 rates).
+  0. TJ reruns run-projection-v2 for 10-22 and 10-23 (console loop), then VACUUM FULL via the session pooler; verify the new runs are served and the table size after.
   1. TJ runs `VACUUM FULL` on `rolling_player_game_metrics` at a quiet hour; then check the size.
   2. Full S-F hydration plus F3/F4 hits/blocks ship with the next FORGE model release (audit session).
 - **Gotchas**
