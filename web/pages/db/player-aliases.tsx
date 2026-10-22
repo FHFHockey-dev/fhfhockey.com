@@ -444,7 +444,7 @@ const PlayerAliasesReview = () => {
 };
 
 const PlayerAliasesPage: NextPage = () => (
-  <AdminPageGate>
+  <AdminPageGate allowReviewToken>
     <PlayerAliasesReview />
   </AdminPageGate>
 );

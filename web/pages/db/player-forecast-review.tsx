@@ -55,7 +55,7 @@ function PlayerForecastReview() {
 
 export default function PlayerForecastReviewPage() {
   return (
-    <AdminPageGate>
+    <AdminPageGate allowReviewToken>
       <PlayerForecastReview />
     </AdminPageGate>
   );
