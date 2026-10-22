@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
+import { fixtureRsoBindings, fixtureRsoPolicy } from "../player-forecasts/rsoUsePolicy.fixtures";
 import { candidatePlanMetrics } from "./candidatePlanMetrics";
 import { lineupGapReport } from "./lineupGaps";
 import { evaluatePlan } from "./planning";
@@ -9,6 +11,7 @@ const member = (id: string, team: string, positions: string[], availability: Pla
   id, nhlId: id.charCodeAt(0), nhlTeamId: team.charCodeAt(0), rosterRevision: `roster-${id}`, name: id.toUpperCase(), teamAbbreviation: team,
   eligiblePositions: positions, playerClass: "skater", availability, eligibilityVerified: true, ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] });
 const perGame: Record<string, number> = { a: 1, b: 2, c: 1.5 };
+beforeEach(() => vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(fixtureRsoPolicy(["fixture"], ["pts"])));
 function snapshot(): PlanningSnapshot {
   const players = [member("a", "A", ["C"], "rostered"), member("b", "B", ["C"], "rostered"), member("c", "C", ["D"], "free_agent")];
   const games = [["A", "2026-10-05"], ["A", "2026-10-06"], ["B", "2026-10-06"], ["C", "2026-10-05"], ["C", "2026-10-06"]].map(([team, date]) => ({
@@ -24,6 +27,7 @@ function snapshot(): PlanningSnapshot {
   data.forecasts = games.flatMap(game => players.filter(player => player.teamAbbreviation === game.teamAbbreviation).map((player): GameForecast => ({
     playerId: player.id, gameId: game.id, stats: { pts: perGame[player.id] }, conditioning: "unconditional", sourceKind: "detailed",
     sourceWatermark: "fixture", cutoffAt: data.context.asOf, issuedAt: data.context.asOf, expiresAt: game.startsAt, modelVersion: "fixture", revisionId: "r",
+    rsoTargetBindings: fixtureRsoBindings("fixture", data.context.asOf, ["pts"]),
     issuedContext: { version: "forge-issued-context-v1", playerId: player.id, gameId: game.id, nhlPlayerId: player.nhlId!, teamId: player.nhlTeamId!,
       seasonId: 20262027, scheduledAt: game.startsAt, scheduleRevision: game.scheduleRevision, rosterRevision: player.rosterRevision!,
       observedAt: data.context.asOf, scheduleSourceUpdatedAt: null, scheduleFetchedAt: null, identityUpdatedAt: null, membershipCreatedAt: [] },

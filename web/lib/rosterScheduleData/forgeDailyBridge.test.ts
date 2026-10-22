@@ -1,7 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { candidateHorizonPoints } from "lib/rosterScheduleOptimizer/planning";
-import type { PlanningGame, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
+import { withCurrentPlanningRead } from "lib/rosterScheduleOptimizer/currentPlanningRead";
+import { currentRsoUsePolicy } from "lib/player-forecasts/rsoUsePolicy";
+import type { PlanningData, PlanningGame, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import { runHorizonFilter } from "lib/projections/releasedRunFence";
 import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_VERSION, loadForgeDailyBridgeForecasts, opponentTilts, teamWinProbability, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
 import { compactBridgeForecasts, expandBridgeForecasts, fitBridgeWire, packPlanningSnapshots, unpackPlanningSnapshots, type BridgeForecastWire } from "./bridgeForecastWire";
@@ -335,19 +337,43 @@ describe("FORGE daily bridge", () => {
     expect(limitations.some(line => line.startsWith("Goalie wins use the team's win chance"))).toBe(true);
   });
 
-  it("produces forecasts the planner accepts for league points", () => {
-    const { forecasts } = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy);
+  it("produces forecasts the planner accepts for league points", async () => {
+    // Season totals give s1 a faceoff rate, so every weighted skater stat has an input: (50 + 0.5 × 600) / (10 + 0.5 × 80) = 7.
+    const seasonTotals = [{ player_id: 101, season: "20262027", games_played: 10, penalty_minutes: 0, plus_minus: 0, sh_goals: 0,
+      sh_assists: 0, sh_points: 0, total_fow: 50, total_fol: 40, goals: 4, gw_goals: 0 }, { player_id: 101, season: "20252026",
+      games_played: 80, penalty_minutes: 0, plus_minus: 0, sh_goals: 0, sh_assists: 0, sh_points: 0, total_fow: 600, total_fol: 500, goals: 20, gw_goals: 0 }];
+    const { forecasts } = buildForgeDailyBridgeForecasts({ ...inputs(), seasonTotals }, players, games, now, 20262027, policy);
+    const upcoming = games.filter(row => row.date >= "2026-10-19");
+    const { wire } = compactBridgeForecasts(forecasts, { players, games: upcoming }, 20262027);
+    const revisions = [...new Set(forecasts.map(row => row.revisionId))].sort();
+    // The bridge is only admitted through a current read whose manifest names its revisions.
+    const data: PlanningData = { players, games: upcoming, forecasts: [], baselineSources: [], participationSources: [],
+      evidence: { schedule: { source: "fixture", asOf: now.toISOString(), seasonId: 20262027, completeness: "complete", limitations: [] } },
+      forecastManifest: { version: "planning-forecasts-v1", id: "current-read", seasonId: 20262027, asOf: now.toISOString(),
+        scheduleRevision: "schedule", rosterRevision: "roster", issuedRevisionIds: revisions, baselineChecksum: null,
+        requiredOpportunities: forecasts.length, forecastedOpportunities: forecasts.length, exclusionCounts: {},
+        rsoUsePolicy: { version: "rso-target-use-v1", revision: currentRsoUsePolicy().revision, bridgeRevisionIds: revisions } } };
     const snapshot: PlanningSnapshot = { id: "snap", context: { provider: "manual", seasonId: 20262027, leagueId: "l", teamId: "t",
       startDate: "2026-10-19", endDate: "2026-10-25", timeZone: "UTC", asOf: now.toISOString() },
-      players, games, forecasts, roster: [], lockedAssignments: [], realized: {}, opponent: null,
+      players, games: upcoming, forecasts, roster: [], lockedAssignments: [], realized: {}, opponent: null,
       rules: { lineupMode: "daily", rosterSlots: { C: 1, G: 1, BN: 1 }, acquisitionTiming: "next_day", acquisitionCost: 1, periods: [],
         scoring: { mode: "points", weights: { GOALS: 3, ASSISTS: 2, PP_POINTS: 1, SHOTS_ON_GOAL: 0.5, FACEOFFS_WON: 0.1, SAVES_GOALIE: 0.2, WINS_GOALIE: 4 }, categories: [] },
         goalieMinimum: { required: null, credited: null, counts: "unknown", penalty: "none" }, unsupported: [] },
       evidence: { schedule: { source: "fixture", asOf: now.toISOString(), seasonId: 20262027, completeness: "complete", limitations: [] } } };
-    const points = candidateHorizonPoints(snapshot);
-    expect(points.get("s1")).toBeCloseTo(2 * (0.35 * 3 + 0.45 * 2 + 0.25 + 3.1 * 0.5));
-    expect(points.get("g1")).toBeCloseTo(0.8 * (25 * 0.2 + 0.55 * 4) + 0.7 * (25 * 0.2 + 0.55 * 4));
-    expect(points.get("s2")).toBeNull();
+    // Literal rows carry no current-read authority, so the planner withholds their value.
+    expect(candidateHorizonPoints(snapshot).get("s1")).toBeNull();
+    vi.useFakeTimers(); vi.setSystemTime(now);
+    // A JSON round trip, as over HTTP: the bridge reuses one stats line across a skater's games, which the wire unshares.
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => ({ ok: true, json: async () => JSON.parse(JSON.stringify({
+      success: true, data, bridgeForecasts: wire, read: {
+        nonce: (init.headers as Record<string, string>)["X-RSO-Read-Nonce"], evaluatedAt: now.toISOString() } })) }) as Response));
+    try {
+      const points = await withCurrentPlanningRead({ ...snapshot, forecasts: [] }, {}, currentRsoUsePolicy().revision,
+        new AbortController().signal, (input, _data, readError) => { expect(readError).toBeNull(); return candidateHorizonPoints(input); });
+      expect(points.get("s1")).toBeCloseTo(2 * (0.35 * 3 + 0.45 * 2 + 0.25 + 3.1 * 0.5 + 7 * 0.1));
+      expect(points.get("g1")).toBeCloseTo(0.8 * (25 * 0.2 + 0.55 * 4) + 0.7 * (25 * 0.2 + 0.55 * 4));
+      expect(points.get("s2")).toBeNull();
+    } finally { vi.useRealTimers(); vi.unstubAllGlobals(); }
   });
 
   it.each([

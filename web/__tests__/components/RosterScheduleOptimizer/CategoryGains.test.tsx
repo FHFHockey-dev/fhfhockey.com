@@ -1,10 +1,14 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import * as rsoPolicy from "lib/player-forecasts/rsoUsePolicy";
+import { fixtureRsoBindings, fixtureRsoPolicy } from "lib/player-forecasts/rsoUsePolicy.fixtures";
 import CategoryGains from "components/RosterScheduleOptimizer/CategoryGains";
 import { evaluatePlan } from "lib/rosterScheduleOptimizer/planning";
 import type { GameForecast, PlanIntent, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 
 afterEach(cleanup);
+const reviewedTargets = ["GOALS", "SHOTS", "SAVES_GOALIE", "SHOTS_AGAINST_GOALIE", "GOALS_AGAINST_GOALIE", "GOALIE_MINUTES"];
+beforeEach(() => vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(fixtureRsoPolicy(["fixture-v1"], reviewedTargets)));
 const intent: PlanIntent = { revision: 1, steps: [{ id: "chosen", type: "add", playerId: "3", dropPlayerId: "2",
   at: "2026-10-05T22:00:00Z", effectiveAt: "2026-10-06T00:00:00Z", conditional: true, dependsOn: [] }],
   protectedPlayerIds: ["1"], excludedPlayerIds: [], goalieCoverage: "accept_risk", goalieWindow: "any", goalieSplit: "mon_thu", alternativeCount: 5 };
@@ -24,6 +28,7 @@ function fixture(): PlanningSnapshot {
     return { playerId: member.id, gameId: game.id, stats, conditioning: "unconditional", sourceKind: "detailed",
       revisionId: `fixture-forge-${game.id}`, sourceWatermark: "fixture-only", modelVersion: "fixture-v1",
       cutoffAt: "2026-10-05T00:00:00Z", issuedAt: "2026-10-05T00:00:00Z", expiresAt: game.startsAt,
+      rsoTargetBindings: fixtureRsoBindings("fixture-v1", "2026-10-05T00:00:00Z", reviewedTargets),
       allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false },
       startProbability: null, confirmedStart: false, limitations: [],
       issuedContext: { version: "forge-issued-context-v1", playerId: member.id, gameId: game.id, nhlPlayerId: member.nhlId!,

@@ -2,7 +2,9 @@
 // Offline replay of one fixed matchup week through forecast admission, roster
 // planning, goalie-minimum coverage and candidate ranking. Every input is a
 // synthetic fixture; nothing reads Supabase, Yahoo or the network.
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as rsoPolicy from "lib/player-forecasts/rsoUsePolicy";
+import { bindFixtureForecast, fixtureRsoBindings, fixtureRsoPolicy } from "lib/player-forecasts/rsoUsePolicy.fixtures";
 import { parseYahooBoardSettings } from "lib/integrations/yahoo/liveDraft";
 import { publicPlanningForecasts } from "lib/projections/consumerRevisionAdmission";
 import { buildSkaterModeledHeadTotals } from "lib/projections/modeledHeadTotals";
@@ -75,6 +77,7 @@ function issuedForecast(data: PlanningSnapshot, playerId: string, gameId: string
   const expiresAt = new Date(Math.min(Date.parse(issuedAt) + 36 * 3600000, Date.parse(match.startsAt!))).toISOString();
   return { playerId, gameId, stats, conditioning: "unconditional", sourceKind: "detailed", sourceWatermark: "fixture-inputs",
     cutoffAt: issuedAt, issuedAt, expiresAt, modelVersion: "fixture-v1", revisionId: `r-${playerId}-${gameId}`,
+    rsoTargetBindings: fixtureRsoBindings("fixture-v1", issuedAt, Object.keys(stats)),
     issuedContext: { version: "forge-issued-context-v1", playerId, gameId, nhlPlayerId: member.nhlId!, teamId: member.nhlTeamId!,
       seasonId: SEASON, scheduledAt: match.startsAt!, scheduleRevision: match.scheduleRevision!, rosterRevision: member.rosterRevision!,
       observedAt: issuedAt, scheduleSourceUpdatedAt: issuedAt, scheduleFetchedAt: issuedAt, identityUpdatedAt: issuedAt,
@@ -84,6 +87,8 @@ function issuedForecast(data: PlanningSnapshot, playerId: string, gameId: string
 }
 
 const ISSUED = "2026-10-09T20:00:00Z";
+// Fictional reviews for the fixture rows and the natively admitted goalie (code version v1).
+beforeEach(() => vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(fixtureRsoPolicy(["fixture-v1", "v1"], ["GOALS", "SAVES_GOALIE"])));
 const AS_OF = "2026-10-10T12:00:00Z";
 
 /** League and week as the Yahoo loader would build them, with fixed forecasts. */
@@ -127,7 +132,7 @@ function replayWeek(yahooSettings: unknown = { min_games_played: "3" }, credited
     ["y", "YYY-2026-10-11", 1.75],
     // z has scheduled games but no issued forecast at all.
   ];
-  data.forecasts = [...admitted,
+  data.forecasts = [...admitted.map(bindFixtureForecast),
     ...goals.map(([playerId, gameId, value]) => issuedForecast(data, playerId, gameId, { GOALS: value }, ISSUED)),
     { ...issuedForecast(data, "g2", "GGG-2026-10-11", { SAVES_GOALIE: 4 }, ISSUED), startProbability: 0.9 }];
   return data;

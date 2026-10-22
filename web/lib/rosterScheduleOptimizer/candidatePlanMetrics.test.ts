@@ -1,8 +1,20 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
 import { candidatePlanMetrics as candidateMetrics, candidatePlanForSort } from "./candidatePlanMetrics";
 import { defaultIntent, defaultWorkspace } from "./workspace";
 import { evaluatePlan } from "./planning";
 import type { GameForecast, PlanningSnapshot } from "./planningTypes";
+
+// Native fixture rows carry an explicit fictional review of their one scored target.
+// The production catalog stays empty; the denial case below removes the binding.
+const fixtureScope = { component: "fictional-candidates", modelMode: "synthetic", codeVersion: "fixture",
+  configurationHash: "a".repeat(64), artifactHash: "b".repeat(64), targetKey: "GOALS", horizonGames: 1,
+  conditioning: "synthetic-unconditional", participationLineage: "synthetic-only" };
+const fixturePolicy: rsoPolicy.RsoUsePolicy = { version: "rso-target-use-v1", revision: "fictional-candidate-reviews",
+  revokedReviewIds: [], reviews: [{ id: "fictional-GOALS", binding: fixtureScope, reviewedAt: "2026-09-01T00:00:00Z",
+    expiresAt: "2100-01-01T00:00:00Z", inputCutoffFrom: "2026-09-01T00:00:00Z", inputCutoffUntil: "2100-01-01T00:00:00Z",
+    allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false } }] };
+beforeEach(() => vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(fixturePolicy));
 
 function fixture(): PlanningSnapshot {
   const workspace = defaultWorkspace(new Date("2026-10-04T12:00:00Z"));
@@ -25,6 +37,7 @@ function fixture(): PlanningSnapshot {
       conditioning: "unconditional", sourceKind: "detailed", sourceWatermark: "fixture-only", cutoffAt: snapshot.context.asOf,
       issuedAt: snapshot.context.asOf, expiresAt: game.startsAt, revisionId: `revision-${row.id}`, modelVersion: "fixture",
       startProbability: null, confirmedStart: false, allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false }, limitations: [],
+      rsoTargetBindings: { GOALS: { ...fixtureScope, cutoffAt: snapshot.context.asOf } },
       issuedContext: { version: "forge-issued-context-v1", playerId: row.id, gameId: game.id, nhlPlayerId: row.nhlId, teamId: row.nhlTeamId,
         seasonId: snapshot.context.seasonId, scheduledAt: game.startsAt, scheduleRevision: game.scheduleRevision, rosterRevision: row.rosterRevision,
         observedAt: snapshot.context.asOf, scheduleSourceUpdatedAt: snapshot.context.asOf, scheduleFetchedAt: snapshot.context.asOf,
@@ -270,6 +283,16 @@ describe("complete timed candidate metrics", () => {
     expect(candidateMetrics(snapshot, selectedIntent)).toEqual(metrics);
     expect(JSON.stringify(selectedIntent)).toBe(selectedBefore);
     expect(JSON.stringify({ snapshot, intent })).toBe(before);
+  });
+
+  it.each(["unbound", "production catalog"])("withholds native fixture values when the target is %s", denial => {
+    const snapshot = fixture(), intent = { ...defaultIntent(), protectedPlayerIds: ["a"] };
+    if (denial === "unbound") snapshot.forecasts = snapshot.forecasts.map(({ rsoTargetBindings: _binding, ...row }) => row);
+    else vi.mocked(rsoPolicy.currentRsoUsePolicy).mockReturnValue(rsoPolicy.RSO_USE_POLICY);
+    const plans = candidateMetrics(snapshot, intent).candidates.flatMap(candidate => candidate.plans);
+    // Schedule capacity stays; the +2 points the reviewed fixture earns is withheld, not zeroed.
+    expect(plans).toHaveLength(1);
+    expect(plans[0]).toMatchObject({ netAGP: 1, netPoints: null });
   });
 
   it.each(["availability", "eligibility", "excluded", "no game"])("reports filtered input for %s without pretending it was evaluated", problem => {

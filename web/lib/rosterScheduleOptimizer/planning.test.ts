@@ -22,7 +22,7 @@ const fixtureBindings = Object.fromEntries(reviewedTargets.map(targetKey => [tar
 }]));
 const fixturePolicy: rsoPolicy.RsoUsePolicy = { version: "rso-target-use-v1", revision: "fictional-planner-reviews",
   revokedReviewIds: [], reviews: reviewedTargets.map(targetKey => ({ id: `fictional-${targetKey}`,
-    binding: fixtureBindings[targetKey], reviewedAt: "2026-09-01T00:00:00Z", expiresAt: "2026-11-01T00:00:00Z",
+    binding: fixtureBindings[targetKey], reviewedAt: "2026-09-01T00:00:00Z", expiresAt: "2100-01-01T00:00:00Z",
     inputCutoffFrom: "2026-09-01T00:00:00Z", inputCutoffUntil: "2026-11-01T00:00:00Z",
     allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: true },
   })) };
