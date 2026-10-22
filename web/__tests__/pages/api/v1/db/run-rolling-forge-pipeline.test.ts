@@ -988,6 +988,33 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         expect(nstStageRow()).toMatchObject({ status: "complete" });
       });
 
+      it("degrades the route's 503 source_down answer (NST 520-527) the same way", async () => {
+        updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => {
+          res.status(503).json({ ...outage, operationStatus: "source_down" });
+        });
+
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+        const upstream = stageStatus(res, "upstream_skater_sources");
+        expect(upstream.steps.map((step: any) => [step.id, step.status])).toEqual([
+          ["update-nst-gamelog", "skipped"], ["update-wgo-skaters", "success"], ["update-wgo-totals", "success"],
+        ]);
+        expect(upstream.status).toBe("success");
+        expect(upstream.steps[0]).toMatchObject({ statusCode: 503, degraded: "nst_source_unavailable" });
+        expect(updateRollingPlayerAveragesMock).toHaveBeenCalled();
+        expect(nstStageRow()).toMatchObject({ status: "complete" });
+      });
+
+      it("still blocks a 503 that is not a source_down answer", async () => {
+        updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => { res.status(503).json(outage); });
+
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+        expect(stageStatus(res, "upstream_skater_sources").status).toBe("failed");
+        expect(res.body.termination).toMatchObject({ state: "stopped_on_blocking_failure" });
+        expect(res.body.failureSummary.degradedSteps).toEqual([]);
+      });
+
       it("still blocks when the NST route itself errors", async () => {
         updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => {
           res.status(500).json({ ...outage, error: "database write failed" });

@@ -584,6 +584,9 @@ describe("update-nst-gamelog automatic season cursor", () => {
       expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
       expect(starts).toHaveLength(1);
       expect(result.body).toMatchObject({ success: false, operationStatus: "source_down" });
+      // The pipeline degrades on this answer: no error string, one unresolved source.
+      expect(result.body.error).toBeUndefined();
+      expect(result.body.nstProgress.sourceOutcomes.unresolvedCount).toBe(1);
       expect(result.body.nstProgress).toMatchObject({ networkAttempts: 1, stoppedEarly: true,
         continuation: { nextIndex: 0 }, auditPersistence: "confirmed" });
       expect(db.audits).toHaveLength(1);
@@ -687,6 +690,42 @@ describe("update-nst-gamelog automatic season cursor", () => {
       expect(db.audits[0].details).toMatchObject({ failedRows: 4, sourceDown: { status: 521 } });
       expect(db.audits[0].details.failedUrls).toHaveLength(4);
       expect(result.body.nstProgress.continuation.nextIndex).toBe(0);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it("ends a run of plain HTTP 500s on an explicit date range at the default deadline with an acknowledged audit", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "nst-http500-deadline-test-"));
+    const store = createNstFileBudgetStore(directory);
+    const starts: number[] = [];
+    const startedAt = Date.now();
+    try {
+      fetchNstTextByUrlMock.mockImplementation((url, options) => {
+        expect(options.retries).toBe(0);
+        return withNstRequestBudget(url, options.requestControl, async () => {
+          starts.push(Date.now() - startedAt);
+          throw new NstResponseError({ status: 500, redactedUrl: url });
+        }, store);
+      });
+      // Two scheduled dates make a 40-URL plan, paced at 21 seconds per attempt.
+      const query = { runMode: "incremental", startDate: "2026-10-02", endDate: "2026-10-03" };
+      const result = await run(query);
+      // Default budget: 220 s, with the last five reserved for the audit.
+      expect(Date.now() - startedAt).toBeLessThan(220_000);
+      expect(starts).toHaveLength(11);
+      expect(starts.at(-1)).toBe(210_000);
+      expect(result.statusCode).toBe(200);
+      expect(result.body).toMatchObject({ success: false, operationStatus: "blocked" });
+      expect(result.body.resume).toBeUndefined();
+      expect(result.body.nstProgress).toMatchObject({
+        networkAttempts: 11, stoppedEarly: true, sourceDown: null, plannedRequestCount: 40,
+        auditPersistence: "confirmed", continuation: { nextIndex: 0, totalUrls: 40, blocked: true }
+      });
+      expect(db.audits).toHaveLength(1);
+      expect(db.audits[0]).toMatchObject({ status: "failure", details: {
+        failedRows: 5, stoppedEarly: true, sourceDown: null,
+        nstProgress: { continuation: { nextIndex: 0, blocked: true } }
+      } });
+      expect(db.audits[0].details.failedUrls).toHaveLength(5);
     } finally { rmSync(directory, { recursive: true, force: true }); }
   });
 
