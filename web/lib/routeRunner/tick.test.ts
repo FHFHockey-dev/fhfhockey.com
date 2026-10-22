@@ -237,7 +237,26 @@ describe("runRouteRunnerTick", () => {
       next_query: { startDate: "2026-01-01", endDate: "2026-01-31", resumeFrom: "8478402" }
     });
     expect(job.last_error).toContain("Blocked by freshness checks");
-    expect(job.progress).toMatchObject({ blockedBy: "freshness" });
+    expect(job.progress).toMatchObject({ blockedBy: "freshness", blockerCount: 1 });
+  });
+
+  it("keeps the approved bypass on a bypassed job and marks every step result", async () => {
+    const rolling = "/api/v1/db/update-rolling-player-averages";
+    const freshnessBypass = {
+      approvedBy: "admin-1", approvedAt: "2026-10-22T09:59:00.000Z",
+      sourceJobId: "00000000-0000-4000-8000-000000000009", blockerCount: 1, reason: "Blocked by freshness checks."
+    };
+    const memory = createMemoryRouteRunnerStore([
+      makeJob({ route_path: rolling, contract: "rolling_resume_from", progress: { freshnessBypass },
+        next_query: { startDate: "2026-01-01", endDate: "2026-01-31", bypassFreshnessBlockers: "true" } })
+    ]);
+    await tick(memory.store, { [rolling]: responder(200, { success: true, operationStatus: "completed", runSummary: { rowsUpserted: 12 } }) });
+    const job = memory.jobs.get(makeJob().id)!;
+    expect(job.status).toBe("completed");
+    expect(job.progress).toMatchObject({ freshnessBypass });
+    const result = memory.events.find((event) => event.status_code === 200)!;
+    expect(result.level).toBe("warn");
+    expect(result.message).toContain("Freshness bypass approved by admin-1 at 2026-10-22T09:59:00.000Z");
   });
 
   it("fails a job whose route keeps asking for the same query", async () => {

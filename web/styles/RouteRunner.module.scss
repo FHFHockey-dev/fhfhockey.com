@@ -641,6 +641,37 @@
   color: v.$danger-color;
 }
 
+// Freshness bypass: the confirmation and the warning kept on the bypassed job.
+.bypassBanner,
+.bypassConfirm {
+  display: grid;
+  gap: v.$space-xs;
+  margin: 0;
+  padding: v.$space-sm;
+  border: 1px solid rgba(v.$warning-color, 0.55);
+  border-radius: v.$radius-control;
+  background: rgba(v.$warning-color, 0.08);
+  color: v.$warning-color;
+  font-size: v.$font-size-sm;
+}
+
+.bypassConfirm h3 {
+  margin: 0;
+  font-size: v.$font-size-sm;
+}
+
+.bypassConfirm p {
+  margin: 0;
+}
+
+.bypassBadge {
+  padding: 0 v.$space-xs;
+  border: 1px solid rgba(v.$warning-color, 0.55);
+  border-radius: v.$radius-control;
+  color: v.$warning-color;
+  font-size: v.$font-size-xs;
+}
+
 .nextStep {
   margin: 0;
   color: v.$text-secondary;

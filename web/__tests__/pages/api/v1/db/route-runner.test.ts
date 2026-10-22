@@ -156,6 +156,57 @@ describe("route runner jobs API", () => {
     expect(mocks.memory.jobs.size).toBe(0);
   });
 
+  describe("freshness bypass re-queue", () => {
+    const blocked = () =>
+      makeJob({
+        route_path: "/api/v1/db/update-rolling-player-averages",
+        contract: "rolling_resume_from",
+        status: "failed",
+        next_query: { startDate: "2026-01-01", endDate: "2026-01-31", resumeFrom: "8478402" },
+        last_error: "Blocked by freshness checks (HTTP 422, 2 blocker(s)).",
+        progress: { blockedBy: "freshness", blockerCount: 2, stalls: 0 }
+      });
+    const path =
+      "/api/v1/db/update-rolling-player-averages?startDate=2026-01-01&endDate=2026-01-31&resumeFrom=8478402&bypassFreshnessBlockers=true";
+    const approval = { sourceJobId: makeJob().id, blockerCount: 2, confirmed: true };
+
+    it("refuses a bypass path without the explicit confirmation, or from the cron bearer", async () => {
+      mocks.memory = createMemoryRouteRunnerStore([blocked()]);
+      const bare = createRes();
+      await jobsHandler(request("POST", "Bearer admin-token", { body: { path } }), bare);
+      expect(bare.statusCode).toBe(400);
+      expect(bare.body.error).toContain("explicit confirmation");
+
+      const cron = createRes();
+      await jobsHandler(request("POST", "Bearer configured-test-secret", { body: { path, bypassApproval: approval } }), cron);
+      expect(cron.statusCode).toBe(403);
+
+      const stale = createRes();
+      await jobsHandler(
+        request("POST", "Bearer admin-token", { body: { path, bypassApproval: { ...approval, blockerCount: 1 } } }),
+        stale
+      );
+      expect(stale.statusCode).toBe(409);
+      expect(mocks.memory.jobs.size).toBe(1);
+    });
+
+    it("queues the confirmed re-queue and records who approved it and when", async () => {
+      mocks.memory = createMemoryRouteRunnerStore([blocked()]);
+      const res = createRes();
+      await jobsHandler(request("POST", "Bearer admin-token", { body: { path, bypassApproval: approval } }), res);
+      expect(res.statusCode).toBe(201);
+      expect(res.body.job).toMatchObject({
+        created_by: ADMIN_ID,
+        next_query: { bypassFreshnessBlockers: "true", resumeFrom: "8478402" },
+        progress: { freshnessBypass: { approvedBy: ADMIN_ID, sourceJobId: makeJob().id, blockerCount: 2 } }
+      });
+      const [approvalEvent] = mocks.memory.events.filter((event: any) => event.job_id === res.body.job.id);
+      expect(approvalEvent.level).toBe("warn");
+      expect(approvalEvent.message).toContain(`Freshness bypass approved by ${ADMIN_ID}`);
+      expect(approvalEvent.progress.freshnessBypass.approvedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    });
+  });
+
   it("lists jobs for the cron bearer without recording a user", async () => {
     mocks.memory = createMemoryRouteRunnerStore([makeJob()]);
     const res = createRes();

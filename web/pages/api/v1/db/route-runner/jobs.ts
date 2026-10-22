@@ -1,15 +1,24 @@
 /**
  * Route runner jobs (admin only).
  * GET: the latest 50 jobs. POST { path }: queue an allowlisted route run.
+ * A path with bypassFreshnessBlockers also needs { bypassApproval } from the
+ * page's confirmation; the approval is recorded on the job as an event.
  */
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { parseRunnerInput } from "lib/routeRunner/core";
+import {
+  checkFreshnessBypass,
+  formatFreshnessBypass,
+  parseRunnerInput,
+  requestsFreshnessBypass,
+  type FreshnessBypassRequest
+} from "lib/routeRunner/core";
 import { createSupabaseRouteRunnerStore } from "lib/routeRunner/store";
 import { createClientWithToken } from "lib/supabase";
 import adminOnly, { invokedByCron } from "utils/adminOnlyMiddleware";
 
 const MAX_PATH_LENGTH = 2_000;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** The signed-in admin's id; null for the cron bearer or an unreadable token. */
 async function requesterUserId(req: NextApiRequest): Promise<string | null> {
@@ -41,14 +50,36 @@ async function handler(req: NextApiRequest & { supabase?: any }, res: NextApiRes
       if (!parsed.ok) {
         return res.status(400).json({ success: false, error: parsed.error });
       }
+      const createdBy = await requesterUserId(req);
+      const bypassRequest = (req.body as { bypassApproval?: FreshnessBypassRequest } | undefined)?.bypassApproval;
+      const sourceJobId = bypassRequest?.sourceJobId;
+      const bypass = checkFreshnessBypass({
+        routePath: parsed.routePath,
+        query: parsed.query,
+        request: bypassRequest,
+        sourceJob:
+          requestsFreshnessBypass(parsed.query) && typeof sourceJobId === "string" && UUID.test(sourceJobId)
+            ? await store.getJob(sourceJobId)
+            : null,
+        approverId: createdBy,
+        nowIso: new Date().toISOString()
+      });
+      if (!bypass.ok) {
+        return res.status(bypass.status).json({ success: false, error: bypass.error });
+      }
       const job = await store.createJob({
         route_path: parsed.routePath,
         initial_query: parsed.query,
         next_query: parsed.query,
         contract: parsed.contract,
-        created_by: await requesterUserId(req)
+        created_by: createdBy,
+        ...(bypass.approval ? { progress: { freshnessBypass: bypass.approval } } : {})
       });
       await store.insertEvents([
+        ...(bypass.approval
+          ? [{ job_id: job.id, level: "warn" as const, message: formatFreshnessBypass(bypass.approval),
+              progress: { freshnessBypass: bypass.approval } }]
+          : []),
         {
           job_id: job.id,
           level: "info",

@@ -8,12 +8,16 @@ import {
   buildBypassRequeuePath,
   buildStepQuery,
   buildTimeline,
+  checkFreshnessBypass,
   classifyStepResult,
+  describeFreshnessBlock,
   estimateEtaMs,
   extractStepProgress,
   formatEventLine,
   mergeJobProgress,
-  parseRunnerInput
+  parseRunnerInput,
+  readJobProgress,
+  requestsFreshnessBypass
 } from "./core";
 import { ROUTE_RUNNER_ROUTES } from "./registry";
 
@@ -240,6 +244,7 @@ describe("classifyStepResult", () => {
     expect(decision).toMatchObject({
       kind: "fail",
       blockedBy: "freshness",
+      blockerCount: 2,
       nextQuery: { startDate: "2026-01-01", endDate: "2026-01-31", fastMode: "true", resumeFrom: "8478402" }
     });
     expect(decision.reason).toContain("Blocked by freshness checks (HTTP 422, 2 blocker(s))");
@@ -342,6 +347,63 @@ describe("progress", () => {
     );
     expect(buildBypassRequeuePath({ ...job, progress: {} })).toBeNull();
     expect(buildBypassRequeuePath({ ...job, status: "queued" })).toBeNull();
+  });
+
+  describe("freshness bypass approval", () => {
+    const source = {
+      id: "00000000-0000-4000-8000-000000000001",
+      route_path: "/api/v1/db/update-rolling-player-averages",
+      status: "failed",
+      next_query: { startDate: "2026-01-01", endDate: "2026-01-31", resumeFrom: "8478402" },
+      progress: { blockedBy: "freshness", blockerCount: 2 },
+      last_error: "Blocked by freshness checks (HTTP 422, 2 blocker(s))."
+    };
+    const requeue = parseRunnerInput(buildBypassRequeuePath(source)!);
+    if (!requeue.ok) throw new Error("re-queue path must parse");
+    const base = {
+      routePath: requeue.routePath,
+      query: requeue.query,
+      request: { sourceJobId: source.id, blockerCount: 2, confirmed: true },
+      sourceJob: source,
+      approverId: "admin-1",
+      nowIso: "2026-10-22T12:00:00.000Z"
+    };
+
+    it("reads the bypass flag and the blocker count shown in the confirmation", () => {
+      expect(requestsFreshnessBypass({ bypassFreshnessBlockers: "true" })).toBe(true);
+      expect(requestsFreshnessBypass({ bypassFreshnessBlockers: "1" })).toBe(true);
+      expect(requestsFreshnessBypass({ bypassFreshnessBlockers: "false" })).toBe(false);
+      expect(requestsFreshnessBypass({})).toBe(false);
+      expect(describeFreshnessBlock(source)).toEqual({ blockerCount: 2, reason: source.last_error });
+      // Jobs blocked before the count was stored fall back to the reason text.
+      expect(describeFreshnessBlock({ ...source, progress: { blockedBy: "freshness" } })!.blockerCount).toBe(2);
+      expect(describeFreshnessBlock({ ...source, status: "completed" })).toBeNull();
+    });
+
+    it("records who approved what, and only for the blocked job's own re-queue", () => {
+      expect(checkFreshnessBypass(base)).toEqual({
+        ok: true,
+        approval: { approvedBy: "admin-1", approvedAt: "2026-10-22T12:00:00.000Z", sourceJobId: source.id, blockerCount: 2, reason: source.last_error }
+      });
+      expect(checkFreshnessBypass({ ...base, query: { startDate: "2026-01-01" } })).toEqual({ ok: true, approval: null });
+    });
+
+    it("never treats the bypass flag alone as approval", () => {
+      expect(checkFreshnessBypass({ ...base, approverId: null })).toMatchObject({ ok: false, status: 403 });
+      expect(checkFreshnessBypass({ ...base, request: undefined })).toMatchObject({ ok: false, status: 400 });
+      expect(checkFreshnessBypass({ ...base, request: { ...base.request, confirmed: "yes" } })).toMatchObject({ ok: false, status: 400 });
+      expect(checkFreshnessBypass({ ...base, request: { ...base.request, blockerCount: 1 } })).toMatchObject({ ok: false, status: 409 });
+      expect(checkFreshnessBypass({ ...base, sourceJob: { ...source, status: "completed" } })).toMatchObject({ ok: false, status: 409 });
+      expect(checkFreshnessBypass({ ...base, query: { ...base.query, endDate: "2026-02-28" } })).toMatchObject({ ok: false, status: 409 });
+    });
+
+    it("keeps an approved bypass on the job's progress across steps", () => {
+      const approval = checkFreshnessBypass(base);
+      if (!approval.ok || !approval.approval) throw new Error("expected an approval");
+      const start = readJobProgress({ freshnessBypass: approval.approval });
+      const merged = mergeJobProgress(start, extractStepProgress({ runSummary: { rowsUpserted: 5 } }), 0);
+      expect(merged.freshnessBypass).toEqual(approval.approval);
+    });
   });
 
   it("reads team-daily dataset rows and generic row counts", () => {

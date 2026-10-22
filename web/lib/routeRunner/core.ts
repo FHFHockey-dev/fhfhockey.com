@@ -199,6 +199,8 @@ export type StepDecision =
       /** A continuation kept on the failed job (for a manual re-queue). */
       nextQuery?: RouteQuery;
       blockedBy?: "freshness";
+      /** The freshness gate's blocker count, when the route reported one. */
+      blockerCount?: number;
     };
 
 type Body = Record<string, any>;
@@ -368,7 +370,8 @@ function classifyRolling(
       kind: "fail",
       reason: `Blocked by freshness checks (HTTP 422${Number.isSafeInteger(blockers) ? `, ${blockers} blocker(s)` : ""}). Refresh the stale sources, or re-queue with bypassFreshnessBlockers=true${nextResumeFrom != null ? ` from resumeFrom ${nextResumeFrom}` : ""}.`,
       nextQuery,
-      blockedBy: "freshness"
+      blockedBy: "freshness",
+      ...(Number.isSafeInteger(blockers) && blockers >= 0 ? { blockerCount: blockers } : {})
     };
   }
   const partial =
@@ -677,7 +680,29 @@ export type JobProgress = {
   stalls: number;
   /** Set when the job failed on a gate a manual re-queue can bypass. */
   blockedBy: "freshness" | null;
+  /** The freshness gate's blocker count on a blocked job (null when unknown). */
+  blockerCount: number | null;
+  /** Set on a job queued with an approved freshness bypass; kept for the job's life. */
+  freshnessBypass: FreshnessBypassApproval | null;
 };
+
+/** Who approved running a job past its freshness blockers, and what they were shown. */
+export type FreshnessBypassApproval = {
+  approvedBy: string;
+  approvedAt: string;
+  sourceJobId: string;
+  blockerCount: number | null;
+  reason: string | null;
+};
+
+function readFreshnessBypass(value: unknown): FreshnessBypassApproval | null {
+  const record = asRecord(value);
+  const approvedBy = nonEmptyString(record?.approvedBy);
+  const approvedAt = nonEmptyString(record?.approvedAt);
+  const sourceJobId = nonEmptyString(record?.sourceJobId);
+  if (!record || !approvedBy || !approvedAt || !sourceJobId) return null;
+  return { approvedBy, approvedAt, sourceJobId, blockerCount: count(record.blockerCount), reason: nonEmptyString(record.reason) };
+}
 
 export function readJobProgress(value: unknown): JobProgress | null {
   const record = asRecord(value);
@@ -689,7 +714,9 @@ export function readJobProgress(value: unknown): JobProgress | null {
     cursor: nonEmptyString(record.cursor),
     rowsUnit: nonEmptyString(record.rowsUnit) ?? "rows",
     stalls: count(record.stalls) ?? 0,
-    blockedBy: record.blockedBy === "freshness" ? "freshness" : null
+    blockedBy: record.blockedBy === "freshness" ? "freshness" : null,
+    blockerCount: count(record.blockerCount),
+    freshnessBypass: readFreshnessBypass(record.freshnessBypass)
   };
 }
 
@@ -718,7 +745,9 @@ export function mergeJobProgress(
     cursor: step.cursor ?? previous?.cursor ?? null,
     rowsUnit: step.rows != null ? step.rowsUnit : (previous?.rowsUnit ?? step.rowsUnit),
     stalls,
-    blockedBy: null
+    blockedBy: null,
+    blockerCount: null,
+    freshnessBypass: previous?.freshnessBypass ?? null
   };
 }
 
@@ -743,6 +772,112 @@ export function buildBypassRequeuePath(job: {
   const query = scalarQuery(job.next_query) ?? {};
   query.bypassFreshnessBlockers = "true";
   return `${job.route_path}?${new URLSearchParams(query).toString().replace(/%2C/gi, ",")}`;
+}
+
+const FALSE_VALUES = new Set(["", "false", "0", "no", "off"]);
+
+/** True when the query asks the route to run past its freshness blockers. */
+export function requestsFreshnessBypass(query: RouteQuery): boolean {
+  const value = query.bypassFreshnessBlockers;
+  return value != null && !FALSE_VALUES.has(String(value).trim().toLowerCase());
+}
+
+/**
+ * What the re-queue confirmation shows for a freshness-blocked job: the
+ * blocker count (from progress, else the stored reason) and the reason.
+ */
+export function describeFreshnessBlock(job: {
+  status: string;
+  progress: unknown;
+  last_error: string | null;
+}): { blockerCount: number | null; reason: string | null } | null {
+  const progress = readJobProgress(job.progress);
+  if (job.status !== "failed" || progress?.blockedBy !== "freshness") return null;
+  const parsed = job.last_error?.match(/(\d+) blocker\(s\)/);
+  return {
+    blockerCount: progress.blockerCount ?? (parsed ? Number(parsed[1]) : null),
+    reason: job.last_error
+  };
+}
+
+export type FreshnessBypassRequest = {
+  /** The freshness-blocked job being re-queued. */
+  sourceJobId?: unknown;
+  /** The blocker count the approver was shown; must match the source job. */
+  blockerCount?: unknown;
+  /** The approver ticked the explicit confirmation. */
+  confirmed?: unknown;
+};
+
+/**
+ * Gate for queueing a job with bypassFreshnessBlockers. A bypass is never
+ * implied by the query alone: it needs a signed-in admin (not the cron
+ * bearer), an explicit confirmation naming the freshness-blocked source job
+ * and the blocker count shown, and the query must be exactly that job's
+ * re-queue path. Returns the approval to record on the new job, or null when
+ * the query asks for no bypass.
+ */
+export function checkFreshnessBypass(args: {
+  routePath: string;
+  query: RouteQuery;
+  request: FreshnessBypassRequest | null | undefined;
+  sourceJob: {
+    id: string;
+    route_path: string;
+    status: string;
+    next_query: unknown;
+    progress: unknown;
+    last_error: string | null;
+  } | null;
+  approverId: string | null;
+  nowIso: string;
+}):
+  | { ok: true; approval: FreshnessBypassApproval | null }
+  | { ok: false; status: 400 | 403 | 409; error: string } {
+  if (!requestsFreshnessBypass(args.query)) return { ok: true, approval: null };
+  if (!args.approverId) {
+    return { ok: false, status: 403, error: "Bypassing freshness blockers needs a signed-in admin's approval." };
+  }
+  if (args.request?.confirmed !== true || typeof args.request.sourceJobId !== "string") {
+    return {
+      ok: false,
+      status: 400,
+      error: "Bypassing freshness blockers needs explicit confirmation: use Re-queue with bypass on the blocked job."
+    };
+  }
+  const block = args.sourceJob ? describeFreshnessBlock(args.sourceJob) : null;
+  if (!args.sourceJob || args.sourceJob.id !== args.request.sourceJobId || !block) {
+    return { ok: false, status: 409, error: "The confirmed job is not a freshness-blocked failed job." };
+  }
+  const shown = args.request.blockerCount ?? null;
+  if (shown !== block.blockerCount) {
+    return { ok: false, status: 409, error: "The blocker count confirmed does not match the job. Reload and confirm again." };
+  }
+  const expected = buildBypassRequeuePath(args.sourceJob);
+  const expectedParsed = expected ? parseRunnerInput(expected) : null;
+  const sameQuery =
+    expectedParsed?.ok === true &&
+    expectedParsed.routePath === args.routePath &&
+    JSON.stringify(Object.entries(expectedParsed.query).sort()) === JSON.stringify(Object.entries(args.query).sort());
+  if (!sameQuery) {
+    return { ok: false, status: 409, error: "The bypass approval covers only the blocked job's own re-queue path." };
+  }
+  return {
+    ok: true,
+    approval: {
+      approvedBy: args.approverId,
+      approvedAt: args.nowIso,
+      sourceJobId: args.sourceJob.id,
+      blockerCount: block.blockerCount,
+      reason: block.reason
+    }
+  };
+}
+
+/** The approval line recorded on the new job (and repeated on its step results). */
+export function formatFreshnessBypass(approval: FreshnessBypassApproval): string {
+  const blockers = approval.blockerCount == null ? "an unknown number of" : String(approval.blockerCount);
+  return `Freshness bypass approved by ${approval.approvedBy} at ${approval.approvedAt}: ${blockers} freshness blocker(s) from job ${approval.sourceJobId} are overridden, so this job's results use stale upstream data.`;
 }
 
 export type RouteRunnerEventLike = {

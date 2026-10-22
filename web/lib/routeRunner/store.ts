@@ -78,6 +78,8 @@ export type NewRouteRunnerJob = {
   next_query: RouteQuery;
   contract: RouteRunnerContract;
   created_by: string | null;
+  /** Initial progress, e.g. an approved freshness bypass carried for the job's life. */
+  progress?: unknown;
 };
 
 export interface RouteRunnerStore {

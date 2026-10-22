@@ -28,12 +28,15 @@ import Container from "components/Layout/Container";
 import {
   buildBypassRequeuePath,
   buildTimeline,
+  describeFreshnessBlock,
   estimateEtaMs,
   formatDuration,
   formatEventLine,
+  formatFreshnessBypass,
   isActiveStatus,
   parseRunnerInput,
-  readJobProgress
+  readJobProgress,
+  type FreshnessBypassRequest
 } from "lib/routeRunner/core";
 import {
   getRunnerOptions,
@@ -477,11 +480,18 @@ function JobDetail(props: {
   events: RouteRunnerEventRow[];
   offsetMs: number;
   onAction: (action: "cancel" | "run_now") => void;
-  onRequeue: (path: string) => void;
+  onRequeue: (path: string, approval: FreshnessBypassRequest) => void;
   busy: boolean;
 }) {
   const { job, events, offsetMs } = props;
   const requeuePath = buildBypassRequeuePath(job);
+  const block = describeFreshnessBlock(job);
+  const [confirming, setConfirming] = useState(false);
+  const [accepted, setAccepted] = useState(false);
+  useEffect(() => {
+    setConfirming(false);
+    setAccepted(false);
+  }, [job.id]);
   const timeline = useMemo(() => buildTimeline(events), [events]);
   const progress = readJobProgress(job.progress);
   const percent =
@@ -527,6 +537,11 @@ function JobDetail(props: {
           {job.route_path}
           {queryText(job.next_query)}
         </p>
+        {progress?.freshnessBypass && (
+          <p className={styles.bypassBanner} role="note" aria-label="Freshness bypass">
+            <strong>Freshness blockers bypassed.</strong> {formatFreshnessBypass(progress.freshnessBypass)}
+          </p>
+        )}
         {reason && (
           <p className={`${styles.reason} ${job.status === "failed" ? styles.reasonFailed : ""}`}>{reason}</p>
         )}
@@ -638,18 +653,49 @@ function JobDetail(props: {
           >
             Run now
           </button>
-          {requeuePath && (
+          {requeuePath && block && !confirming && (
             <button
               type="button"
               className={styles.buttonPrimary}
               disabled={props.busy}
               title={requeuePath}
-              onClick={() => props.onRequeue(requeuePath)}
+              onClick={() => setConfirming(true)}
             >
               Re-queue with bypass
             </button>
           )}
         </div>
+        {requeuePath && block && confirming && (
+          <div className={styles.bypassConfirm} role="alertdialog" aria-labelledby="runner-bypass-title">
+            <h3 id="runner-bypass-title">
+              Bypass {block.blockerCount ?? "an unknown number of"} freshness blocker(s)?
+            </h3>
+            {block.reason && <p>{block.reason}</p>}
+            <p>
+              The re-queued job runs past the stale upstream sources, so its results are built on stale data. Your
+              approval is recorded on the new job, and its results stay marked as bypassed.
+            </p>
+            <label className={styles.flag}>
+              <input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} />
+              I approve running past these blockers
+            </label>
+            <div className={styles.actions}>
+              <button
+                type="button"
+                className={styles.buttonDanger}
+                disabled={props.busy || !accepted}
+                onClick={() =>
+                  props.onRequeue(requeuePath, { sourceJobId: job.id, blockerCount: block.blockerCount, confirmed: true })
+                }
+              >
+                Confirm bypass re-queue
+              </button>
+              <button type="button" className={styles.buttonSecondary} onClick={() => setConfirming(false)}>
+                Keep blocked
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -766,11 +812,11 @@ function RouteRunner() {
     }
   }
 
-  async function requeue(path: string) {
+  async function requeue(path: string, bypassApproval: FreshnessBypassRequest) {
     setActionBusy(true);
     setError(null);
     try {
-      const body = await authFetch(JOBS_API, { method: "POST", body: { path } });
+      const body = await authFetch(JOBS_API, { method: "POST", body: { path, bypassApproval } });
       await loadJobs();
       setSelectedId(body.job.id);
     } catch (caught: any) {
@@ -830,6 +876,9 @@ function RouteRunner() {
                       <span className={styles.jobRowTitle}>
                         <StatusPill status={row.status} />
                         {routeLabel(row.route_path)}
+                        {readJobProgress(row.progress)?.freshnessBypass && (
+                          <span className={styles.bypassBadge}>freshness bypassed</span>
+                        )}
                       </span>
                       <span className={styles.jobRowMeta}>
                         {new Date(row.created_at).toLocaleString()} · {row.steps} steps ·{" "}
@@ -848,7 +897,7 @@ function RouteRunner() {
               events={events}
               offsetMs={offsetMs}
               onAction={(action) => void runAction(action)}
-              onRequeue={(path) => void requeue(path)}
+              onRequeue={(path, approval) => void requeue(path, approval)}
               busy={actionBusy}
             />
           ) : (
