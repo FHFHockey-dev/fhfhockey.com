@@ -35,9 +35,7 @@
 - **Next**
   0. TJ queues the bounded rolling recompute on /db/runner: `/api/v1/db/update-rolling-player-averages?startDate=2026-10-07&endDate=2026-10-21&fastMode=true&executionProfile=overnight`; then 6.3 (re-run audit Q5 for null/zero last-5 rates).
   1. TJ runs `VACUUM FULL` on `rolling_player_game_metrics` at a quiet hour; then check the size.
-  2. TJ's console-loop NST gamelog backfill (10-07..10-18) was 126/240 at 13:30Z. On "Backfill complete": the 6.1 counts, the 6.2 bounded rolling recompute and the job 79 unschedule.
-  3. R21 approvals as above.
-  4. Full S-F hydration plus F3/F4 hits/blocks ship with the next FORGE model release (audit session).
+  2. Full S-F hydration plus F3/F4 hits/blocks ship with the next FORGE model release (audit session).
 - **Gotchas**
   - Pre-2026-27 rows still hold pruned wide values, so never omit the pruned keys from the upsert.
   - Before the drop, check master's code for the 491 names too.
