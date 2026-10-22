@@ -5,7 +5,8 @@ import { withCurrentPlanningRead } from "lib/rosterScheduleOptimizer/currentPlan
 import { currentRsoUsePolicy } from "lib/player-forecasts/rsoUsePolicy";
 import type { PlanningData, PlanningGame, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import { runHorizonFilter } from "lib/projections/releasedRunFence";
-import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_VERSION, loadForgeDailyBridgeForecasts, opponentTilts, teamWinProbability, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
+import { STARTER_DECISION_SHARE, teamWinProbability } from "lib/projections/goalie/goalieOutcomes";
+import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_VERSION, loadForgeDailyBridgeForecasts, opponentTilts, teamStrengthPriors, teamWinProbability as ledgerTeamWin, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
 import { compactBridgeForecasts, expandBridgeForecasts, fitBridgeWire, packPlanningSnapshots, unpackPlanningSnapshots, type BridgeForecastWire } from "./bridgeForecastWire";
 import { preservationJson } from "lib/rosterScheduleOptimizer/workspace";
 
@@ -133,7 +134,7 @@ describe("FORGE daily bridge", () => {
 
   it("is empty with a plain reason when no run exists, and trims to the byte budget", () => {
     expect(buildForgeDailyBridgeForecasts({ runs: [], skaters: [], goalies: [], goalieShares: [] }, players, games, now, 20262027, policy))
-      .toEqual({ forecasts: [], limitations: [expect.stringContaining("no successful FORGE run")] });
+      .toEqual({ forecasts: [], teamWins: [], limitations: [expect.stringContaining("no successful FORGE run")] });
     // The budget counts compact wire bytes, the size the projections actually travel at.
     const trimmed = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy, 1000);
     expect(trimmed.forecasts.length).toBeGreaterThan(0);
@@ -320,21 +321,57 @@ describe("FORGE daily bridge", () => {
     expect(goals({ positionAllowed })).toBeLessThan(goals({}));
   });
 
-  it("estimates a goalie's win chance from team strength when FORGE leaves it blank", () => {
-    const even = { source: "nhl_team_data" as const, sourceDate: null, xga: 90, xgaPerGame: 3, xgfPerGame: 3 };
-    expect(teamWinProbability(even, even, true)).toBeGreaterThan(0.52);
-    expect(teamWinProbability(even, even, true)).toBeLessThan(0.56);
-    expect(teamWinProbability(even, even, false)).toBeCloseTo(1 - teamWinProbability(even, even, true), 2);
-    // A stronger team on the road still beats an even matchup on the road.
-    expect(teamWinProbability({ ...even, xgfPerGame: 3.6, xgaPerGame: 2.6 }, even, false)).toBeGreaterThan(teamWinProbability(even, even, false) + 0.05);
-    expect(teamWinProbability(undefined, even, true)).toBe(0.5);
+  it("serves FORGE's paired team win probability, kept apart from each goalie's unconditional wins", () => {
     const base: ForgeDailyBridgeInputs = inputs();
-    base.goalies = base.goalies.map(row => ({ ...row, proj_win_prob: null }));
-    const { forecasts, limitations } = buildForgeDailyBridgeForecasts(base, players, games, now, 20262027, policy);
-    const g1 = forecasts.find(row => row.playerId === "g1" && row.gameId === "2")!;
-    expect(g1.conditionalStats!.WINS_GOALIE).toBe(0.5); // no team-strength rows in this fixture
-    expect(g1.stats.WINS_GOALIE).toBeCloseTo(0.5 * g1.startProbability!, 3);
-    expect(limitations.some(line => line.startsWith("Goalie wins use the team's win chance"))).toBe(true);
+    // Pre-7.2 rows are not paired (0.55 + 0.40): a game with both teams' rows is normalised to sum to 1.
+    base.goalies = [{ ...base.goalies[0], opponent_team_id: 8 }, { ...base.goalies[0], goalie_id: 301, team_id: 8, opponent_team_id: 10,
+      starter_probability: 0.9, proj_win_prob: 0.4 }];
+    const { forecasts, teamWins, limitations } = buildForgeDailyBridgeForecasts(base, players, games, now, 20262027, policy);
+    // Team population: one probability per team-game, denominator the team's games.
+    expect(teamWins).toEqual([{ gameId: "1", team: "TOR", probability: 0.55 / 0.95, source: "forge" }]);
+    // Goalie population: per-start W is the decision share of the team's wins; expected W adds his start chance.
+    const goalie = (id: string, gameId: string) => forecasts.find(row => row.playerId === id && row.gameId === gameId)!;
+    for (const id of ["g1", "g2"]) expect(goalie(id, "1").conditionalStats!.WINS_GOALIE).toBeCloseTo(STARTER_DECISION_SHARE * 0.55 / 0.95, 4);
+    const teamGoalieWins = goalie("g1", "1").stats.WINS_GOALIE! + goalie("g2", "1").stats.WINS_GOALIE!;
+    expect(goalie("g1", "1").startProbability! + goalie("g2", "1").startProbability!).toBeCloseTo(1, 4);
+    expect(teamGoalieWins).toBeCloseTo(STARTER_DECISION_SHARE * 0.55 / 0.95, 3);
+    // Game 2 is not projected and this fixture has no team-strength priors: wins stay unknown, never 0.5.
+    expect(goalie("g1", "2").stats.WINS_GOALIE).toBeNull();
+    expect(goalie("g1", "2").conditionalStats!.WINS_GOALIE).toBeNull();
+    expect(goalie("g1", "2").stats.SAVES_GOALIE).not.toBeNull();
+    expect(limitations).toContain("2 goalie-games have no team win probability (FORGE left it blank, or a team-strength prior is missing), so their wins are unknown.");
+  });
+
+  it("pairs a one-sided game and moves unprojected games to FORGE's win model, both teams summing to 1", () => {
+    const prior = (team_abbrev: string, xga_per_game: number, xgf_per_game: number) =>
+      ({ team_abbrev, date: "2026-10-19", games_played: 50, xga: 50 * xga_per_game, xga_per_game, xgf_per_game });
+    const teamPriors = [prior("TOR", 2.9, 3.2), prior("MTL", 3.3, 2.7)];
+    const g3 = member("g3", 203, "MTL", 8, "goalie");
+    // TOR's goalies have only an older line; only MTL's FORGE row exists for game 1; game 5 (TOR at MTL) is unprojected.
+    const paired = [game("1", "TOR", "2026-10-19T23:00:00Z"), game("5", "TOR", "2026-10-23T23:00:00Z"), game("5", "MTL", "2026-10-23T23:00:00Z")]
+      .map(row => ({ ...row, opponent: row.teamAbbreviation === "TOR" ? "MTL" : "TOR" }));
+    const base: ForgeDailyBridgeInputs = inputs();
+    base.goalies = [{ ...base.goalies[0], run_id: "r1", as_of_date: "2026-10-18", game_id: 0, opponent_team_id: 8 },
+      { ...base.goalies[0], goalie_id: 203, team_id: 8, opponent_team_id: 10, proj_win_prob: 0.4 }];
+    base.goalieShares = [...base.goalieShares, { player_id: 203, game_id: 5, game_date: "2026-10-23", l10_start_pct: 1, season_start_pct: 1, updated_at: "2026-10-19T10:00:00Z" }];
+    const { teamWins, forecasts } = buildForgeDailyBridgeForecasts({ ...base, teamPriors }, [...players, g3], paired, now, 20262027, policy);
+    const win = (gameId: string, team: string) => teamWins.find(row => row.gameId === gameId && row.team === team);
+    expect(win("1", "TOR")).toEqual({ gameId: "1", team: "TOR", probability: 1 - 0.4 / STARTER_DECISION_SHARE, source: "forge_paired" });
+    const priors = teamStrengthPriors(teamPriors), tor = priors.get("TOR")!, mtl = priors.get("MTL")!;
+    const torGoals = (tor.xgfPerGame! + mtl.xgaPerGame!) / 2, mtlGoals = (mtl.xgfPerGame! + tor.xgaPerGame!) / 2;
+    expect(win("5", "TOR")).toEqual({ gameId: "5", team: "TOR", probability: teamWinProbability(torGoals, mtlGoals), source: "forge_model" });
+    expect(win("5", "TOR")!.probability + win("5", "MTL")!.probability).toBeCloseTo(1, 12);
+    expect(forecasts.find(row => row.playerId === "g3" && row.gameId === "5")!.conditionalStats!.WINS_GOALIE)
+      .toBeCloseTo(STARTER_DECISION_SHARE * win("5", "MTL")!.probability, 4);
+  });
+
+  it("keeps the ledger's legacy xG win chance, which bridge forecasts no longer use", () => {
+    const even = { source: "nhl_team_data" as const, sourceDate: null, xga: 90, xgaPerGame: 3, xgfPerGame: 3 };
+    expect(ledgerTeamWin(even, even, true)).toBeGreaterThan(0.52);
+    expect(ledgerTeamWin(even, even, true)).toBeLessThan(0.56);
+    expect(ledgerTeamWin(even, even, false)).toBeCloseTo(1 - ledgerTeamWin(even, even, true), 2);
+    expect(ledgerTeamWin({ ...even, xgfPerGame: 3.6, xgaPerGame: 2.6 }, even, false)).toBeGreaterThan(ledgerTeamWin(even, even, false) + 0.05);
+    expect(ledgerTeamWin(undefined, even, true)).toBe(0.5);
   });
 
   it("produces forecasts the planner accepts for league points", async () => {
@@ -342,7 +379,13 @@ describe("FORGE daily bridge", () => {
     const seasonTotals = [{ player_id: 101, season: "20262027", games_played: 10, penalty_minutes: 0, plus_minus: 0, sh_goals: 0,
       sh_assists: 0, sh_points: 0, total_fow: 50, total_fol: 40, goals: 4, gw_goals: 0 }, { player_id: 101, season: "20252026",
       games_played: 80, penalty_minutes: 0, plus_minus: 0, sh_goals: 0, sh_assists: 0, sh_points: 0, total_fow: 600, total_fol: 500, goals: 20, gw_goals: 0 }];
-    const { forecasts } = buildForgeDailyBridgeForecasts({ ...inputs(), seasonTotals }, players, games, now, 20262027, policy);
+    // Team-strength priors give g1's unprojected game 2 a win probability from FORGE's win model.
+    const teamPriors = [{ team_abbrev: "TOR", date: "2026-10-19", games_played: 50, xga: 145, xga_per_game: 2.9, xgf_per_game: 3.2 },
+      { team_abbrev: "X", date: "2026-10-19", games_played: 50, xga: 150, xga_per_game: 3, xgf_per_game: 3 }];
+    const priors = teamStrengthPriors(teamPriors), tor = priors.get("TOR")!, x = priors.get("X")!;
+    const gameTwoWin = Math.round(STARTER_DECISION_SHARE * teamWinProbability((tor.xgfPerGame! + x.xgaPerGame!) / 2,
+      (x.xgfPerGame! + tor.xgaPerGame!) / 2) * 10000) / 10000;
+    const { forecasts } = buildForgeDailyBridgeForecasts({ ...inputs(), seasonTotals, teamPriors }, players, games, now, 20262027, policy);
     const upcoming = games.filter(row => row.date >= "2026-10-19");
     const { wire } = compactBridgeForecasts(forecasts, { players, games: upcoming }, 20262027);
     const revisions = [...new Set(forecasts.map(row => row.revisionId))].sort();
@@ -371,7 +414,7 @@ describe("FORGE daily bridge", () => {
       const points = await withCurrentPlanningRead({ ...snapshot, forecasts: [] }, {}, currentRsoUsePolicy().revision,
         new AbortController().signal, (input, _data, readError) => { expect(readError).toBeNull(); return candidateHorizonPoints(input); });
       expect(points.get("s1")).toBeCloseTo(2 * (0.35 * 3 + 0.45 * 2 + 0.25 + 3.1 * 0.5 + 7 * 0.1));
-      expect(points.get("g1")).toBeCloseTo(0.8 * (25 * 0.2 + 0.55 * 4) + 0.7 * (25 * 0.2 + 0.55 * 4));
+      expect(points.get("g1")).toBeCloseTo(0.8 * (25 * 0.2 + 0.55 * 4) + 0.7 * (25 * 0.2 + gameTwoWin * 4), 3);
       expect(points.get("s2")).toBeNull();
     } finally { vi.useRealTimers(); vi.unstubAllGlobals(); }
   });
