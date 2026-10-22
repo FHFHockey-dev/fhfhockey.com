@@ -36,7 +36,7 @@ export function useRosterPlanning(snapshot: PlanningSnapshot | null, intent: Pla
   }, [expiresAt, monotonicExpiry]);
   const expired = monotonicExpiry != null ? monotonicExpiry <= planningMonotonicNow() : expiresAt != null && expiresAt <= Date.now();
   const execution = expired ? undefined : current?.execution;
-  return { result: execution?.result ?? null, metrics: execution?.metrics,
+  return { result: execution?.result ?? null, metrics: execution?.metrics, healthyReserves: execution?.healthyReserves ?? [],
     displaySnapshot: execution?.displaySnapshot ?? null, data: execution?.data ?? null,
     error: current?.error ?? execution?.readError ?? null, loading: Boolean(snapshot && !current) };
 }

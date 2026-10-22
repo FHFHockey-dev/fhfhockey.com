@@ -2192,3 +2192,38 @@ test.extend({ hasTouch: true })("compact partial and unavailable evidence retain
   await page.screenshot({ path: testInfo.outputPath("compact-unavailable-1440x900.png") });
   await verifyMobileWorkspaces("unavailable");
 });
+
+// TJ 2026-10-22: a player got healthy but stayed in his IR spot, and the RSO never flagged it.
+test("alerts on a healthy player left in IR and shows what activating him gains", async ({ page }, testInfo) => {
+  // Offline fixture: abort non-local requests and answer any unmocked API with 503 (routes registered later win).
+  await page.route(url => !["127.0.0.1", "localhost"].includes(url.hostname), route => route.abort());
+  await page.route("**/api/**", route => route.fulfill({ status: 503, json: { error: "fixture: not mocked" } }));
+  await page.clock.install({ time: new Date("2026-09-26T12:00:00Z") });
+  const members = [fixturePlayer(1, "Alpha Center", "CAR"), { ...fixturePlayer(3, "Healthy Defender", "BOS"), eligiblePositions: ["D"], injury: null }];
+  const workspace = fixtureWorkspace(members, { ...fixtureRules, rosterSlots: { C: 1, D: 1, BN: 1, IR: 1 } });
+  workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "league", teamId: "team", endDate: date(6) };
+  workspace.roster = [{ playerId: members[0].id, position: "active" }, { playerId: members[1].id, position: "IR" }];
+  await seedWorkspace(page, workspace);
+  await installDraftProAuthenticatedFixtures(page, () => ({ access: { eligible: false, grantingSources: [], expiresAt: null, verifiedAt: null, nextVerificationAt: null, reason: "no_active_grant", capabilities: [], providerReadiness: { stripe: false, patreon: false, yahoo: false } } }));
+  const storageKey = `sb-${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fyhftlxokyjtpndbkfse.supabase.co").hostname.split(".")[0]}-auth-token`;
+  await page.addInitScript(key => { const session = localStorage.getItem("sb-127-auth-token"); if (session) localStorage.setItem(key, session); }, storageKey);
+  await page.route("**/api/v1/roster-schedule-optimizer/access", route => route.fulfill({ json: { data: { eligible: true, capabilities: ["rso_sync"], grantingSources: ["test"], expiresAt: null, reason: null } } }));
+  await page.route("**/api/v1/roster-schedule-optimizer/workspace**", route => route.fulfill({ json: { data: null } }));
+  const games = [5, 6].flatMap(day => members.map(member => fixtureGame(`${member.id}:${day}`, day, member.teamAbbreviation!)));
+  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: { players: members, games, forecasts: [], evidence: {} } } }));
+  // A live Yahoo read: no injury designation for the defender, and so no IR eligibility.
+  await page.route("**/api/v1/roster-schedule-optimizer/provider", route => route.fulfill({ json: { success: true,
+    snapshot: { id: "provider-healthy-ir", context: workspace.context, players: members, roster: workspace.roster, games, forecasts: [], rules: workspace.rules,
+      lockedAssignments: [], realized: {}, opponent: null,
+      evidence: { roster: { source: "Yahoo authorized current roster", asOf: workspace.context.asOf, seasonId: 20262027, completeness: "complete", limitations: [] } } },
+    capabilities: { roster: true, availability: true, rules: true, matchup: false, acquisitions: true, limitations: [] } } }));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/roster-schedule-optimizer");
+  const alert = page.getByRole("alert", { name: "Healthy players in IR" });
+  await expect(alert).toContainText("Healthy Defender is in your IR spot, but Yahoo lists no injury.");
+  await expect(alert).toContainText("Yahoo no longer lists him for IR, so the lineup is illegal until he moves.");
+  await expect(alert).toContainText("Move him to an open bench or active spot.");
+  // This fixture has no current forecast read, so the planner prices games, not points (the unit test covers points).
+  await expect(alert.getByText("+2 active games this week")).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("healthy-ir-alert-1440x900.png") });
+});

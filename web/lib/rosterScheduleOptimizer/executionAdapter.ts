@@ -3,6 +3,7 @@ import { resolvePlanningContributions } from "../player-forecasts/planningContri
 import { candidatePlanMetrics, type CandidatePlanOptions } from "./candidatePlanMetrics";
 import { forecastAllows, planRoster, sanitizeForecastInputs } from "./planning";
 import { capacityPlanningSnapshot, currentPlanningTime, forecastInputExpiry, planningMonotonicNow, withCurrentPlanningRead, type CurrentPlanningOptions } from "./currentPlanningRead";
+import { healthyReserves } from "./healthyReserves";
 import type { PlanIntent, PlanningSnapshot } from "./planningTypes";
 
 /** One current read feeds the plan, bounded candidate search and display view. */
@@ -29,7 +30,8 @@ export async function executeRosterPlanning(snapshot: PlanningSnapshot, intent: 
         ...(!numeric && !independentStart ? { startProbability: null, appearanceProbability: null,
           confirmedStart: false, startParticipation: undefined } : {}) };
       }) };
-      return { result: planRoster(current, intent), metrics: candidatePlanMetrics(current, intent, candidateOptions), displaySnapshot };
+      return { result: planRoster(current, intent), metrics: candidatePlanMetrics(current, intent, candidateOptions), displaySnapshot,
+        healthyReserves: healthyReserves(current, intent) };
     };
     let evaluated = evaluate(input);
     const publishedMonotonic = planningMonotonicNow(), publishedServer = currentPlanningTime();
