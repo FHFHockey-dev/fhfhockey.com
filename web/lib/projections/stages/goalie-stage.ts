@@ -12,7 +12,9 @@ import {
   GOALIE_CONTEXT_SAVE_PCT_PASS_THROUGH,
   goalieConditionalWinProbability,
   goalieRestSavePctAdjustment,
+  goalieWinPopulations,
   marketTeamWinProbability,
+  STARTER_DECISION_SHARE,
   teamWinProbability,
 } from "../goalie/goalieOutcomes";
 import { getSeasonLeagueSavePct, type SeasonLeagueSavePctCache } from "../goalie/leagueSavePct";
@@ -371,9 +373,12 @@ export async function runPerGameGoalieStage(args: {
     const lambdaFor = teamGoalsByTeamId.get(c.teamId) ?? null;
     const lambdaAgainst = teamGoalsByTeamId.get(c.opponentTeamId) ?? null;
     const lambdasAvailable = lambdaFor !== null && lambdaAgainst !== null;
-    const teamWinProb = marketTeamWinProbability(
+    const marketTeamWinProb = marketTeamWinProbability(
       args.gameMarketSummary?.h2h, defendingTeamAbbrev, opponentTeamAbbrev,
-    ) ?? (lambdasAvailable ? teamWinProbability(lambdaFor, lambdaAgainst) : null);
+    );
+    const teamWinProb = marketTeamWinProb ?? (lambdasAvailable ? teamWinProbability(lambdaFor, lambdaAgainst) : null);
+    const teamWinSource = marketTeamWinProb !== null ? "moneyline_devig_proportional"
+      : teamWinProb !== null ? "poisson_race" : null;
     const adjustedTeamGoalsFor = teamGoalsFor === null ? null : Number(
       Math.max(
         0,
@@ -760,6 +765,39 @@ export async function runPerGameGoalieStage(args: {
       starterModelMeta,
     });
 
+    // Keep the two win populations apart (Codex review 7.2). proj_win_prob is unchanged: it is the
+    // team's goalie slot, sum over starters of P(start) x P(team wins | starts) x decision share.
+    const winPopulations = teamWinProb === null ? null : goalieWinPopulations(
+      [...boardStarterProbabilities.entries()].map(([goalieId, startProbability]) => {
+        const inputs = scenarioInputs.get(goalieId);
+        return { goalieId, startProbability, teamWinIfStarts: inputs ? winIfStarts(inputs.modeledSavePct)! : teamWinProb };
+      }),
+    );
+    const winPopulationsMeta = {
+      team: {
+        population: "team_game",
+        denominator: "games",
+        win_probability: teamWinProb === null ? null : Number(teamWinProb.toFixed(4)),
+        source: teamWinSource,
+        paired_with_opponent: "sums_to_1",
+      },
+      goalies: (winPopulations?.goalies ?? []).map((g) => ({
+        goalie_id: g.goalieId,
+        start_probability: Number(g.startProbability.toFixed(4)),
+        team_win_if_starts: Number(g.teamWinIfStarts.toFixed(4)),
+        credited_win_if_starts: Number(g.creditedWinIfStarts.toFixed(4)),
+        starter_win: Number(g.starterWin.toFixed(4)),
+        relief_win: Number(g.reliefWin.toFixed(4)),
+        unconditional_win: Number(g.unconditionalWin.toFixed(4)),
+      })),
+      goalie_population: "candidate_goalie_game",
+      goalie_denominators: { credited_win_if_starts: "starts", unconditional_win: "candidate_games" },
+      decision_share: STARTER_DECISION_SHARE,
+      start_probability_mass: winPopulations ? Number(winPopulations.startProbabilityMass.toFixed(4)) : null,
+      values_per: "single_game",
+      proj_win_prob_population: "team_goalie_slot_credited_starter_win",
+    };
+
     const goalieUpsert = {
       run_id: runId,
       as_of_date: asOfDate,
@@ -780,7 +818,7 @@ export async function runPerGameGoalieStage(args: {
       proj_shutout_prob: Number(
         (shutoutProb * goalieHorizonTotalScalar).toFixed(4),
       ),
-      uncertainty: { ...goalieUncertainty, daily_board_candidates: dailyBoardCandidates } as any,
+      uncertainty: { ...goalieUncertainty, daily_board_candidates: dailyBoardCandidates, win_populations: winPopulationsMeta } as any,
       updated_at: new Date().toISOString(),
     };
 

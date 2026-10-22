@@ -119,6 +119,30 @@ describe("goalie producer confirmation evidence", () => {
     }
   });
 
+  it("records the team-game win and each candidate's unconditional W as separate populations", async () => {
+    const { row } = await run(undefined, { override: false, goalsFor: 3.3, opponentGoalsFor: 2.9 });
+    const populations = row.uncertainty.win_populations;
+    expect(populations.team).toMatchObject({ population: "team_game", denominator: "games", source: "poisson_race" });
+    expect(populations.goalie_denominators).toEqual({ credited_win_if_starts: "starts", unconditional_win: "candidate_games" });
+    expect(populations.proj_win_prob_population).toBe("team_goalie_slot_credited_starter_win");
+    const teamWin = populations.team.win_probability;
+    expect(teamWin).toBeGreaterThan(0.5);
+    expect(populations.goalies.map((g: any) => g.goalie_id).sort()).toEqual([100, 101]);
+    // Identical evidence: each goalie's team win if he starts is the team value, and every team win
+    // is credited to exactly one candidate (starter share plus relief).
+    const total = populations.goalies.reduce((sum: number, g: any) => sum + g.unconditional_win, 0);
+    expect(total).toBeCloseTo(teamWin * populations.start_probability_mass, 3);
+    for (const g of populations.goalies) {
+      expect(g.team_win_if_starts).toBeCloseTo(teamWin, 4);
+      expect(g.credited_win_if_starts).toBeCloseTo(teamWin * STARTER_DECISION_SHARE, 4);
+      expect(g.unconditional_win).toBeLessThan(g.credited_win_if_starts);
+    }
+
+    const missing = await run(undefined, { override: false, goalsFor: null, opponentGoalsFor: null });
+    expect(missing.row.uncertainty.win_populations.team).toMatchObject({ win_probability: null, source: null });
+    expect(missing.row.uncertainty.win_populations.goalies).toEqual([]);
+  });
+
   it.each([0.4, 0.8, 1])("does not manufacture confirmation from override %s or legacy booleans", async probability => {
     const actual = await run(undefined, { probability });
     expect(actual.selected.confirmedStatus).toBe(false);

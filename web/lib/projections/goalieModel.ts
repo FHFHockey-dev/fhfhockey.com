@@ -35,7 +35,8 @@ export type GoalieModelInput = {
   /** Additive game-context save % adjustment (B2B, workload, damped context terms). */
   savePctAdjustment?: number;
   /**
-   * P(team wins | this goalie starts), paired per game so both teams sum to 1. When omitted,
+   * P(team wins | this goalie starts): a team-game probability (the team-level value is paired per
+   * game so both teams sum to 1), conditioned on this starter. When omitted,
    * an unpaired Poisson race of projectedGoalsFor vs this goalie's goals allowed is used.
    */
   teamWinProbabilityIfStarts?: number | null;
@@ -45,6 +46,11 @@ export type GoalieModelOutput = {
   modeledSavePct: number;
   projectedGoalsAllowed: number;
   projectedSaves: number;
+  /**
+   * This goalie's credited W without relief: P(start) x P(team wins | starts) x decision share
+   * (with starterProbability 1, the W among starts). Not a team win probability; scored against
+   * credited wins. goalieWinPopulations adds the relief share across candidates.
+   */
   winProbability: number | null;
   shutoutProbability: number;
   blowupRisk: number;

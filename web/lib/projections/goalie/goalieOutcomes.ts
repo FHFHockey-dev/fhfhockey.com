@@ -28,7 +28,8 @@ export const GOALIE_HEAVY_WORKLOAD_MIN_STARTS_14D = 5;
 // evidence belongs to task 9.
 export const GOALIE_CONTEXT_SAVE_PCT_PASS_THROUGH = 0.25;
 // Starters were credited with 98.4% of their teams' wins (8,347 of 8,483); the rest went to
-// relievers after a pull or injury. Goalie W = P(team wins | starts) x this share x P(start).
+// relievers after a pull or injury. Goalie W = P(team wins | starts) x this share x P(start),
+// plus the relief share when another candidate starts (goalieWinPopulations).
 export const STARTER_DECISION_SHARE = 0.984;
 // P(starter is credited with the shutout | starter allowed no goals while in net): credited
 // shutouts 5.45% of starts vs 5.88% of starts with zero goals against (exits for injury or rest,
@@ -195,4 +196,66 @@ export function shutoutProbability(args: {
     pSaveAll *= sv;
   }
   return clamp(total * fullGame, 0, 1);
+}
+
+/**
+ * Two win populations that must not be mixed (Codex review 7.2):
+ * - team: P(team wins the game), one value per team-game; the two teams sum to 1. Validated
+ *   against game outcomes.
+ * - goalie: P(this goalie is credited with the win), one value per candidate goalie. It is
+ *   P(start) x P(team wins | starts) x STARTER_DECISION_SHARE plus the relief share of the wins
+ *   when another candidate starts. Validated against credited wins, among starts (the
+ *   conditional term) and among all candidates (the unconditional value).
+ */
+export type GoalieWinCandidate = {
+  goalieId: number;
+  /** P(this goalie starts); the candidates' values should sum to about 1. */
+  startProbability: number;
+  /** P(team wins | this goalie starts): a team-game quantity conditioned on the starter. */
+  teamWinIfStarts: number;
+};
+
+export type GoalieWinPopulation = GoalieWinCandidate & {
+  /** P(credited with the win | starts) = teamWinIfStarts x STARTER_DECISION_SHARE. */
+  creditedWinIfStarts: number;
+  /** P(starts and is credited with the win). */
+  starterWin: number;
+  /** P(another candidate starts, this goalie relieves and is credited with the win). */
+  reliefWin: number;
+  /** starterWin + reliefWin: the goalie's unconditional W for the game. */
+  unconditionalWin: number;
+};
+
+/**
+ * Per-candidate unconditional W. Relief wins (1 - decision share of the team's wins when h
+ * starts) go to the other candidates in proportion to their start probabilities, i.e. the
+ * dressed backup is the likelier non-starter. With start probabilities summing to 1 the
+ * candidates' unconditional W sums to the start-weighted team win probability.
+ */
+export function goalieWinPopulations(
+  candidates: GoalieWinCandidate[],
+  decisionShare: number = STARTER_DECISION_SHARE
+): { goalies: GoalieWinPopulation[]; startWeightedTeamWin: number | null; startProbabilityMass: number } {
+  const cleaned = candidates.map((c) => ({
+    ...c,
+    startProbability: clamp(Number.isFinite(c.startProbability) ? c.startProbability : 0, 0, 1),
+    teamWinIfStarts: clamp(c.teamWinIfStarts, 0, 1)
+  }));
+  const mass = cleaned.reduce((sum, c) => sum + c.startProbability, 0);
+  const goalies = cleaned.map((g) => {
+    let reliefWin = 0;
+    for (const h of cleaned) {
+      if (h.goalieId === g.goalieId || h.startProbability <= 0) continue;
+      const others = mass - h.startProbability;
+      if (others <= 0) continue;
+      reliefWin += h.startProbability * h.teamWinIfStarts * (1 - decisionShare) * (g.startProbability / others);
+    }
+    const creditedWinIfStarts = g.teamWinIfStarts * decisionShare;
+    const starterWin = g.startProbability * creditedWinIfStarts;
+    return { ...g, creditedWinIfStarts, starterWin, reliefWin, unconditionalWin: clamp(starterWin + reliefWin, 0, 1) };
+  });
+  const startWeightedTeamWin = mass > 0
+    ? cleaned.reduce((sum, c) => sum + c.startProbability * c.teamWinIfStarts, 0) / mass
+    : null;
+  return { goalies, startWeightedTeamWin, startProbabilityMass: mass };
 }
