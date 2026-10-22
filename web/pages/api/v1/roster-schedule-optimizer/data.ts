@@ -11,19 +11,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   let query;
   try { query = parsePlanningDataQuery(req.query); }
   catch (error) { return res.status(400).json({ success: false, error: error instanceof Error ? error.message : "Invalid planning range." }); }
+  const nonce = req.headers?.["x-rso-read-nonce"];
+  if (nonce !== undefined && (typeof nonce !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(nonce))) {
+    return res.status(400).json({ success: false, error: "Invalid planning read nonce." });
+  }
   try {
     const now = new Date();
     // One server-side source per request; RSO has no legacy forecasts, so every fallback serves none.
     const source = await selectForecastServingSource(serviceRoleClient, query.seasonId, now);
-    const data = await loadPlanningData(serviceRoleClient, query, { now, source, forgeDailyBridge: true });
+    const data = await loadPlanningData(serviceRoleClient, query, { now, source, forgeDailyBridge: true, consumer: "rso" });
     // A shared copy of native forecasts never outlives the selected catalog.
     const nativeMaxAge = source.kind === "native" ? Math.max(0, Math.min(300, Math.floor((Date.parse(source.expiresAt) - Date.now()) / 1000))) : null;
-    res.setHeader("Cache-Control", nativeMaxAge === null ? "public, s-maxage=300, stale-while-revalidate=300" : `public, s-maxage=${nativeMaxAge}, stale-while-revalidate=0`);
+    res.setHeader("Cache-Control", nonce || data.forecastManifest?.rsoUsePolicy ? "private, no-store"
+      : nativeMaxAge === null ? "public, s-maxage=300, stale-while-revalidate=300" : `public, s-maxage=${nativeMaxAge}, stale-while-revalidate=0`);
     // Interim bridge projections travel compactly beside `data`; clients rebuild them, so the strict transport is unchanged.
     const bridge = compactBridgeForecasts(data.forecasts, data, query.seasonId);
     const transport = encodePlanningDataTransport({ ...data, forecasts: bridge.forecasts }), forecastSource = forecastSourceSummary(source);
     // The whole body, bridge wire included, must fit the platform response limit; the latest bridge rows give way first.
-    const body = fitBridgeWire(bridge.wire, wire => ({ success: true, data: transport, ...(wire ? { bridgeForecasts: wire } : {}), forecastSource }),
+    const body = fitBridgeWire(bridge.wire, wire => ({ success: true, data: transport, ...(wire ? { bridgeForecasts: wire } : {}), forecastSource,
+      ...(nonce ? { read: { nonce, evaluatedAt: now.toISOString() } } : {}) }),
       PLANNING_RESPONSE_BYTE_BUDGET);
     if (!body) throw new PlanningDataTransportLimitError();
     return res.json(body);

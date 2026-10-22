@@ -420,7 +420,7 @@ describe("Yahoo snapshot evidence", () => {
     const normalized = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a",
       startDate: "2026-10-01", endDate: "2026-10-03", timeZone: "UTC", now });
     expect(normalized.snapshot.context.timeZone).toBe("America/New_York");
-    expect(mocks.planningData).toHaveBeenLastCalledWith(db, expect.objectContaining({ timeZone: "America/New_York" }), { now, forgeDailyBridge: true });
+    expect(mocks.planningData).toHaveBeenLastCalledWith(db, expect.objectContaining({ timeZone: "America/New_York" }), { now, forgeDailyBridge: true, consumer: "rso" });
     mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "UTC", draft_status: "postdraft" }, transport });
 
     for (const mode of ["repeated", "oversized", "stale", "wrong-scope", "failed", "rate-limited", "optional-limited", "deadline", "bounded", "ownership-only"]) {

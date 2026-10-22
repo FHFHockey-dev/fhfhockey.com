@@ -1,5 +1,6 @@
 import { loadPlanningInputs, pages, withinDeadline, PlanningReadDeadlineError, type PlanningDataQuery } from "./planningInputs";
 import { admitConsumerGameRevisions } from "lib/projections/consumerRevisionAdmission";
+import { currentRsoUsePolicy, restrictRsoForecast, type RsoUsePolicyManifest } from "lib/player-forecasts/rsoUsePolicy";
 import { loadForgeDailyBridgeForecasts } from "./forgeDailyBridge";
 export { normalizePlanningGames } from "./planningInputs";
 export { publicPlanningForecasts } from "lib/projections/consumerRevisionAdmission";
@@ -47,6 +48,7 @@ function evidence(source: string, asOf: string | null, seasonId: number | null, 
 }
 
 export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningDataQuery, options: { now?: Date; forecastsEnabled?: boolean; deadlineMs?: number; skipOwnership?: boolean; skipRecentForm?: boolean;
+  consumer?: "rso" | "start_chart";
   /** A source the caller already selected for this request; otherwise it is selected here. */
   source?: ForecastServingSource;
   /** RSO only: serve interim FORGE daily projections while native forecasts are not activated. */
@@ -173,7 +175,7 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
     forecastProblems.push("Shared game-forecast serving is not enabled; schedule planning remains available.");
     for (const id of scheduledGameIds) recordGameExclusion(id, "serving_disabled");
   }
-  const { forecasts: admitted, acceptedNewsRevision, limitations: admissionProblems } = await admitConsumerGameRevisions(
+  const { forecasts: admitted, admittedSources, acceptedNewsRevision, limitations: admissionProblems } = await admitConsumerGameRevisions(
     db, revisions, players, games, now, query.seasonId, exclusionCounts, exclusionRows, deadline, calendarPolicy);
   forecastProblems.push(...admissionProblems);
   let forecasts = admitted, bridged = false;
@@ -194,6 +196,35 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
       }
     } catch { forecastProblems.push("Interim FORGE projections could not be read; schedule planning remains available."); }
   }
+  // Permission denial is downstream of selection: it must never empty admission
+  // and thereby invoke the separately approved interim bridge.
+  let rsoUsePolicy: RsoUsePolicyManifest | undefined;
+  if (options.consumer === "rso") {
+    const policy = currentRsoUsePolicy();
+    rsoUsePolicy = { version: policy.version, revision: policy.revision,
+      bridgeRevisionIds: bridged ? [...new Set(forecasts.map(row => row.revisionId))].sort() : [] };
+    if (!bridged) forecasts = forecasts.map(forecast => {
+      const admitted = admittedSources.find(row => row.forecast === forecast);
+      const rsoTargetBindings = Object.fromEntries(Object.keys(forecast.stats).map(targetKey => [targetKey, {
+        component: `forge-detailed-${admitted?.source.kind ?? "unknown"}`,
+        modelMode: admitted?.revision.payload.modelMode ?? "unknown", codeVersion: forecast.modelVersion ?? "unknown",
+        // Issuance/captured-read hashes do not establish reviewed configuration
+        // or model artifact identity. Missing producer evidence stays unknown.
+        configurationHash: null, artifactHash: null, targetKey, horizonGames: 1,
+        conditioning: admitted?.source.kind === "goalie" ? "start_only_zero_relief" : "conditional_playing",
+        participationLineage: `${forecast.revisionId}:participation`, cutoffAt: forecast.cutoffAt ?? "",
+      }]));
+      const restricted = restrictRsoForecast({ ...forecast, rsoTargetBindings }, { rsoUsePolicy }, now.toISOString(), policy);
+      for (const [targetKey, uses] of Object.entries(restricted.targetAllowedUses ?? {})) {
+        if (uses.assignment && uses.totals && uses.comparison) continue;
+        exclusionCounts.use_not_approved = (exclusionCounts.use_not_approved ?? 0) + 1;
+        if (exclusionRows.length < 15000) exclusionRows.push({ gameId: forecast.gameId, playerId: forecast.playerId,
+          targetKey, reasons: ["use_not_approved"] });
+      }
+      return restricted;
+    });
+    if (!bridged && forecasts.length) forecastProblems.push("Detailed target uses require an applicable reviewed scope; unapproved quality remains unavailable.");
+  }
   if (rolloutValid && (options.forecastsEnabled ?? starterBoardFlags().serving)) {
     const issued = new Set(revisions.map(revision => String(revision.game_id)));
     for (const id of selectedGameIds) if (!issued.has(id) && !discoveryUnavailable.has(id)) recordGameExclusion(id, "no_issued_revision");
@@ -204,6 +235,7 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
   const scheduleRevision = playerForecastSourcePayloadHash(games.map(game => game.scheduleRevision).sort());
   const rosterRevision = playerForecastSourcePayloadHash(players.map(player => [player.id, player.rosterRevision]).sort());
   const manifestContent = { seasonId: query.seasonId, calendarPolicy, acceptedNewsRevision, scheduleRevision, rosterRevision,
+    ...(rsoUsePolicy ? { rsoUsePolicy } : {}),
     issuedRevisionIds: [...new Set(forecasts.map(row => row.revisionId))].sort(), baselineChecksum: baseline.checksum,
     participationRevisionIds: participation.sources.map(source => source.revisionId).sort(), participationChecksum: participation.checksum,
     exclusions: exclusionRows };

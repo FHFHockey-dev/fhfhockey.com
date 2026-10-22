@@ -1,5 +1,7 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resolvePlanningContributions } from "./planningContributions";
+import { deniedRsoUses, type RsoUsePolicy, type RsoTargetUseBinding } from "./rsoUsePolicy";
+import { forecastAllows } from "../rosterScheduleOptimizer/planning";
 import { inspectCalendarConsumerCoverage, parseCalendarCoverageProfile, summarizeCalendarConsumerCoverage } from "./calendarCoverage";
 import * as publicPlanning from "../rosterScheduleData/planning";
 import type { PlayerForecastCalendarScope } from "./schedule";
@@ -856,5 +858,85 @@ describe("calendar consumer target coverage", () => {
     expect(reader).not.toHaveBeenCalled();
     await expect(inspectCalendarConsumerCoverage(db, [], profile, new Date(now), 14,
       { ...receipts, gameIds: [30] })).rejects.toThrow("empty calendar");
+  });
+});
+
+
+describe("P07 detailed target permissions through retained resolution", () => {
+  beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date(now)); });
+  afterEach(() => vi.useRealTimers());
+  function reviewed() {
+    const bindings: Record<string, RsoTargetUseBinding> = Object.fromEntries(["GOALS", "ASSISTS"].map(targetKey => [targetKey, {
+      component: "synthetic-detailed", modelMode: "synthetic", codeVersion: "forge-v1",
+      configurationHash: "a".repeat(64), artifactHash: "b".repeat(64), targetKey, horizonGames: 1,
+      conditioning: "conditional_playing", participationLineage: "detail-1:participation", cutoffAt: "2026-09-28T11:00:00Z",
+    }]));
+    const policy: RsoUsePolicy = { version: "rso-target-use-v1", revision: "synthetic-use-review", revokedReviewIds: [],
+      reviews: Object.values(bindings).map(binding => ({ id: `review-${binding.targetKey}`, binding,
+        reviewedAt: "2026-09-27T00:00:00Z", expiresAt: "2026-09-30T00:00:00Z",
+        inputCutoffFrom: "2026-09-27T00:00:00Z", inputCutoffUntil: "2026-09-30T00:00:00Z",
+        allowedUses: { ...deniedRsoUses(), [binding.targetKey === "GOALS" ? "assignment" : "totals"]: true },
+      })) };
+    const data = fixture([{ ...rate, mean: 2 }, { ...rate, targetKey: "ASSISTS", mean: 0 }], [detailed({
+      stats: { GOALS: 1, ASSISTS: 0 }, conditionalStats: { GOALS: 2, ASSISTS: 0 }, rsoTargetBindings: bindings,
+    })]);
+    return { data, policy };
+  }
+  it("keeps target/use permissions independent, retains a true zero and weights participation once", () => {
+    const { data, policy } = reviewed();
+    const resolved = resolvePlanningContributions(data, { consumer: "rso", usePolicy: policy });
+    const row = resolved.forecasts[0];
+    expect(row.stats).toMatchObject({ GOALS: null, ASSISTS: 0 });
+    expect(row.assignmentStats).toMatchObject({ GOALS: 1, ASSISTS: null });
+    expect(forecastAllows(row, "GOALS", "comparison")).toBe(false);
+    expect(forecastAllows(row, "ASSISTS", "comparison")).toBe(false);
+    expect(row.contributions?.GOALS.inputs?.participation?.probability).toBe(0.5);
+    const retained = resolvePlanningContributions(JSON.parse(JSON.stringify(resolved)), { consumer: "rso", usePolicy: policy });
+    expect(retained.forecasts).toEqual(resolved.forecasts);
+  });
+  it.each(["missing", "revoked", "expired_now", "changed_policy", "changed_binding", "invented_flags"])
+  ("does not retain or manufacture approval after %s", kind => {
+    const { data, policy } = reviewed();
+    const saved = JSON.parse(JSON.stringify(resolvePlanningContributions(data, { consumer: "rso", usePolicy: policy }))) as PlanningSnapshot;
+    const current = structuredClone(policy);
+    if (kind === "missing") current.reviews = [];
+    if (kind === "revoked") current.revokedReviewIds = policy.reviews.map(row => row.id);
+    if (kind === "expired_now") vi.setSystemTime(new Date("2026-09-30T00:00:00Z"));
+    if (kind === "changed_policy") {
+      saved.forecastManifest = { version: "planning-forecasts-v1", id: "old", seasonId: 20262027, asOf: now,
+        scheduleRevision: "s", rosterRevision: "r", issuedRevisionIds: ["detail-1"], baselineChecksum: null,
+        requiredOpportunities: 1, forecastedOpportunities: 1, exclusionCounts: {},
+        rsoUsePolicy: { version: "rso-target-use-v1", revision: policy.revision, bridgeRevisionIds: [] } };
+      current.revision = "new-revision-same-counts";
+    }
+    if (kind === "changed_binding") for (const binding of Object.values(saved.forecasts[0].rsoTargetBindings!)) binding.artifactHash = "c".repeat(64);
+    if (kind === "invented_flags") {
+      current.reviews = [];
+      saved.forecasts[0].allowedUses = { assignment: true, totals: true, comparison: true, conditionalTieBreak: true };
+      for (const row of Object.values(saved.forecasts[0].contributions!)) {
+        row.allowedUses = saved.forecasts[0].allowedUses;
+        row.inputs!.detailed!.released = true;
+        row.inputs!.detailed!.allowedUses = saved.forecasts[0].allowedUses;
+      }
+    }
+    const row = resolvePlanningContributions(saved, { consumer: "rso", usePolicy: current }).forecasts[0];
+    expect(row.stats).toMatchObject({ GOALS: null, ASSISTS: null });
+    expect(row.assignmentStats).toMatchObject({ GOALS: null, ASSISTS: null });
+    expect(row.contributions?.GOALS.exclusionReasons).toContain("use_not_approved");
+  });
+  it("does not choose a permissive baseline because a present detailed target lacks permission", () => {
+    const { data } = reviewed();
+    data.participationSources = [modeledParticipation()];
+    const row = resolvePlanningContributions(data, { consumer: "rso" }).forecasts[0];
+    expect(row.contributions?.GOALS.sourceIds).toContain("detail-1");
+    expect(row.stats.GOALS).toBeNull();
+    expect(row.assignmentStats?.GOALS).toBeNull();
+  });
+  it("preserves the separately qualified native rate and modeled-participation path", () => {
+    const data = fixture([{ ...rate, policyVersion: "skater-baseline-rates-v1" }]);
+    data.participationSources = [modeledParticipation()];
+    const resolved = resolvePlanningContributions(data, { consumer: "rso" });
+    expect(resolved.forecasts[0].stats.GOALS).toBe(0.5);
+    expect(resolvePlanningContributions(JSON.parse(JSON.stringify(resolved)), { consumer: "rso" }).forecasts[0].stats.GOALS).toBe(0.5);
   });
 });

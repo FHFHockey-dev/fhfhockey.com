@@ -40,7 +40,7 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
     const source = await mocks.select.mock.results[0].value;
     expect(source).toMatchObject({ kind: "legacy", reason: "native_not_activated" });
     expect(mocks.load).toHaveBeenCalledExactlyOnceWith(mocks.db, { seasonId: 20262027, startDate: query.startDate, endDate: query.endDate },
-      { now: new Date(), source, forgeDailyBridge: true });
+      { now: new Date(), source, forgeDailyBridge: true, consumer: "rso" });
     expect(res.headers["Cache-Control"]).toBe("public, s-maxage=300, stale-while-revalidate=300");
     expect(res.body.forecastSource).toEqual({ kind: "legacy", headRevision: null, expiresAt: null, reason: "native_not_activated" });
     expect(decodePlanningDataTransport(res.body.data)).toEqual(data);
@@ -50,7 +50,7 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
     mocks.select.mockResolvedValue(native);
     const res = await request();
     expect(mocks.select).toHaveBeenCalledTimes(1);
-    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source: native, forgeDailyBridge: true });
+    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source: native, forgeDailyBridge: true, consumer: "rso" });
     expect(res.headers["Cache-Control"]).toBe("public, s-maxage=60, stale-while-revalidate=0");
     expect(res.body.forecastSource).toEqual({ kind: "native", headRevision: 3, expiresAt: native.expiresAt, reason: null });
     expect(decodePlanningDataTransport(res.body.data)).toEqual(data);
@@ -60,7 +60,7 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
     const source = { kind, reason: "native_catalog_expired", environment: { PLAYER_FORECAST_BASELINE_RELEASE_IDS: "" } };
     mocks.select.mockResolvedValue(source);
     const res = await request();
-    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source, forgeDailyBridge: true });
+    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source, forgeDailyBridge: true, consumer: "rso" });
     expect(res.headers["Cache-Control"]).toBe("public, s-maxage=300, stale-while-revalidate=300");
     expect(res.body.forecastSource).toEqual({ kind, headRevision: null, expiresAt: null, reason: "native_catalog_expired" });
   });
@@ -72,6 +72,20 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
     mocks.load.mockRejectedValue(new Error("fixture-secret-database-url"));
     const failed = await request();
     expect(failed.code).toBe(503); expect(JSON.stringify(failed.body)).not.toContain("fixture-secret");
+  });
+
+  it("does not cache permission-bearing responses across policy revocation", async () => {
+    mocks.select.mockResolvedValue(native);
+    mocks.load.mockResolvedValue({ ...data, forecastManifest: { version: "planning-forecasts-v1", id: "synthetic-policy-1",
+      seasonId: 20262027, asOf: new Date().toISOString(), rsoUsePolicy: { version: "rso-target-use-v1", revision: "synthetic-policy-1", bridgeRevisionIds: [] } } });
+    const first = await request();
+    expect(first.headers["Cache-Control"]).toBe("private, no-store");
+    mocks.load.mockResolvedValue({ ...data, forecastManifest: { ...first.body.data.data.forecastManifest, id: "synthetic-policy-2",
+      rsoUsePolicy: { version: "rso-target-use-v1", revision: "synthetic-policy-2", bridgeRevisionIds: [] } } });
+    const revoked = await request();
+    expect(revoked.headers["Cache-Control"]).toBe("private, no-store");
+    expect(revoked.body.data.data.forecastManifest.id).toBe("synthetic-policy-2");
+    expect(mocks.load).toHaveBeenCalledTimes(2);
   });
 
   it("sends interim bridge projections compactly beside the strict transport, rebuilt exactly by the client", async () => {
@@ -122,4 +136,19 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
     expect(rebuilt).toHaveLength(kept);
     expect(rebuilt[0].limitations.at(-1)).toBe(`Interim projections were trimmed to the first ${kept} of 7200 player-games to fit the planning response; later games stay schedule-only.`);
   });
+  it("echoes the exact current generation and server evaluation instant without shared caching", async () => {
+    const firstNonce = "00000000-0000-4000-8000-000000000001", secondNonce = "00000000-0000-4000-8000-000000000002";
+    const first = await request({ headers: { "x-rso-read-nonce": firstNonce } });
+    expect(first.body.read).toEqual({ nonce: firstNonce, evaluatedAt: "2026-10-15T12:00:00.000Z" });
+    expect(first.headers["Cache-Control"]).toBe("private, no-store");
+    vi.setSystemTime(new Date("2026-10-15T12:00:05Z"));
+    const second = await request({ headers: { "x-rso-read-nonce": secondNonce } });
+    expect(second.body.read).toEqual({ nonce: secondNonce, evaluatedAt: "2026-10-15T12:00:05.000Z" });
+    expect(mocks.load).toHaveBeenCalledTimes(2);
+  });
+  it.each(["bad", ["00000000-0000-4000-8000-000000000001"]])("rejects malformed read correlation before selecting sources: %j", async nonce => {
+    const res = await request({ headers: { "x-rso-read-nonce": nonce } });
+    expect(res.code).toBe(400); expect(mocks.select).not.toHaveBeenCalled();
+  });
+
 });

@@ -319,7 +319,7 @@ export async function loadYahooPlanningSnapshot(args: {
     } catch (error) { optionalFailure(error); return { date, rows: null }; }
   }));
   const [data, rosterResponse, scoreboardResult, leagueRosterResult, leagueResult, teamResult] = await Promise.all([
-    loadPlanningData(db, { ...query, timeZone }, { now, forgeDailyBridge: true }),
+    loadPlanningData(db, { ...query, timeZone }, { now, forgeDailyBridge: true, consumer: "rso" }),
     readRequiredPlanningResource(() => fetchYahooBoardResource({ ...provider, resource: { type: "roster", teamKey: team.external_team_key, date: today } })),
     fetchYahooPlanningResource({ ...provider, resource: { type: "scoreboard" } }).then(value => value, optionalFailure),
     fetchYahooBoardResource({ ...provider, resource: { type: "league_rosters" } }).then(value => value, optionalFailure),

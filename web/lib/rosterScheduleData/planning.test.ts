@@ -8,6 +8,7 @@ import { loadGameExpectations } from "lib/player-forecasts/gameExpectationReader
 import { loadPlanningData, normalizePlanningGames, parsePlanningDataQuery, publicPlanningForecasts } from "./planning";
 import type { ContributionPlanningSnapshot, ForecastDiscoveryExclusion, PlanningPlayer } from "lib/rosterScheduleOptimizer/planningTypes";
 import { resolvePlanningContributions } from "lib/player-forecasts/planningContributions";
+import { forecastAllows } from "lib/rosterScheduleOptimizer/planning";
 import { buildGoalieParticipationReceipt, buildFrozenWindowGoalieParticipationReceipt, buildFrozenWindowGoalieStartReceipt, type GoalieParticipationInput, buildRosterObservationGoalieParticipationReceipt, buildRosterObservationGoalieStartReceipt } from "lib/player-forecasts/modeledGoalieParticipation";
 import { GOALIE_PARTICIPATION_DATASET, FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET, FROZEN_WINDOW_GOALIE_START_DATASET, type GoalieParticipationBundle, ROSTER_OBSERVATION_GOALIE_PARTICIPATION_DATASET, ROSTER_OBSERVATION_GOALIE_START_DATASET } from "lib/player-forecasts/modeledGoalieParticipationStore";
 import { buildSkaterParticipationReceipt, buildFrozenWindowSkaterParticipationReceipt, type SkaterParticipationInput, buildRosterObservationSkaterParticipationReceipt } from "lib/player-forecasts/modeledSkaterParticipation";
@@ -153,6 +154,38 @@ describe("public RSO data boundary", () => {
   const publicQuery = { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-11" };
   const publicOptions = { now: new Date("2026-10-10T12:00:00Z"), forecastsEnabled: false };
 
+  it.each(["goalie", "skater"] as const)("P07 denies unreviewed %s quality after selection without bridge fallback or Start Chart changes", async kind => {
+    const { db, tables, calls } = newsDb([]);
+    const issued = revision([{ playerId: 847001, startingProbability: 0.5, conditional: { SAVES_GOALIE: 30 } }]);
+    let target = "SAVES_GOALIE", expected = 15;
+    if (kind === "skater") {
+      tables.fhfh_player_identities = [{ id: 7, nhl_player_id: 847001, canonical_name: "Skater", canonical_position: "L" }];
+      issued.payload.goalies = []; issued.payload.modelMode = "candidate"; issued.payload.codeVersion = "synthetic-unreviewed-candidate";
+      issued.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, horizon_games: 1,
+        as_of_date: "2026-10-10", run_id: "run-1", proj_hits: 3,
+        uncertainty: { model: { skater_selection: scopedSkaterSelection(issued) } } }];
+      target = "HITS"; expected = 3;
+    }
+    db.rpc.mockReturnValue(rpcResponse({ data: [issued], error: null }));
+    const options = { ...publicOptions, forecastsEnabled: true, forgeDailyBridge: true,
+      source: { kind: "legacy" as const, reason: "native_not_activated" as const, environment: {} } };
+    const shared = await loadPlanningData(db as never, publicQuery, { ...options, consumer: "start_chart" });
+    expect(shared.forecasts[0].stats[target]).toBe(expected);
+    expect(forecastAllows(shared.forecasts[0], target, "totals")).toBe(true);
+    calls.length = 0;
+    const restricted = await loadPlanningData(db as never, publicQuery, { ...options, consumer: "rso" });
+    expect(restricted.forecasts).toHaveLength(1);
+    expect(restricted.forecasts[0].revisionId).toBe("issued-1");
+    for (const use of ["assignment", "totals", "comparison", "conditionalTieBreak"] as const)
+      expect(forecastAllows(restricted.forecasts[0], target, use)).toBe(false);
+    expect(restricted.forecastManifest?.exclusions).toContainEqual({ gameId: "2026020001", playerId: "7", targetKey: target, reasons: ["use_not_approved"] });
+    expect(calls.some(call => call.table === "forge_runs")).toBe(false);
+    const roundTrip = decodePlanningDataTransport(JSON.parse(JSON.stringify(encodePlanningDataTransport(restricted))));
+    expect(roundTrip.forecastManifest).toEqual(restricted.forecastManifest);
+    expect(roundTrip.forecasts).toEqual(restricted.forecasts);
+    expect((await loadPlanningData(db as never, publicQuery, { ...options, consumer: "start_chart" })).forecasts).toEqual(shared.forecasts);
+  });
+
   it("keeps fresh ownership (0% included) as the value and a stale reading only as labelled last-known evidence (R7 W2)", async () => {
     const { db, tables } = formDb([], []);
     tables.yahoo_nhl_player_map_read = [{ nhl_player_id: 847001, yahoo_player_id: 55 }];
@@ -181,12 +214,16 @@ describe("public RSO data boundary", () => {
         proj_goals_es: 0.3, proj_goals_pp: 0.1, proj_assists_es: 0.4, proj_assists_pp: 0.1, proj_shots_es: 2, proj_shots_pp: 0.5,
         proj_toi_es_seconds: 900, proj_toi_pp_seconds: 120, proj_hits: 1, proj_blocks: 0.4 }],
       forge_goalie_projections: [], goalie_start_projections: [] });
-    const bridged = await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true });
+    const bridged = await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true, consumer: "rso" });
     expect(bridged.forecasts).toEqual([expect.objectContaining({ playerId: "7", gameId: "2026020001",
       revisionId: "forge-daily-bridge-v1:run-b", stats: expect.objectContaining({ GOALS: 0.4, POINTS: 0.9 }) })]);
     expect(bridged.evidence.forecasts.source).toBe("Interim FORGE daily projections");
     expect(bridged.forecastManifest).toMatchObject({ issuedRevisionIds: ["forge-daily-bridge-v1:run-b"], forecastedOpportunities: 1 });
     expect(bridged.forecastManifest?.exclusionCounts.serving_disabled).toBeUndefined();
+    expect(bridged.forecastManifest?.rsoUsePolicy?.bridgeRevisionIds).toEqual(["forge-daily-bridge-v1:run-b"]);
+    const resolved = resolvePlanningContributions({ ...bridged, context: { ...publicQuery, asOf: publicOptions.now.toISOString() } }, { consumer: "rso" });
+    // Loader output is serializable evidence; numeric authority is minted only by the current-read execution boundary.
+    expect(forecastAllows(resolved.forecasts[0], "GOALS", "totals")).toBe(false);
     expect((await loadPlanningData(db as never, publicQuery, publicOptions)).forecasts).toEqual([]);
     expect((await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true,
       source: { kind: "empty", reason: "native_catalog_expired", environment: {} } })).forecasts).toEqual([]);

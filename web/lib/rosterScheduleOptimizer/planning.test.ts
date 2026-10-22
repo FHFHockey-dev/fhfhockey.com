@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
 import { candidateAcquisitionSteps, candidateMetrics, candidateActivePoints, candidateHorizonPoints, evaluatePlan, planRoster, scheduleFits, swapCategoryBreakdown } from "./planning";
 import { comparePlanSensitivity } from "../player-forecasts/planComparison";
 import { snapshotSchema } from "../in-season/workspaceSchema";
@@ -8,6 +9,24 @@ import { candidatePlanForSort, candidatePlanMetrics, ownershipBrokeTie } from ".
 import { lineupGapReport } from "./lineupGaps";
 import { acquisitionEffectiveAt, buildTimeline } from "./planningTimeline";
 import type { GameForecast, PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
+
+// Algorithm fixtures have explicit fictional reviews. Production catalog stays empty;
+// the policy-denial cases below remove these bindings and use the real resolver.
+const reviewedTargets = ["pts", "made", "attempts", "GOALS", "ASSISTS", "SHOTS", "HITS", "BLOCKS", "PENALTY_MINUTES",
+  "SAVES_GOALIE", "SHOTS_AGAINST_GOALIE", "GOALS_AGAINST_GOALIE", "GOALIE_MINUTES", "WINS_GOALIE", "SHUTOUTS_GOALIE",
+  "saves", "shotsAgainst", "goalsAgainst", "minutes", "g", "h", "unused"];
+const fixtureBindings = Object.fromEntries(reviewedTargets.map(targetKey => [targetKey, {
+  component: "fictional-planner", modelMode: "synthetic", codeVersion: "fixture-v1",
+  configurationHash: "a".repeat(64), artifactHash: "b".repeat(64), targetKey, horizonGames: 1,
+  conditioning: "synthetic-unconditional", participationLineage: "synthetic-only", cutoffAt: "2026-10-04T00:00:00Z",
+}]));
+const fixturePolicy: rsoPolicy.RsoUsePolicy = { version: "rso-target-use-v1", revision: "fictional-planner-reviews",
+  revokedReviewIds: [], reviews: reviewedTargets.map(targetKey => ({ id: `fictional-${targetKey}`,
+    binding: fixtureBindings[targetKey], reviewedAt: "2026-09-01T00:00:00Z", expiresAt: "2026-11-01T00:00:00Z",
+    inputCutoffFrom: "2026-09-01T00:00:00Z", inputCutoffUntil: "2026-11-01T00:00:00Z",
+    allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: true },
+  })) };
+beforeEach(() => vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(fixturePolicy));
 
 const fixtureId = (value: string) => [...value].reduce((id, char) => (id * 31 + char.charCodeAt(0)) % 100000000, 1) + 1;
 const player = (id: string, team: string, availability: PlanningPlayer["availability"] = "rostered"): PlanningPlayer => ({
@@ -19,7 +38,7 @@ const intent: PlanIntent = { revision: 3, steps: [], protectedPlayerIds: [], exc
 function issuedForecast(data: PlanningSnapshot, playerId: string, gameId: string, overrides: Partial<GameForecast> = {}): GameForecast {
   const member = data.players.find(row => row.id === playerId)!;
   const game = data.games.find(row => row.id === gameId && row.teamAbbreviation === member.teamAbbreviation)!;
-  return { playerId, gameId, stats: { pts: playerId === "a" ? 1 : 2 }, conditioning: "unconditional",
+  return { playerId, gameId, rsoTargetBindings: structuredClone(fixtureBindings), stats: { pts: playerId === "a" ? 1 : 2 }, conditioning: "unconditional",
     sourceKind: "detailed", sourceWatermark: "fixture-inputs", cutoffAt: "2026-10-04T00:00:00Z",
     issuedAt: "2026-10-04T00:00:00Z", expiresAt: game.startsAt!, modelVersion: "fixture-v1", revisionId: "r",
     issuedContext: { version: "forge-issued-context-v1", playerId, gameId, nhlPlayerId: member.nhlId!,
@@ -1933,5 +1952,33 @@ describe("ownership provenance in saved snapshots (R7 W2)", () => {
       .toEqual({ value: 40, observedOn: "2026-10-07", provider: "yahoo", status: "stale" });
     const legacy = snapshot();
     expect(snapshotSchema.parse(JSON.parse(JSON.stringify(legacy))).players[0].ownershipEvidence).toBeUndefined();
+  });
+});
+
+
+describe("P07 planner denial", () => {
+  it("retains legal capacity, manager locks and realized results without inventing zero quality", () => {
+    const data = snapshot();
+    data.forecasts = data.forecasts.map(({ rsoTargetBindings: _binding, ...row }) => row);
+    data.realized = { pts: 7 };
+    data.lockedAssignments = [{ date: "2026-10-05", playerId: "a", slotId: "C#1", source: "manager" }];
+    const before = JSON.stringify(data), result = evaluatePlan(data, intent, "outcome");
+    expect(result.legal).toBe(true);
+    expect(result.activeGames).toBe(2);
+    expect(result.assignments).toContainEqual(expect.objectContaining({ playerId: "a", locked: true }));
+    expect(result.projectedValue).toBeNull();
+    expect(result.projectedStats.pts).toBeNull();
+    expect(result.comparisonEligible).toBe(false);
+    expect(result.recommendation).toMatchObject({ eligible: false, mode: "schedule_capacity" });
+    expect(JSON.stringify(data)).toBe(before);
+    expect(data.realized.pts).toBe(7);
+  });
+  it("cannot turn one unreviewed required competitor into a complete recommendation", () => {
+    const data = snapshot();
+    data.forecasts = data.forecasts.map(row => row.playerId === "b" ? { ...row, rsoTargetBindings: undefined } : row);
+    const result = evaluatePlan(data, intent, "outcome");
+    expect(result.legal).toBe(true);
+    expect(result.comparisonEligible).toBe(false);
+    expect(result.recommendation?.eligible).toBe(false);
   });
 });

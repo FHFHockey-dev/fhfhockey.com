@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { saveWorkspaceSchema, workspaceQuerySchema } from "./workspaceSchema";
+import { deniedRsoUses, restrictRsoForecast } from "../player-forecasts/rsoUsePolicy";
 
 const context = { provider: "manual", seasonId: 20262027, leagueId: "league", teamId: "team", startDate: "2026-10-01", endDate: "2026-10-07", timeZone: "America/New_York", asOf: "2026-10-01T12:00:00Z" };
 const rules = { lineupMode: "daily", rosterSlots: { C: 1 }, lineupPeriods: [{ id: "week", start: "2026-10-01T00:00:00Z", end: "2026-10-08T00:00:00Z", lockAt: null }], acquisitionTiming: "unknown", acquisitionCost: null, periods: [], scoring: { mode: "points", weights: {}, categories: [] }, goalieMinimum: { required: null, credited: null, periodStart: "2026-10-01", periodEnd: "2026-10-07", counts: "unknown", penalty: "unknown" }, unsupported: [] };
@@ -293,4 +294,26 @@ describe("saved in-season workspace validation", () => {
     const badOwnership = { ...workspace, manualPlayers: [{ id: "p", nhlId: null, name: "Player", teamAbbreviation: null, eligiblePositions: [], playerClass: "skater", availability: "unknown", ownership: 101, canDrop: null, holdValue: null, reserveEligibility: [] }] };
     expect(saveWorkspaceSchema.safeParse({ workspace: badOwnership, snapshot, expectedVersion: null }).success).toBe(false);
   });
+});
+
+
+it("retains P07 scope through saved JSON without treating valid claims as approval", () => {
+  const uses = { assignment: true, totals: true, comparison: true, conditionalTieBreak: true };
+  const forecast = { playerId: "7", gameId: "31", stats: { HITS: 0 }, conditioning: "unconditional",
+    startProbability: null, confirmedStart: false, revisionId: "synthetic-unreviewed", issuedAt: context.asOf,
+    cutoffAt: context.asOf, expiresAt: "2026-10-08T00:00:00Z", modelVersion: "synthetic-code", limitations: [],
+    allowedUses: uses, targetAllowedUses: { HITS: uses }, rsoTargetBindings: { HITS: {
+      component: "fictional", modelMode: "candidate", codeVersion: "synthetic-code", configurationHash: "a".repeat(64),
+      artifactHash: "b".repeat(64), targetKey: "HITS", horizonGames: 1, conditioning: "conditional_playing",
+      participationLineage: "synthetic-participation", cutoffAt: context.asOf,
+    } } };
+  const original = { ...snapshot, forecasts: [forecast] };
+  const parsed = saveWorkspaceSchema.parse(JSON.parse(JSON.stringify({ workspace, snapshot: original, expectedVersion: null })));
+  expect(parsed.snapshot?.forecasts).toEqual([forecast]);
+  const row = restrictRsoForecast(parsed.snapshot!.forecasts[0], undefined, context.asOf);
+  expect(row.targetAllowedUses?.HITS).toEqual(deniedRsoUses());
+  expect(row.stats.HITS).toBe(0); // retained evidence is not permission or a missing value
+  const claimed = structuredClone(original);
+  Object.assign(claimed.forecasts[0].rsoTargetBindings.HITS, { approved: true });
+  expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: claimed, expectedVersion: null }).success).toBe(false);
 });

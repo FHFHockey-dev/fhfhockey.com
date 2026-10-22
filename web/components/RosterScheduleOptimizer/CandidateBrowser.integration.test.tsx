@@ -5,7 +5,7 @@ import type { PlanIntent, PlanningSnapshot } from "lib/rosterScheduleOptimizer/p
 import { defaultWorkspace } from "lib/rosterScheduleOptimizer/workspace";
 import CandidateBrowser from "./CandidateBrowser";
 
-type Packet = { snapshot: PlanningSnapshot; intent: PlanIntent; options?: CandidatePlanOptions };
+type Packet = { snapshot: PlanningSnapshot; intent: PlanIntent; candidateOptions?: CandidatePlanOptions };
 // Exercise the real hook/message/solver/UI path in isolation; browser Worker packaging is outside this test.
 class LocalCandidateWorker {
   static instances: LocalCandidateWorker[] = [];
@@ -16,7 +16,7 @@ class LocalCandidateWorker {
     const copied = structuredClone(packet);
     queueMicrotask(() => {
       if (this.stopped) return;
-      try { this.onmessage?.({ data: { metrics: candidatePlanMetrics(copied.snapshot, copied.intent, copied.options) } }); }
+      try { this.onmessage?.({ data: { metrics: candidatePlanMetrics(copied.snapshot, copied.intent, copied.candidateOptions) } }); }
       catch { this.onmessage?.({ data: { error: "Candidate comparisons could not complete." } }); }
     });
   });
@@ -84,7 +84,7 @@ it("carries the652known197unknown pool through the worker and keeps browsing sep
   fireEvent.click(screen.getByRole("button", { name: "Compare this player" }));
   await waitFor(() => expect(reasons().queryByText(/wasn't compared automatically/)).toBeNull());
   expect(LocalCandidateWorker.instances).toHaveLength(2);
-  expect(LocalCandidateWorker.instances[1].postMessage.mock.calls[0][0].options).toEqual({ requestedPlayerIds: ["known-651"] });
+  expect(LocalCandidateWorker.instances[1].postMessage.mock.calls[0][0].candidateOptions).toEqual({ requestedPlayerIds: ["known-651"] });
   expect(screen.queryByRole("button", { name: "Compare this player" })).toBeNull();
   expect(props.add).not.toHaveBeenCalled(); expect(props.selectPlan).not.toHaveBeenCalled();
   expect(JSON.stringify({ snapshot: props.snapshot, intent: props.intent })).toBe(before);

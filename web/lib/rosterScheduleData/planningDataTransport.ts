@@ -16,6 +16,9 @@ export type PlanningDataTransport = { version: typeof PLANNING_DATA_TRANSPORT_VE
 const finite = z.number().finite(), index = finite.int().nonnegative(), positive = index.positive();
 const clock = z.string().refine(value => Number.isFinite(Date.parse(value))), strings = z.array(z.string());
 const uses = z.object({ assignment: z.boolean(), totals: z.boolean(), comparison: z.boolean(), conditionalTieBreak: z.boolean() }).strict();
+const rsoTargetBinding = z.object({ component: z.string().min(1), modelMode: z.string().min(1), codeVersion: z.string().min(1),
+  configurationHash: z.string().regex(/^[a-f0-9]{64}$/).nullable(), artifactHash: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
+  targetKey: z.string().min(1), horizonGames: positive, conditioning: z.string().min(1), participationLineage: z.string().min(1).nullable(), cutoffAt: clock }).strict();
 const powerPlayRole = z.discriminatedUnion("status", [
   z.object({ value: z.null(), source: z.null(), status: z.literal("unavailable"), reason: z.literal("current_role_evidence_unavailable") }).strict(),
   z.object({ value: z.null(), source: z.null(), status: z.literal("not_applicable"), reason: z.literal("not_applicable") }).strict(),
@@ -50,13 +53,16 @@ const dataShape = z.object({ players: z.array(z.object({ id: z.string(), nhlId: 
     home: z.boolean(), status: z.enum(["scheduled", "live", "final", "postponed", "cancelled"]) }).passthrough()),
   forecasts: rows(z.object({ playerId: z.string(), gameId: z.string(), revisionId: z.string(), stats: z.record(finite.nullable()),
     allowedUses: uses.optional(), appearanceProbability: finite.min(0).max(1).nullable().optional(),
+    targetAllowedUses: z.record(uses).optional(), rsoTargetBindings: z.record(rsoTargetBinding).optional(),
     powerPlayRole: powerPlayRole.optional(),
     startProbability: finite.min(0).max(1).nullable(), confirmedStart: z.boolean(), conditioning: z.literal("unconditional"),
     issuedAt: clock, cutoffAt: clock.optional(), expiresAt: clock.optional(), modelVersion: z.string().nullable(), limitations: strings,
     startParticipation: participant.optional() }).passthrough()),
   baselineSources: rows(source).optional(),
   participationSources: rows(z.unknown()).optional(), forecastManifest: z.object({ version: z.literal("planning-forecasts-v1"), id: z.string(),
-    seasonId: positive, asOf: clock }).passthrough().optional(),
+    seasonId: positive, asOf: clock,
+    rsoUsePolicy: z.object({ version: z.literal("rso-target-use-v1"), revision: z.string().min(1), bridgeRevisionIds: strings }).strict().optional(),
+  }).passthrough().optional(),
   evidence: z.record(z.object({ source: z.string(), asOf: clock.nullable(), seasonId: positive.nullable(),
     completeness: z.enum(["complete", "partial", "unknown"]), limitations: strings }).strict()),
   matchupWeeks: rows(z.object({ gameKey: z.string(), week: positive, startDate: z.string(), endDate: z.string() }).strict()).optional() }).strict();

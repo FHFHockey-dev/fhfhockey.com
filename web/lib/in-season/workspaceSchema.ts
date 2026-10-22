@@ -44,6 +44,9 @@ const contributionGame = z.object({ seasonId, gameId: positiveInteger, teamId: p
   scheduledAt: instant, scheduleRevision: id, rosterRevision: id,
   playerId: positiveInteger, nhlPlayerId: positiveInteger }).strict();
 const allowedUses = z.object({ assignment: z.boolean(), totals: z.boolean(), comparison: z.boolean(), conditionalTieBreak: z.boolean() }).strict();
+const rsoTargetBinding = z.object({ component: id, modelMode: id, codeVersion: id,
+  configurationHash: z.string().regex(/^[a-f0-9]{64}$/).nullable(), artifactHash: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
+  targetKey: id, horizonGames: positiveInteger, conditioning: id, participationLineage: id.nullable(), cutoffAt: instant }).strict();
 const calendarPolicy = z.object({ version: z.literal("forecast-calendar-v1"),
   calendarDays: z.number().int().min(1).max(21), overlapDays: z.literal(7), timeZone: z.literal("UTC") }).strict();
 const contributionSource = z.object({ kind: z.enum(["detailed", "baseline"]), sourceId: id,
@@ -89,6 +92,8 @@ const forecast = z.object({ playerId: id, gameId: id, stats: statLine,
     scheduleSourceUpdatedAt: instant.nullable(), scheduleFetchedAt: instant.nullable(),
     identityUpdatedAt: instant.nullable(), membershipCreatedAt: z.array(instant).max(100) }).strict().optional(),
   allowedUses: allowedUses.optional(), assignmentStats: statLine.optional(),
+  targetAllowedUses: z.record(z.string().min(1).max(50), allowedUses).optional(),
+  rsoTargetBindings: z.record(z.string().min(1).max(50), rsoTargetBinding).optional(),
   sourceKind: z.enum(["detailed", "baseline", "blended"]).optional(),
   conditionalStats: statLine.optional(), tieBreakStats: statLine.optional(),
   appearanceProbability: z.number().finite().min(0).max(1).nullable().optional(),
@@ -107,6 +112,7 @@ const forecastExclusionReason = z.enum(["serving_disabled", "no_issued_revision"
   "use_not_approved", "canary_excluded", "discovery_timeout", "discovery_failed", "incomplete_refresh", "eligibility_unverified",
   "game_mismatch", "invalid_cutoff", "no_usable_target", "conflicting_forecast"]);
 const forecastManifest = z.object({ version: z.literal("planning-forecasts-v1"), id,
+  rsoUsePolicy: z.object({ version: z.literal("rso-target-use-v1"), revision: id, bridgeRevisionIds: stringArray }).strict().optional(),
   calendarPolicy: calendarPolicy.optional(),
   acceptedNewsRevision: id.nullable().optional(),
   seasonId, asOf: instant, scheduleRevision: id, rosterRevision: id, issuedRevisionIds: stringArray,

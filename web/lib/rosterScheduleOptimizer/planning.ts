@@ -98,7 +98,7 @@ function applies(key: string, kind: "skater" | "goalie", applicability: Applicab
 }
 export function forecastAllows(forecast: GameForecast | null, key: string, use: "assignment" | "totals" | "comparison" | "conditionalTieBreak"): boolean {
   if (use !== "conditionalTieBreak" && forecast?.conditioning !== "unconditional") return false;
-  return (forecast?.contributions ? forecast.contributions[key]?.allowedUses[use] : forecast?.allowedUses?.[use]) === true;
+  return (forecast?.contributions ? forecast.contributions[key]?.allowedUses[use] : (forecast?.targetAllowedUses?.[key] ?? forecast?.allowedUses)?.[use]) === true;
 }
 export function assignmentStats(forecast: GameForecast): StatLine {
   return forecast.assignmentStats ?? forecast.stats;
@@ -194,7 +194,7 @@ export function swapCategoryBreakdown(snapshot: PlanningSnapshot, baseline: Plan
 /** Candidate horizon totals are separate from incremental active-game capacity.
  * Use the same source validation, stat applicability and permissions as plans. */
 export function candidateHorizonPoints(input: PlanningSnapshot): Map<string, number | null> {
-  const snapshot = sanitizeForecastInputs(resolvePlanningContributions(sanitizeForecastInputs(input)));
+  const snapshot = sanitizeForecastInputs(resolvePlanningContributions(sanitizeForecastInputs(input), { consumer: "rso" }));
   const applicability = statApplicability(snapshot);
   const forecasts = new Map(snapshot.forecasts.map(row => [`${row.playerId}:${row.gameId}`, row]));
   const points = new Map<string, number | null>();
@@ -578,7 +578,7 @@ export function scheduleAdmissionProblem(snapshot: PlanningSnapshot): string | n
   return `Schedule evidence observed ${iso(observed)} expired ${iso(observed + SCHEDULE_WITNESS_TTL_MS)}; planning time is ${iso(planning)}. Reload the schedule; a forecast refresh does not renew it.`;
 }
 function prepareEvaluation(snapshot: PlanningSnapshot, playerIds?: ReadonlySet<string>) {
-  snapshot = resolvePlanningContributions(sanitizeForecastInputs(snapshot), playerIds ? { playerIds } : undefined);
+  snapshot = resolvePlanningContributions(sanitizeForecastInputs(snapshot), { consumer: "rso", playerIds });
   const players = new Map(snapshot.players.map(player => [player.id, player]));
   const forecasts = new Map(snapshot.forecasts.filter(forecast => !forecast.expiresAt || Date.parse(forecast.expiresAt) > time(snapshot.context.asOf)).map(forecast => [`${forecast.playerId}:${forecast.gameId}`, forecast]));
   const applicability = statApplicability({ ...snapshot, forecasts: [...forecasts.values()] });
@@ -1219,7 +1219,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   snapshot = sanitizeForecastInputs(snapshot);
   const sourceSnapshot = snapshot;
   const relevantPlayerIds = new Set([...snapshot.roster.map(row => row.playerId), ...intent.steps.flatMap(step => [step.playerId, ...(step.dropPlayerId ? [step.dropPlayerId] : [])])]);
-  snapshot = resolvePlanningContributions(snapshot, { playerIds: relevantPlayerIds });
+  snapshot = resolvePlanningContributions(snapshot, { playerIds: relevantPlayerIds, consumer: "rso" });
   const maxEvaluations = Math.max(3, options.maxEvaluations ?? defaultWorkQuotas(snapshot).evaluations);
   const beamWidth = Math.max(2, options.beamWidth ?? 8);
   const maxCandidates = Math.max(1, options.maxCandidates ?? 40);
@@ -1259,7 +1259,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
     // No-move starts counted so far, a known lower bound even while the lineup is not yet legal.
     player => noMoveAgp.assignments.filter(row => row.playerId === player.id).length);
   candidates.forEach(player => relevantPlayerIds.add(player.id));
-  snapshot = resolvePlanningContributions(sourceSnapshot, { playerIds: relevantPlayerIds });
+  snapshot = resolvePlanningContributions(sourceSnapshot, { playerIds: relevantPlayerIds, consumer: "rso" });
   const limitations = new Set<string>();
   if (intent.objective === "outcome" && !outcomeEligible) limitations.add("Best projected points needs projections for your whole lineup; planning for most starts until then.");
   if (fitResult.timeLimitReached) limitations.add("Schedule-fit analysis reached its time budget; additional team/position targets remain unevaluated.");

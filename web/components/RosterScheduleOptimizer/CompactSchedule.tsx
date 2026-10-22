@@ -5,8 +5,6 @@ import { expandActiveSlots } from "lib/rosterScheduleOptimizer/slots";
 import { canEligibilityOccupySlot, normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
 import { lineupPeriodAtDate, localDate, nextLocalMidnight } from "lib/rosterScheduleOptimizer/planningDates";
 import { buildTimeline } from "lib/rosterScheduleOptimizer/planningTimeline";
-import { sanitizeForecastInputs } from "lib/rosterScheduleOptimizer/planning";
-import { resolvePlanningContributions } from "lib/player-forecasts/planningContributions";
 import type { LeagueRules, PastLineup, PlanIntent, PlanningAssignment, PlanningPlayer, PlanningSnapshot, RosterEntry } from "lib/rosterScheduleOptimizer/planningTypes";
 import styles from "./RosterScheduleOptimizer.module.scss";
 import type { PlayerContribution } from "lib/rosterScheduleOptimizer/contributionLedger";
@@ -188,7 +186,8 @@ export function ScheduleIdentity({ player }: { player: PlanningPlayer }) {
     onError={event => { event.currentTarget.src = fallbackTeamLogo; }} /><span>{player.name.split(" ").slice(1).join(" ") || player.name}</span></>;
 }
 
-export default function CompactSchedule({ snapshot, roster, rules, players, assignments, intent, dates, date, today, ready, selectDate, selectPlayer, benchOpen: controlledBenchOpen, onBenchChange, contributions }: {
+export default function CompactSchedule({ admittedSnapshot, snapshot, roster, rules, players, assignments, intent, dates, date, today, ready, selectDate, selectPlayer, benchOpen: controlledBenchOpen, onBenchChange, contributions }: {
+  admittedSnapshot?: PlanningSnapshot | null;
   snapshot: PlanningSnapshot | null; roster: RosterEntry[]; rules: LeagueRules; players: PlanningPlayer[];
   assignments: PlanningAssignment[]; intent: PlanIntent; dates: string[]; date: string; today: string; ready: boolean;
   selectDate: (date: string) => void; selectPlayer: (id: string) => void;
@@ -247,13 +246,7 @@ export default function CompactSchedule({ snapshot, roster, rules, players, assi
   }, [displayedRows, groups, benchOpen]);
   const assignedByDay = new Map(week.map(day => [day, new Set((day === date ? groups : compactGroups({ snapshot, roster, rules, players, assignments, intent, date: day, ready }))
     .flatMap(group => group.rows.filter(row => row.assigned).map(row => row.playerId)))]));
-  const goalieEvidence = useMemo(() => {
-    if (!snapshot) return null;
-    const goalies = snapshot.players.filter(player => player.playerClass === "goalie");
-    const ids = new Set(goalies.map(player => player.id));
-    return resolvePlanningContributions(sanitizeForecastInputs({ ...snapshot, players: goalies,
-      forecasts: snapshot.forecasts.filter(row => ids.has(row.playerId)), baselineSources: snapshot.baselineSources?.filter(row => ids.has(String(row.playerId))) }));
-  }, [snapshot]);
+  const goalieEvidence = admittedSnapshot?.id === snapshot?.id ? admittedSnapshot : null;
   const completeSchedule = snapshot?.evidence.schedule?.completeness === "complete";
   const gameLabel = (player: PlanningPlayer, day: string): { text: string; detail: string; assigned: boolean; goalie?: string } => {
     if (!dates.includes(day)) return { text: "—", detail: "Outside selected range", assigned: false };

@@ -1,4 +1,5 @@
 import type { ContributionAllowedUses, ContributionExclusion, ContributionParticipation, ContributionSource, ForecastCalendarPolicy, ResolvedContribution } from "../player-forecasts/contributions";
+import type { RsoTargetUseBinding, RsoUsePolicyManifest } from "../player-forecasts/rsoUsePolicy";
 import type { GameExpectationPowerPlayRole } from "../player-forecasts/gameExpectations";
 export type ForecastExclusionReason = ContributionExclusion | "canary_excluded" | "discovery_timeout"
   | "discovery_failed" | "incomplete_refresh" | "eligibility_unverified" | "game_mismatch"
@@ -84,6 +85,8 @@ export type GameForecast = {
   /** Opaque fingerprint of retained source reads; not a substitute for their cutoff timestamps. */
   sourceWatermark?: string;
   allowedUses?: ContributionAllowedUses;
+  targetAllowedUses?: Record<string, ContributionAllowedUses>;
+  rsoTargetBindings?: Record<string, RsoTargetUseBinding>;
   assignmentStats?: StatLine;
   sourceKind?: "detailed" | "baseline" | "blended";
   conditionalStats?: StatLine;
@@ -326,6 +329,7 @@ export type PlanningData = {
 };
 export type ForecastManifest = {
   version: "planning-forecasts-v1";
+  rsoUsePolicy?: RsoUsePolicyManifest;
   /** Omitted only for retained legacy snapshots. */
   calendarPolicy?: ForecastCalendarPolicy;
   /** Opaque accepted-event receipt hash; null means no verified receipt set. */

@@ -28,6 +28,6 @@ export function parseGameExpectationScope(query: Record<string, unknown>, now = 
 /** Shared server entry point for FORGE/consumer adapters. No generation, writes or private artifact reads. */
 export async function loadGameExpectations(db: SupabaseClient<any>, scope: GameExpectationScope, now = new Date(),
   options: { source?: ForecastServingSource } = {}) {
-  const data = await loadPlanningData(db, scope, { now, skipOwnership: true, skipRecentForm: true, source: options.source });
+  const data = await loadPlanningData(db, scope, { now, skipOwnership: true, skipRecentForm: true, source: options.source, consumer: "start_chart" });
   return buildGameExpectations(data, scope, now);
 }
