@@ -44,6 +44,12 @@
 -- is partial; this inventory correction does not establish complete ownership
 -- coverage or change the live schedule. Older SQL snippets remain historical.
 
+-- 2026-10-22: job 79 update-nst-gamelog (07:25 UTC) was unscheduled by explicit
+-- TJ approval. It was capped at 6 NST URLs per run (a day is 20), failed daily
+-- and duplicated the 10:05Z pipeline's upstream_skater_sources step, which
+-- fetches the previous day's NST gamelogs. Its 07:25 slot left
+-- NST_ACTIVE_DIRECT_CRON_STARTS. Gap repair is a manual /db/runner job.
+
 -- 2026-10-17 read-only reconciliation: job 234 daily-cron-report (21:15 UTC)
 -- was intentionally disabled at TJ's request; cron.job reads back
 -- active=false and its last run was 2026-10-15 21:15 UTC. The Vercel cron
@@ -131,9 +137,10 @@
     "jobname": "update-nst-gamelog",
     "schedule": "25 7 * * *",
     "run_time_utc": "07:25 UTC",
-    "active": true,
+    "active": false,
     "method": "GET",
-    "route": "/api/v1/db/update-nst-gamelog"
+    "route": "/api/v1/db/update-nst-gamelog",
+    "verification": "Unscheduled 2026-10-22 (cron.unschedule(79)) by explicit TJ approval after the 10-07..10-18 NST backfill was confirmed. The 10:05Z run-rolling-forge-pipeline upstream_skater_sources step fetches the previous day's NST gamelogs. Rollback: reschedule the same Vault-bearer GET at 25 7 * * *."
   },
   {
     "jobid": 9,

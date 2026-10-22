@@ -46,7 +46,6 @@ describe("scheduled cron audit coverage", () => {
     );
 
     expect(manualRoutes).toEqual([
-      "/api/v1/db/update-nst-gamelog",
       "/api/v1/db/update-wgo-goalies",
       "/api/v1/db/update-wgo-skaters",
       "/api/v1/db/update-wgo-totals",
@@ -77,22 +76,23 @@ describe("scheduled cron audit coverage", () => {
     // scheduled only by the Vercel 0 13 * * * cron, outside this pg_cron set.
     // 2026-10-21: job 393 (run-projection-v2?horizonGames=5) was unscheduled;
     // run-projection-v2 has no other active pg_cron owner.
-    // 2026-10-22: job 399 (route-runner-tick, cron-only) was scheduled after R21.
-    expect(authFindings).toHaveLength(46);
+    // 2026-10-22: job 399 (route-runner-tick, cron-only) was scheduled after R21,
+    // and job 79 (update-nst-gamelog, its route's only pg_cron owner) was unscheduled.
+    expect(authFindings).toHaveLength(45);
     expect(
       authFindings.reduce(
         (jobCount, finding) => jobCount + finding.jobNames.length,
         0,
       ),
-    ).toBe(50);
+    ).toBe(49);
     expect(modeCounts).toEqual({
-      "admin-or-cron": 46,
+      "admin-or-cron": 45,
     });
     expect(callerCounts).toEqual({
       "browser-admin": 5,
       "browser-admin-and-internal": 4,
       "cron-only": 27,
-      "internal-server": 10,
+      "internal-server": 9,
     });
     expect(authFindings.some((finding) => finding.routePath === "/api/v1/db/cron-report")).toBe(false);
     const vercelConfig = JSON.parse(fs.readFileSync(path.resolve(webRoot, "vercel.json"), "utf8"));

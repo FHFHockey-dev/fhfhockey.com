@@ -28,7 +28,6 @@ describe("nstCoordination", () => {
 
   it("confirms every active NST cron start has ten minutes of clearance", () => {
     for (const jobName of [
-      "update-nst-gamelog",
       "update-nst-goalies",
       "update-nst-current-season",
       "update-nst-team-daily-incremental",

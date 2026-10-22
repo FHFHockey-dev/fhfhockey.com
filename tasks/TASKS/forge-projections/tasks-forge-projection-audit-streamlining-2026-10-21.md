@@ -71,10 +71,13 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
   - [x] 5.2 Decide with TJ on job 278 (08:15Z rolling, implicit 14-day window): (a) unschedule it, (b) narrow it to `startDate=endDate=run−1`, or (c) move it to a weekly run that still revisits late-arriving source days.
   - [x] 5.3 Apply the job 278 decision and record it in `cron-schedule.md`; update the frozen cron counts if the active set changes.
   - [x] 5.4 Move job 329 (`update-nst-team-stats-all`, 10:55Z) to before the 10:05Z pipeline, spaced from the 07:25, 08:30, 08:45 and 09:55 NST consumers within the NST limits. Get TJ's approval, apply, and record it.
-  - [ ] 5.5 After 6.0 confirms the backfill, unschedule job 79 (the 07:25Z 6-URL NST job; the pipeline's NST step covers the previous day) with TJ's approval. Record it and write a cross-platform note to Codex as the route owner.
+  - [x] 5.5 After 6.0 confirms the backfill, unschedule job 79 (the 07:25Z 6-URL NST job; the pipeline's NST step covers the previous day) with TJ's approval. Record it and write a cross-platform note to Codex as the route owner.
+    - Unscheduled 2026-10-22 ~14:40Z by TJ's approval (read-back: no job 79, no pg_cron job calls the gamelog route). Recorded in `cron-schedule.md`; 07:25 slot removed from `NST_ACTIVE_DIRECT_CRON_STARTS`; cron counts pg_cron 57 / total 87. Note: `tasks/artifacts/cross-platform/2026-10-22-claude-to-codex-nst-gamelog-job79-retired.md`.
 
 - [ ] 6.0 NST backfill follow-through (TJ is running the 10-07..10-18 backfill links)
-  - [ ] 6.1 With TJ's approval, count NST rows per date × table for 10-07..10-18 and confirm the ES/PP/5v5 gaps are filled.
+  - [x] 6.1 With TJ's approval, count NST rows per date × table for 10-07..10-18 and confirm the ES/PP/5v5 gaps are filled.
+    - TJ's backfill finished 2026-10-22 14:19Z (240/240 URLs; one 500 at 208 on a failed cron_job_audit progress read, rerun resumed at 208).
+    - Count (14:25Z): all 12 dates have rows in all 20 `nst_gamelog_*` tables. All-strength, 5v5 and ES counts equal the WGO skater count every date (e.g. 575/575 on 10-13, 504/504 on 10-17); PP and PK counts are lower (only players with that ice time) and equal across each family's four tables.
   - [ ] 6.2 Prepare the exact bounded rolling recompute for the affected window, per the bounds in `web/README.md`. TJ runs it.
   - [ ] 6.3 Confirm with a read-only count that rolling rows were rewritten for the window.
 
