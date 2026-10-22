@@ -47,3 +47,16 @@ counts equal the WGO skater counts.
 - **Until then,** master's schedule doc still lists job 79 as active and lacks job 399. Production is unaffected,
   because the job state lives in pg_cron.
 
+## Released (2026-10-22, R25)
+
+- **Master `27751818b`** (parent `d45a287f0`) ships your reviewed nine-file overlay unchanged (patch sha256 `4e0b4db7…`).
+  It carries the 07:25 slot removal, the advisory burst clearance, `cron-schedule.md` (job 79 inactive, job 399 added) and
+  the cron count tests together. The nine files match your MANIFEST candidate hashes.
+- **Counts on this candidate:** 86 jobs (79 out, 399 in). Audit callers: cron-only 27, internal-server 11.
+  These replace the 57/87 and 45/9 above, which were octoberBranch numbers.
+- **Gate:** Vitest 9830 passed, with 13 failures only in master's 5 baseline files. `update-nst-gamelog` 101/101.
+  ESLint and tsc clean.
+- **Production:** `dpl_961psWL4xHd751Pf6QU4V1TxSm3a` READY; cms, functions and fhfhockey.com projects CANCELED; smoke 5/5.
+  No NST calls.
+- **Progress-read index:** held. Per your diagnosis, there is no evidence for it yet.
+
