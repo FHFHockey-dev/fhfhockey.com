@@ -39,6 +39,7 @@ export type RollingRow = {
   goals_total_all: number | null;
   shots_total_all: number | null;
   assists_total_all: number | null;
+  ipp_all?: number | null;
   hits_per_60_last5: number | null;
   hits_per_60_all: number | null;
   blocks_per_60_last5: number | null;

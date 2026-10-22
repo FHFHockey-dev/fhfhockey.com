@@ -161,6 +161,8 @@ import {
   SKATER_TEAMMATE_ASSIST_ES_MAX_MULTIPLIER,
   SKATER_TEAMMATE_ASSIST_PP_MIN_MULTIPLIER,
   SKATER_TEAMMATE_ASSIST_PP_MAX_MULTIPLIER,
+  SKATER_ASSIST_SHARE_MIN,
+  SKATER_ASSIST_SHARE_MAX,
   SKATER_ROLE_TOP_TOI_ES_MIN,
   SKATER_ROLE_TOP_TOI_ES_MAX,
   SKATER_ROLE_TOP_TOI_PP_MIN,
@@ -252,6 +254,8 @@ import {
   computeSkaterOnIceContextAdjustments,
   computeSkaterOpponentGoalieContextAdjustments,
   computeSkaterPhysicalEventRates,
+  computeSkaterAssistShare,
+  allocateTeamAssists,
   computeSkaterRestScheduleAdjustments,
   computeSkaterSampleShrinkageAdjustments,
   computeSkaterShotQualityAdjustments,
@@ -2306,10 +2310,15 @@ export async function runPerGameSkaterStage(args: {
       const {
         goalRateEs,
         goalRatePp,
-        assistRateEs,
-        assistRatePp,
         conversionShrink,
       } = resolveSkaterConversionRates({ splitRates, sampleWeight });
+      // Assist rates are shares of on-ice goals for (task 3), shrunk to F/D priors; the
+      // team-goal environment carries the goal context terms, so no assist multiplier applies.
+      const assistPosition = playerMetaById.get(playerId)?.position ?? null;
+      const assistRateEs = computeSkaterAssistShare({ goalsAll: ev?.goals_total_all, assistsAll: ev?.assists_total_all,
+        ippAllPct: ev?.ipp_all, position: assistPosition, strength: "es" }).share;
+      const assistRatePp = computeSkaterAssistShare({ goalsAll: pp?.goals_total_all, assistsAll: pp?.assists_total_all,
+        ippAllPct: pp?.ipp_all, position: assistPosition, strength: "pp" }).share;
       // Ledger-only: the same path on the former per-two-goals assist scale.
       const legacyAssistRates = resolveSkaterConversionRates({
         splitRates: computeSupportedStrengthSplitConversionRates({
@@ -2384,18 +2393,8 @@ export async function runPerGameSkaterStage(args: {
         shotsPp: shotsPp * availabilityMultiplier * trendShotMultiplier,
         goalRateEs: clamp(goalRateEs * trendGoalMultiplier, 0.025, 0.3),
         goalRatePp: clamp(goalRatePp * trendGoalMultiplier, 0.04, 0.45),
-        assistRateEs: clampSkaterAssistRate(
-          assistRateEs * trendAssistMultiplier,
-          "es",
-          "trend",
-          SKATER_ASSIST_DENOMINATOR_DEFAULT,
-        ),
-        assistRatePp: clampSkaterAssistRate(
-          assistRatePp * trendAssistMultiplier,
-          "pp",
-          "trend",
-          SKATER_ASSIST_DENOMINATOR_DEFAULT,
-        ),
+        assistRateEs: clamp(assistRateEs * trendAssistMultiplier, SKATER_ASSIST_SHARE_MIN, SKATER_ASSIST_SHARE_MAX),
+        assistRatePp: clamp(assistRatePp * trendAssistMultiplier, SKATER_ASSIST_SHARE_MIN, SKATER_ASSIST_SHARE_MAX),
         legacyAssistRateEs: clampSkaterAssistRate(
           legacyAssistRates.assistRateEs * trendAssistMultiplier,
           "es",
@@ -2665,17 +2664,15 @@ export async function runPerGameSkaterStage(args: {
       ) {
         metrics.data_quality.teammate_coupling_players_adjusted += 1;
       }
-      p.assistRateEs = clampSkaterAssistRate(
+      p.assistRateEs = clamp(
         p.assistRateEs * teammateCoupling.assistRateEsMultiplier,
-        "es",
-        "coupling",
-        SKATER_ASSIST_DENOMINATOR_DEFAULT,
+        SKATER_ASSIST_SHARE_MIN,
+        SKATER_ASSIST_SHARE_MAX,
       );
-      p.assistRatePp = clampSkaterAssistRate(
+      p.assistRatePp = clamp(
         p.assistRatePp * teammateCoupling.assistRatePpMultiplier,
-        "pp",
-        "coupling",
-        SKATER_ASSIST_DENOMINATOR_DEFAULT,
+        SKATER_ASSIST_SHARE_MIN,
+        SKATER_ASSIST_SHARE_MAX,
       );
       p.legacyAssistRateEs = clampSkaterAssistRate(
         p.legacyAssistRateEs * teammateCoupling.assistRateEsMultiplier,
@@ -2810,13 +2807,19 @@ export async function runPerGameSkaterStage(args: {
       assistsPp: 0,
     };
 
+    // Assists from team on-ice goals x assist share (task 3), reconciled to league assists per goal.
+    const assistIndexByPlayerId = new Map([...projected.keys()].map((id, index) => [id, index]));
+    const allocatedAssists = allocateTeamAssists([...projected.values()].map(p => ({
+      toiEs: p.toiEs, toiPp: p.toiPp, goalsEs: p.shotsEs * p.goalRateEs, goalsPp: p.shotsPp * p.goalRatePp,
+      assistShareEs: p.assistRateEs, assistSharePp: p.assistRatePp,
+    })));
+
     for (const [playerId, p] of projected.entries()) {
       let shotsEs = p.shotsEs;
       let shotsPp = p.shotsPp;
       const baseGoalsEs = shotsEs * p.goalRateEs;
       const baseGoalsPp = shotsPp * p.goalRatePp;
-      const baseAssistsEs = baseGoalsEs * p.assistRateEs;
-      const baseAssistsPp = baseGoalsPp * p.assistRatePp;
+      const { assistsEs: baseAssistsEs, assistsPp: baseAssistsPp } = allocatedAssists[assistIndexByPlayerId.get(playerId)!];
       const scenarioBlend = blendSkaterScenarioStatLinesAcrossHorizon({
         currentRole: p.roleTag?.esRole ?? null,
         scenarios: p.roleScenarios,

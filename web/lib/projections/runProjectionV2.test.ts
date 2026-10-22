@@ -46,7 +46,7 @@ import {
   toGoalieRestSplitBucket,
   type StarterContextForTest
 } from "./run-forge-projections";
-import { computeSkaterPhysicalEventRates, resolveAssistDenominators, SKATER_ASSIST_DENOMINATOR_DEFAULT } from "./calculators/skater-adjustments";
+import { allocateTeamAssists, computeSkaterAssistShare, computeSkaterPhysicalEventRates, resolveAssistDenominators, SKATER_ASSIST_DENOMINATOR_DEFAULT } from "./calculators/skater-adjustments";
 import { SKATER_PHYSICAL_RATE_PRIORS } from "./constants/projection-weights";
 import { computeTeamPpShare } from "./stages/skater-stage";
 import type { RollingRow } from "./types/run-forge-projections.types";
@@ -805,6 +805,60 @@ describe("skater small-sample shrinkage adjustments", () => {
     expect(result.sampleWeight).toBeGreaterThan(0.6);
     expect(result.isLowSample).toBe(false);
     expect(result.usedCallupFallback).toBe(false);
+  });
+});
+
+describe("skater assist share of on-ice goals", () => {
+  it("uses the F/D prior for its strength without IPP history", () => {
+    for (const ipp of [null, undefined, 0, Number.NaN]) {
+      expect(computeSkaterAssistShare({ goalsAll: 10, assistsAll: 20, ippAllPct: ipp, position: "C", strength: "es" }))
+        .toEqual({ share: 0.3747, onIceGoalsHistory: 0 });
+    }
+    expect(computeSkaterAssistShare({ goalsAll: null, assistsAll: 5, ippAllPct: 50, position: "D", strength: "pp" }).share).toBe(0.4838);
+  });
+
+  it("shrinks the observed share toward the prior by on-ice goals", () => {
+    // 10 G + 20 A at 60% IPP = 50 on-ice goals; (20 + 258 x 0.3747) / (50 + 258).
+    const es = computeSkaterAssistShare({ goalsAll: 10, assistsAll: 20, ippAllPct: 60, position: "L", strength: "es" });
+    expect(es.onIceGoalsHistory).toBeCloseTo(50, 10);
+    expect(es.share).toBeCloseTo((20 + 258 * 0.3747) / 308, 10);
+    // Defence PP: 2 G + 18 A at 50% IPP = 40 on-ice goals; (18 + 84 x 0.4838) / (40 + 84).
+    expect(computeSkaterAssistShare({ goalsAll: 2, assistsAll: 18, ippAllPct: 50, position: "D", strength: "pp" }).share)
+      .toBeCloseTo((18 + 84 * 0.4838) / 124, 10);
+  });
+
+  it("never credits more assists than on-ice goals and stays within bounds", () => {
+    // IPP above 100% is inconsistent source data: assists cap at the implied on-ice goals.
+    const capped = computeSkaterAssistShare({ goalsAll: 0, assistsAll: 30, ippAllPct: 150, position: "C", strength: "pp" });
+    expect(capped.onIceGoalsHistory).toBeCloseTo(20, 10);
+    expect(capped.share).toBeCloseTo((20 + 58 * 0.3554) / 78, 10);
+    expect(computeSkaterAssistShare({ goalsAll: 0, assistsAll: 1e6, ippAllPct: 100, position: "C", strength: "es" }).share).toBe(0.9);
+  });
+});
+
+describe("team assist allocation", () => {
+  const skater = (toiEs: number, toiPp: number, goalsEs: number, goalsPp: number, assistShareEs = 0.35, assistSharePp = 0.35) =>
+    ({ toiEs, toiPp, goalsEs, goalsPp, assistShareEs, assistSharePp });
+
+  it("reconciles team assists to league assists per goal at each strength", () => {
+    const team = [skater(1200, 200, 0.4, 0.2), skater(1100, 180, 0.3, 0.1, 0.4, 0.5), skater(900, 0, 0.1, 0, 0.25),
+      skater(1300, 120, 0.05, 0.02, 0.3, 0.45), skater(1000, 60, 0.15, 0)];
+    const assists = allocateTeamAssists(team);
+    const total = (key: "assistsEs" | "assistsPp") => assists.reduce((sum, row) => sum + row[key], 0);
+    expect(total("assistsEs")).toBeCloseTo(1.65 * 1.0, 10);
+    expect(total("assistsPp")).toBeCloseTo(1.91 * 0.32, 10);
+    // A skater with no PP minutes is on the ice for no PP goals.
+    expect(assists[2].assistsPp).toBe(0);
+  });
+
+  it("splits by on-ice time and assist share, not by the skater's own goals", () => {
+    const [scorer, setup] = allocateTeamAssists([skater(1000, 0, 0.6, 0, 0.2), skater(1000, 0, 0, 0, 0.6)]);
+    expect(setup.assistsEs / scorer.assistsEs).toBeCloseTo(3, 10);
+  });
+
+  it("assigns no assists without team goals or ice time", () => {
+    expect(allocateTeamAssists([skater(0, 0, 0, 0), skater(0, 0, 0, 0)])).toEqual([{ assistsEs: 0, assistsPp: 0 }, { assistsEs: 0, assistsPp: 0 }]);
+    expect(allocateTeamAssists([])).toEqual([]);
   });
 });
 

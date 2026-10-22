@@ -22,6 +22,10 @@ import {
   SKATER_PHYSICAL_PRIOR_MINUTES,
   SKATER_PHYSICAL_PRIOR_SEASON_WEIGHT,
   SKATER_PHYSICAL_RATE_PRIORS,
+  SKATER_ASSIST_SHARE_PRIORS,
+  SKATER_ASSIST_SHARE_MIN,
+  SKATER_ASSIST_SHARE_MAX,
+  SKATER_TEAM_ASSISTS_PER_GOAL,
   SKATER_PHYSICAL_RECENT_SHRINK_MINUTES,
   SKATER_PHYSICAL_TOI_RATIO_MAX,
   SKATER_REST_ASSIST_MAX_MULTIPLIER,
@@ -570,6 +574,54 @@ export function resolveAssistDenominators(
 ): SkaterAssistDenominators {
   if (option == null) return { ...fallback };
   return typeof option === "string" ? { es: option, pp: option } : { es: option.es, pp: option.pp };
+}
+
+/**
+ * The share of a skater's on-ice goals he assists, shrunk to the F/D prior for that strength.
+ * History is the rolling all-window: goals plus assists over IPP (a percentage) gives his
+ * on-ice goals. Missing or non-positive IPP leaves the prior.
+ */
+export function computeSkaterAssistShare(args: {
+  goalsAll: number | null | undefined;
+  assistsAll: number | null | undefined;
+  ippAllPct: number | null | undefined;
+  position: string | null | undefined;
+  strength: "es" | "pp";
+}): { share: number; onIceGoalsHistory: number } {
+  const prior = SKATER_ASSIST_SHARE_PRIORS[args.position === "D" ? "D" : "F"][args.strength];
+  const goals = finiteOrNull(args.goalsAll);
+  const assists = finiteOrNull(args.assistsAll);
+  const ipp = finiteOrNull(args.ippAllPct);
+  let onIceGoals = 0;
+  let assisted = 0;
+  if (goals != null && assists != null && ipp != null && goals >= 0 && assists >= 0 && ipp > 0) {
+    onIceGoals = (goals + assists) / (ipp / 100);
+    assisted = Math.min(assists, onIceGoals);
+  }
+  const share = (assisted + prior.k * prior.share) / (onIceGoals + prior.k);
+  return { share: clamp(share, SKATER_ASSIST_SHARE_MIN, SKATER_ASSIST_SHARE_MAX), onIceGoalsHistory: onIceGoals };
+}
+
+/**
+ * Assists come from the goals scored while a skater is on the ice: team goals at each strength
+ * x his share of the five skater slots x his assist share, scaled so the team's assists per goal
+ * match the league's at that strength. Returns per-player ES and PP assists in input order.
+ */
+export function allocateTeamAssists(players: ReadonlyArray<{
+  toiEs: number; toiPp: number; goalsEs: number; goalsPp: number; assistShareEs: number; assistSharePp: number;
+}>): Array<{ assistsEs: number; assistsPp: number }> {
+  const sum = (pick: (p: (typeof players)[number]) => number) => players.reduce((total, p) => total + pick(p), 0);
+  const team = { goalsEs: sum(p => p.goalsEs), goalsPp: sum(p => p.goalsPp), toiEs: sum(p => p.toiEs), toiPp: sum(p => p.toiPp) };
+  const onIceEs = (toi: number) => (team.toiEs > 0 ? (team.goalsEs * 5 * toi) / team.toiEs : 0);
+  const onIcePp = (toi: number) => (team.toiPp > 0 ? (team.goalsPp * 5 * toi) / team.toiPp : 0);
+  const rawEs = sum(p => onIceEs(p.toiEs) * p.assistShareEs);
+  const rawPp = sum(p => onIcePp(p.toiPp) * p.assistSharePp);
+  const scaleEs = rawEs > 0 ? (SKATER_TEAM_ASSISTS_PER_GOAL.es * team.goalsEs) / rawEs : 0;
+  const scalePp = rawPp > 0 ? (SKATER_TEAM_ASSISTS_PER_GOAL.pp * team.goalsPp) / rawPp : 0;
+  return players.map(p => ({
+    assistsEs: onIceEs(p.toiEs) * p.assistShareEs * scaleEs,
+    assistsPp: onIcePp(p.toiPp) * p.assistSharePp * scalePp,
+  }));
 }
 
 export function computeStrengthSplitConversionRates(args: {
