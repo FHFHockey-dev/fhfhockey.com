@@ -303,3 +303,18 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
 - **Gate:** the full suite shows master's baseline failures only; tsc and eslint 0.
 - **Deploy and smoke:** READY 00:09Z; smoke test 3/3.
 - **octoberBranch:** pipeline and test changes in `c5b0012b5`, synced with `-s ours`.
+
+### 2026-10-22 morning check (read-only)
+
+- **NST jobs:**
+  - Job 79 (07:26Z) still reports failure, but saved 1,612 rows. NST is reachable again.
+  - Job 329 now runs at 09:15Z; it succeeded.
+- **Pipeline:** its NST step at 10:05Z succeeded (1,276 rows).
+  - First rolling writes after the column drop succeeded: 80 and 280 rows.
+  - The run completed at 10:15Z: 0 failed steps, no degraded steps.
+- **FORGE h1 runs, both on R20 (`248df9923`):**
+  - 10-22: 427 skaters, 24 goalies.
+  - 10-23: 72 skaters, 4 goalies.
+  - No PGRST202, legacy-scan or rolling-read-incomplete messages in 10:00–10:20Z, so the S-F-lite RPC path was used.
+- **S-B:** settle at 11:00Z (0 rows, nothing to settle yet); snapshot at 12:30Z (1,596 rows).
+- **Accuracy run** at 11:32Z: 65 rows.
