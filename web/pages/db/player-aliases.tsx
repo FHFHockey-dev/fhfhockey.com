@@ -4,6 +4,7 @@ import Head from "next/head";
 
 import type { NhlProspectIdentity } from "lib/sources/nhlProspectIdentity";
 import { aliasReviewRole, findAliasReviewOccurrences, getAliasReviewOccurrence, type AliasReviewPlayer } from "lib/sources/playerAliasReview";
+import AdminPageGate from "components/Admin/AdminPageGate";
 import supabase from "lib/supabase";
 import styles from "./player-aliases.module.scss";
 
@@ -128,7 +129,7 @@ function renderHighlightedContext(selectedUnresolved: UnresolvedName) {
   return <>{text.slice(0, occurrence.start)}<mark aria-label="Selected unresolved occurrence" style={{ background: "#ffd54a", color: "#111", padding: "0 2px" }}>{text.slice(occurrence.start, occurrence.end)}</mark>{text.slice(occurrence.end)}</>;
 }
 
-const PlayerAliasesPage: NextPage = () => {
+const PlayerAliasesReview = () => {
   const [unresolvedNames, setUnresolvedNames] = useState<UnresolvedName[]>([]);
   const [players, setPlayers] = useState<PlayerOption[]>([]);
   const [selectedUnresolvedId, setSelectedUnresolvedId] = useState<string>("");
@@ -441,5 +442,11 @@ const PlayerAliasesPage: NextPage = () => {
     </>
   );
 };
+
+const PlayerAliasesPage: NextPage = () => (
+  <AdminPageGate>
+    <PlayerAliasesReview />
+  </AdminPageGate>
+);
 
 export default PlayerAliasesPage;

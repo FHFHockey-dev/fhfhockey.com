@@ -19,6 +19,7 @@ import {
 } from "lib/newsLineupCard";
 import type { NewsLineupCardData } from "lib/newsLineupCard";
 import type { TweetPatternReviewAssignment } from "lib/sources/tweetPatternReview";
+import AdminPageGate from "components/Admin/AdminPageGate";
 import supabase from "lib/supabase";
 
 type ReviewStatus = "pending" | "reviewed" | "ignored";
@@ -510,7 +511,7 @@ function renderHighlightedText(text: string, highlights: string[]) {
   );
 }
 
-const TweetPatternReviewPage: NextPage = () => {
+const TweetPatternReview = () => {
   const [items, setItems] = useState<TweetPatternReviewItem[]>([]);
   const [players, setPlayers] = useState<PlayerOption[]>([]);
   const [categoryOptions, setCategoryOptions] = useState<
@@ -2484,5 +2485,11 @@ const TweetPatternReviewPage: NextPage = () => {
     </>
   );
 };
+
+const TweetPatternReviewPage: NextPage = () => (
+  <AdminPageGate>
+    <TweetPatternReview />
+  </AdminPageGate>
+);
 
 export default TweetPatternReviewPage;

@@ -30,6 +30,7 @@ import {
 import { standardizeColumnName } from "lib/standardization/columnStandardization";
 import { useSnackbar } from "notistack";
 import { doPOST } from "lib/supabase"; // Your existing helper
+import AdminPageGate from "components/Admin/AdminPageGate";
 import Container from "components/Layout/Container";
 import PageTitle from "components/PageTitle";
 import ClientOnly from "components/ClientOnly";
@@ -142,7 +143,7 @@ const TEXT_COLUMNS = new Set([
 //   // e.g., "Years_Experience" if you had such a field
 // ]);
 
-export default function UpsertProjectionsPage() {
+function UpsertProjections() {
   const { enqueueSnackbar } = useSnackbar();
   const user = useUser();
   const router = useRouter();
@@ -891,5 +892,13 @@ export default function UpsertProjectionsPage() {
           )}
       </ClientOnly>
     </Container>
+  );
+}
+
+export default function UpsertProjectionsPage() {
+  return (
+    <AdminPageGate>
+      <UpsertProjections />
+    </AdminPageGate>
   );
 }
