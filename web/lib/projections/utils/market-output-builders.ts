@@ -9,6 +9,7 @@ import {
   impliedProbabilityToAmerican,
   median,
   type DevigMethod,
+  type YesOnlyOverroundSource,
 } from "./devig";
 
 export const ANALYTICS_MODEL_NAME = "forge";
@@ -285,17 +286,54 @@ export function quotesFromMarketSummary(
   return quotes;
 }
 
+/**
+ * How the market probability was obtained. Two-way books are de-vigged on their
+ * own over/under pair; Yes-only books have no opposing price, so their value is
+ * an estimate under an assumed overround (see devigYesOnly), never a fair price.
+ */
+export type MarketProbabilityBasis =
+  | "two-way-devig"
+  | "yes-only-assumed-overround"
+  | "mixed-two-way-and-yes-only";
+
+/** The assumption behind the Yes-only books in a comparison, and its consequence. */
+export type YesOnlyAssumption = {
+  overround: number;
+  overroundSource: YesOnlyOverroundSource;
+  methods: Array<"equal-margin" | "proportional">;
+  /** Median raw implied P(yes): the overround-0 bound, an upper bound on the estimate. */
+  impliedProbabilityMedian: number;
+};
+
 export type MarketProbabilityComparison = {
   marketType: string;
   line: number;
   expectedValue: number;
   model: ModelLineProbabilities;
-  /** Median of per-book de-vigged P(over | no push) at the consensus line. */
+  /**
+   * Median of per-book P(over | no push) at the consensus line: de-vigged for
+   * two-way books, assumption-based for Yes-only books (see marketProbabilityBasis).
+   */
   marketProbabilityOver: number;
+  marketProbabilityBasis: MarketProbabilityBasis;
+  /** Set when any Yes-only book contributed; null for pure two-way markets. */
+  yesOnlyAssumption: YesOnlyAssumption | null;
+  /**
+   * Pure Yes-only markets only: model.overGivenNoPush - impliedProbabilityMedian,
+   * the edge with no overround assumed. A model_over edge that survives here
+   * does not depend on the assumption.
+   */
+  probabilityEdgeAtZeroOverround: number | null;
   /** model.overGivenNoPush - marketProbabilityOver; positive favours the over. */
   probabilityEdge: number;
   threshold: number;
   flagType: "model_over" | "model_under" | null;
+  /**
+   * "model_under" when the edge cleared the threshold but no book at the line
+   * offers an under: it cannot be bet, and a Yes-only estimate has no
+   * assumption-free lower bound, so the flag is withheld (TJ, 2026-10-22).
+   */
+  suppressedFlagType: "model_under" | null;
   /** Best (highest-payout) price per side across books at the consensus line. */
   bestOverPriceAmerican: number | null;
   bestUnderPriceAmerican: number | null;
@@ -336,11 +374,13 @@ function expectedValueWithPush(
  * Compare the model with the market in probability space.
  *
  * Combining books: quotes are grouped by line; the consensus line is the one
- * quoted by the most books (ties go to the lower line). Each book is de-vigged
- * on its own over/under pair (Shin by default; a book with only "yes"/"over"
- * uses devigYesOnly's equal-margin assumption), the market probability is the
- * median of those per-book fair probabilities, and the expected value uses the
- * best price on each side. Lines are never averaged across books.
+ * quoted by the most books (ties go to the lower line). Each two-way book is
+ * de-vigged on its own over/under pair (Shin by default); a book with only
+ * "yes"/"over" gets devigYesOnly's assumption-based estimate (overround from
+ * `yesOnlyOverround`, else FORGE_YES_ONLY_OVERROUND, else the default). The
+ * market probability is the median of the per-book values, and the expected
+ * value uses the best price on each side. Lines are never averaged across books.
+ * No "model_under" flag fires when no book at the line offers an under.
  */
 export function compareModelWithMarket(args: {
   marketType: string;
@@ -378,6 +418,9 @@ export function compareModelWithMarket(args: {
   const fairOver: number[] = [];
   const overPrices: number[] = [];
   const underPrices: number[] = [];
+  const yesOnlyImplied: number[] = [];
+  const yesOnlyMethods = new Set<"equal-margin" | "proportional">();
+  let yesOnlyOverround: { overround: number; source: YesOnlyOverroundSource } | null = null;
   let twoWayBookCount = 0;
   let yesOnlyBookCount = 0;
   for (const sides of books.values()) {
@@ -394,6 +437,9 @@ export function compareModelWithMarket(args: {
       const yes = devigYesOnly(overPrice, { overround: args.yesOnlyOverround });
       if (yes) {
         fairOver.push(yes.probability);
+        yesOnlyImplied.push(yes.implied);
+        yesOnlyMethods.add(yes.method);
+        yesOnlyOverround = { overround: yes.overround, source: yes.overroundSource };
         yesOnlyBookCount += 1;
       }
     }
@@ -412,20 +458,44 @@ export function compareModelWithMarket(args: {
   const probabilityEdge = model.overGivenNoPush - marketProbabilityOver;
   const bestOverPriceAmerican = bestPrice(overPrices);
   const bestUnderPriceAmerican = bestPrice(underPrices);
+  const impliedProbabilityMedian = median(yesOnlyImplied);
+  const yesOnlyAssumption: YesOnlyAssumption | null =
+    yesOnlyOverround && impliedProbabilityMedian != null
+      ? {
+          overround: yesOnlyOverround.overround,
+          overroundSource: yesOnlyOverround.source,
+          methods: Array.from(yesOnlyMethods).sort(),
+          impliedProbabilityMedian,
+        }
+      : null;
+  const rawFlag =
+    probabilityEdge >= threshold
+      ? "model_over"
+      : probabilityEdge <= -threshold
+        ? "model_under"
+        : null;
+  const suppressUnder = rawFlag === "model_under" && underPrices.length === 0;
   return {
     marketType: args.marketType,
     line,
     expectedValue: args.expectedValue,
     model,
     marketProbabilityOver,
+    marketProbabilityBasis:
+      yesOnlyBookCount === 0
+        ? "two-way-devig"
+        : twoWayBookCount === 0
+          ? "yes-only-assumed-overround"
+          : "mixed-two-way-and-yes-only",
+    yesOnlyAssumption,
+    probabilityEdgeAtZeroOverround:
+      twoWayBookCount === 0 && yesOnlyAssumption
+        ? model.overGivenNoPush - yesOnlyAssumption.impliedProbabilityMedian
+        : null,
     probabilityEdge,
     threshold,
-    flagType:
-      probabilityEdge >= threshold
-        ? "model_over"
-        : probabilityEdge <= -threshold
-          ? "model_under"
-          : null,
+    flagType: suppressUnder ? null : rawFlag,
+    suppressedFlagType: suppressUnder ? "model_under" : null,
     bestOverPriceAmerican,
     bestUnderPriceAmerican,
     expectedValueOver: expectedValueWithPush(
@@ -495,13 +565,25 @@ export function buildModelMarketProbabilityFlagRow(args: {
         expected_value_under: round(c.expectedValueUnder),
         two_way_book_count: c.twoWayBookCount,
         yes_only_book_count: c.yesOnlyBookCount,
+        market_probability_basis: c.marketProbabilityBasis,
+        probability_edge_at_zero_overround: round(c.probabilityEdgeAtZeroOverround),
       },
     ],
     provider: args.provider,
     metadata: {
       ...(args.metadata ?? {}),
       comparison_basis: "probability",
-      devig_method: c.devigMethod,
+      // devig_method applies to two-way books only; Yes-only books are described by yes_only_assumption.
+      devig_method: c.twoWayBookCount > 0 ? c.devigMethod : null,
+      market_probability_basis: c.marketProbabilityBasis,
+      yes_only_assumption: c.yesOnlyAssumption
+        ? {
+            assumed_overround: c.yesOnlyAssumption.overround,
+            overround_source: c.yesOnlyAssumption.overroundSource,
+            methods: c.yesOnlyAssumption.methods,
+            implied_probability_median: round(c.yesOnlyAssumption.impliedProbabilityMedian),
+          }
+        : null,
       book_combine: c.combine,
     },
   });

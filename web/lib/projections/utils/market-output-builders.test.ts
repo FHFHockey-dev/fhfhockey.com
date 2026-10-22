@@ -120,6 +120,63 @@ describe("compareModelWithMarket", () => {
     expect(loose.flagType).toBe("model_over");
   });
 
+  it("labels Yes-only market probabilities as assumption-based, never as a de-vig", () => {
+    const quotes: MarketPriceQuote[] = [
+      { sportsbook_key: "dk", outcome_key: "yes", line_value: null, price_american: 300 },
+    ];
+    const result = compareModelWithMarket({
+      marketType: "player_goal_scorer_anytime",
+      expectedValue: 0.3,
+      quotes,
+      threshold: 0.03,
+      yesOnlyOverround: 0.06,
+    })!;
+    expect(result.marketProbabilityBasis).toBe("yes-only-assumed-overround");
+    expect(result.yesOnlyAssumption).toEqual({
+      overround: 0.06, overroundSource: "argument", methods: ["equal-margin"], impliedProbabilityMedian: 0.25,
+    });
+    expect(result.marketProbabilityOver).toBeCloseTo(0.22, 10);
+    // The zero-overround edge is the assumption-free (conservative) edge for an over.
+    expect(result.probabilityEdgeAtZeroOverround).toBeCloseTo(result.model.overGivenNoPush - 0.25, 10);
+    const row = buildModelMarketProbabilityFlagRow({
+      asOfDate: "2026-10-22", entityType: "player", entityId: 1, gameId: 2, comparison: result, provider: "p",
+    })!;
+    expect(row.metadata).toMatchObject({
+      devig_method: null,
+      market_probability_basis: "yes-only-assumed-overround",
+      yes_only_assumption: { assumed_overround: 0.06, overround_source: "argument", methods: ["equal-margin"], implied_probability_median: 0.25 },
+    });
+    expect((row.reasons as Array<Record<string, unknown>>)[0].market_probability_basis).toBe("yes-only-assumed-overround");
+
+    const twoWay = compareModelWithMarket({ marketType: "player_goals", expectedValue: 0.3, quotes: pair("dk", 0.5, 500, -800) })!;
+    expect(twoWay.marketProbabilityBasis).toBe("two-way-devig");
+    expect(twoWay.yesOnlyAssumption).toBeNull();
+    expect(twoWay.probabilityEdgeAtZeroOverround).toBeNull();
+  });
+
+  it("withholds model_under when no book at the line offers an under", () => {
+    const yesOnly: MarketPriceQuote[] = [
+      { sportsbook_key: "dk", outcome_key: "yes", line_value: null, price_american: 150 },
+    ];
+    const suppressed = compareModelWithMarket({ marketType: "player_goal_scorer_anytime", expectedValue: 0.3, quotes: yesOnly })!;
+    expect(suppressed.probabilityEdge).toBeLessThan(-0.05);
+    expect(suppressed.flagType).toBeNull();
+    expect(suppressed.suppressedFlagType).toBe("model_under");
+    expect(buildModelMarketProbabilityFlagRow({
+      asOfDate: "2026-10-22", entityType: "player", entityId: 1, gameId: 2, comparison: suppressed, provider: null,
+    })).toBeNull();
+
+    // A book with an under at the same line makes the under bettable again.
+    const mixed = compareModelWithMarket({
+      marketType: "player_goals",
+      expectedValue: 0.3,
+      quotes: [...yesOnly.map((q) => ({ ...q, line_value: 0.5 })), ...pair("fd", 0.5, 150, -190)],
+    })!;
+    expect(mixed.marketProbabilityBasis).toBe("mixed-two-way-and-yes-only");
+    expect(mixed.flagType).toBe("model_under");
+    expect(mixed.suppressedFlagType).toBeNull();
+  });
+
   it("skips invalid prices and returns null without usable quotes", () => {
     expect(
       compareModelWithMarket({

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEFAULT_YES_ONLY_OVERROUND,
+  YES_ONLY_OVERROUND_ENV,
   americanToDecimal,
   americanToImpliedProbability,
   devig,
@@ -9,6 +11,7 @@ import {
   expectedValueAtAmericanPrice,
   impliedProbabilityToAmerican,
   isValidAmericanPrice,
+  resolveYesOnlyOverround,
 } from "./devig";
 
 describe("American price conversion", () => {
@@ -66,6 +69,20 @@ describe("devig", () => {
     expect(devigYesOnly(300, { overround: 0.08, method: "proportional" })!.probability).toBeCloseTo(0.25 / 1.08, 10);
     // Extreme longshot falls back to proportional instead of going negative.
     expect(devigYesOnly(5000, { overround: 0.1 })!.method).toBe("proportional");
+  });
+
+  it("Yes-only estimates are labelled assumption-based and record where the overround came from", () => {
+    expect(devigYesOnly(300, { env: {} })).toMatchObject({
+      basis: "assumed-overround", overround: DEFAULT_YES_ONLY_OVERROUND, overroundSource: "default", implied: 0.25,
+    });
+    expect(devigYesOnly(300, { env: { [YES_ONLY_OVERROUND_ENV]: "0.06" } })).toMatchObject({
+      overround: 0.06, overroundSource: "env", probability: 0.22,
+    });
+    expect(devigYesOnly(300, { overround: 0.1, env: { [YES_ONLY_OVERROUND_ENV]: "0.06" } })!.overroundSource).toBe("argument");
+    // A bad configuration is refused rather than silently replaced by the default.
+    expect(resolveYesOnlyOverround(undefined, { [YES_ONLY_OVERROUND_ENV]: "8" })).toBeNull();
+    expect(resolveYesOnlyOverround(-0.01, {})).toBeNull();
+    expect(devigYesOnly(300, { env: { [YES_ONLY_OVERROUND_ENV]: "abc" } })).toBeNull();
   });
 
   it("expected value at an offered price", () => {
