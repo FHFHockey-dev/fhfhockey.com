@@ -29,6 +29,9 @@ type User = {
 
 type AuthContextValue = {
   isLoading: boolean;
+  // True while a signed-in user's role is still being read; isLoading turns
+  // false before the role resolves, so role-gated UI waits on this too.
+  isRoleLoading: boolean;
   user: User;
   signOut: () => Promise<void>;
   refreshProfileAvatar: (userId: string) => Promise<void>;
@@ -36,6 +39,7 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue>({
   isLoading: true,
+  isRoleLoading: true,
   user: null,
   signOut: async () => undefined,
   refreshProfileAvatar: async () => undefined
@@ -51,6 +55,8 @@ type Props = {
 export default function AuthProvider({ children }: Props) {
   const [user, setUser] = useState<User>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRoleLoading, setIsRoleLoading] = useState(true);
+  const roleRequestRef = useRef(0);
   const ensuredUserIdsRef = useRef<Set<string>>(new Set());
   const avatarUserRef = useRef<{ id: string; metadataUrl: string | null } | null>(null);
   const avatarRequestRef = useRef(0);
@@ -100,16 +106,20 @@ export default function AuthProvider({ children }: Props) {
       avatarUserRef.current = null;
 
       if (!session) {
+        roleRequestRef.current++;
         setUser(null);
         setIsLoading(false);
+        setIsRoleLoading(false);
         return;
       }
 
       const mappedUser = mapUser(session.user, { role: null });
       avatarUserRef.current = { id: session.user.id, metadataUrl: mappedUser?.avatarUrl ?? null };
+      // A token refresh re-syncs the same user: keep the role already read so
+      // role-gated pages don't drop out while it is read again.
       setUser((currentUser) =>
         currentUser && mappedUser && currentUser.id === mappedUser.id
-          ? { ...mappedUser, avatarUrl: currentUser.avatarUrl }
+          ? { ...mappedUser, avatarUrl: currentUser.avatarUrl, role: currentUser.role }
           : mappedUser
       );
       setIsLoading(false);
@@ -122,12 +132,18 @@ export default function AuthProvider({ children }: Props) {
         });
       }
 
+      const roleRequest = ++roleRequestRef.current;
+      setIsRoleLoading(true);
+      const finishRoleRequest = () => {
+        if (isMounted && roleRequestRef.current === roleRequest) setIsRoleLoading(false);
+      };
       void supabase
         .from("users")
         .select("role")
         .eq("user_id", session.user.id)
         .maybeSingle()
         .then(({ data, error }) => {
+          finishRoleRequest();
           if (!isMounted || error) {
             return;
           }
@@ -147,7 +163,7 @@ export default function AuthProvider({ children }: Props) {
               role: resolvedRole
             };
           });
-        });
+        }, finishRoleRequest);
     }
 
     const initialSessionRevision = sessionRevisionRef.current;
@@ -161,6 +177,7 @@ export default function AuthProvider({ children }: Props) {
         if (!isMounted || sessionRevisionRef.current !== initialSessionRevision) return;
         setUser(null);
         setIsLoading(false);
+        setIsRoleLoading(false);
       });
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
@@ -179,7 +196,7 @@ export default function AuthProvider({ children }: Props) {
   }, [refreshProfileAvatar]);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, signOut, refreshProfileAvatar }}>
+    <AuthContext.Provider value={{ user, isLoading, isRoleLoading, signOut, refreshProfileAvatar }}>
       {children}
     </AuthContext.Provider>
   );

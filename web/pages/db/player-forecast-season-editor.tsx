@@ -12,6 +12,7 @@ import {
   SKATER_FANTASY_V4_PRIMITIVE_TARGETS,
   SKATER_PRIMITIVE_TARGETS,
 } from "lib/fantasy-projections/contracts";
+import AdminPageGate from "components/Admin/AdminPageGate";
 import supabase from "lib/supabase";
 import styles from "styles/PlayerForecastSeasonEditor.module.scss";
 
@@ -178,7 +179,7 @@ function PlayerModelContext({ player }: { player: any }) {
   );
 }
 
-export default function PlayerForecastSeasonEditorPage() {
+function PlayerForecastSeasonEditor() {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -804,5 +805,13 @@ export default function PlayerForecastSeasonEditorPage() {
         </section>
       </main>
     </>
+  );
+}
+
+export default function PlayerForecastSeasonEditorPage() {
+  return (
+    <AdminPageGate>
+      <PlayerForecastSeasonEditor />
+    </AdminPageGate>
   );
 }

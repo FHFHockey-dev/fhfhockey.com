@@ -20,6 +20,7 @@ import Container from "components/Layout/Container";
 import supabase, { doPOST } from "lib/supabase";
 import { useSnackbar } from "notistack";
 import useCurrentSeason from "hooks/useCurrentSeason";
+import AdminPageGate from "components/Admin/AdminPageGate";
 import CronRouteRunner from "components/Admin/CronRouteRunner";
 
 const NST_MANUAL_BACKFILL_DELAY_MS = 21_000;
@@ -80,9 +81,9 @@ function clearPendingNstBackfill() {
   window.localStorage.removeItem(NST_TEAM_STATS_BACKFILL_STORAGE_KEY);
 }
 
-export default function Page() {
+function DatabasePage() {
   const { enqueueSnackbar } = useSnackbar();
-  const { isLoading: isAuthLoading, user } = useAuth();
+  const { user } = useAuth();
   const isAdmin = user?.role === "admin";
 
   const [numPlayers, setNumPlayers] = useState(0);
@@ -743,28 +744,6 @@ export default function Page() {
       setGames(finishedGames?.slice(0, 20) ?? []);
     })();
   }, [isAdmin, season?.seasonId]);
-
-  if (isAuthLoading) {
-    return (
-      <Container>
-        <TextBanner text="Checking administrator access…" />
-      </Container>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <Container>
-        <TextBanner text="Administrator access required" />
-        <Typography>
-          Sign in with an administrator account to use database operations.
-        </Typography>
-        <Link href="/" passHref legacyBehavior>
-          <Button component="a">Return home</Button>
-        </Link>
-      </Container>
-    );
-  }
 
   return (
     <Container>
@@ -1462,6 +1441,11 @@ export default function Page() {
         {isAdmin && (
           <Grid xs={12}>
             <CronRouteRunner />
+            <Link href="/db/runner" passHref legacyBehavior>
+              <Button component="a" variant="contained" color="warning" sx={{ mt: 1 }}>
+                Long runs: open the route runner
+              </Button>
+            </Link>
           </Grid>
         )}
       </Grid>
@@ -1476,5 +1460,13 @@ export default function Page() {
         Snackbar
       </Button>
     </Container>
+  );
+}
+
+export default function Page() {
+  return (
+    <AdminPageGate>
+      <DatabasePage />
+    </AdminPageGate>
   );
 }

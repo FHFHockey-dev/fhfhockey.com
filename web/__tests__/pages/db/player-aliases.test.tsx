@@ -3,6 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 vi.mock("next/head", () => ({ default: () => null }));
+vi.mock("contexts/AuthProviderContext", () => ({
+  useAuth: () => ({ isLoading: false, user: { id: "admin", role: "admin" } })
+}));
 vi.mock("lib/supabase", () => ({
   default: { auth: { getSession: async () => ({ data: { session: null } }) } }
 }));

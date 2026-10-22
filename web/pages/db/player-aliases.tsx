@@ -3,6 +3,7 @@ import type { NextPage } from "next";
 import Head from "next/head";
 
 import type { NhlProspectIdentity } from "lib/sources/nhlProspectIdentity";
+import AdminPageGate from "components/Admin/AdminPageGate";
 import supabase from "lib/supabase";
 import styles from "./player-aliases.module.scss";
 
@@ -169,7 +170,7 @@ function renderHighlightedContext(selectedUnresolved: UnresolvedName) {
   });
 }
 
-const PlayerAliasesPage: NextPage = () => {
+const PlayerAliasesReview = () => {
   const [unresolvedNames, setUnresolvedNames] = useState<UnresolvedName[]>([]);
   const [players, setPlayers] = useState<PlayerOption[]>([]);
   const [selectedUnresolvedId, setSelectedUnresolvedId] = useState<string>("");
@@ -442,5 +443,11 @@ const PlayerAliasesPage: NextPage = () => {
     </>
   );
 };
+
+const PlayerAliasesPage: NextPage = () => (
+  <AdminPageGate allowReviewToken>
+    <PlayerAliasesReview />
+  </AdminPageGate>
+);
 
 export default PlayerAliasesPage;
