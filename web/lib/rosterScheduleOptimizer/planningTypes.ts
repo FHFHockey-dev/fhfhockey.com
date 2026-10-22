@@ -47,7 +47,11 @@ export type PlanningPlayer = {
   form?: { label: string; games: number; points: number; includedInForecast: boolean | null };
   /** Provider injury designation (e.g. Yahoo IR, IR-LT, O, DTD); absent when healthy or unknown. */
   injury?: { status: string; label: string; note: string | null } | null;
+  /** Yahoo's daily goalie designation from today's roster read; null when Yahoo has not set one, absent when unread. */
+  startingStatus?: ProviderStartingStatus | null;
 };
+/** Yahoo's "Starting" / "Not Starting" mark for one date, and when the roster carrying it was read. */
+export type ProviderStartingStatus = { source: "yahoo"; date: string; isStarting: boolean; observedAt: string };
 export type RosterEntry = {
   playerId: string;
   position: "active" | "bench" | "IR" | "IR+" | "NA";

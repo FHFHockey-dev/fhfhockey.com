@@ -5,6 +5,7 @@ import { canEligibilityOccupySlot, normalizeEligibility } from "lib/rosterSchedu
 import type { ActiveSlotInstance } from "lib/rosterScheduleOptimizer/types";
 import type { GameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
 import type { GameForecast, PastLineup, PlanningAssignment, PlanningGame, PlanningPlayer, RosterEntry } from "lib/rosterScheduleOptimizer/planningTypes";
+import { providerStartNote } from "lib/rosterScheduleOptimizer/providerGoalieStarts";
 import InfoTooltip from "./InfoTooltip";
 import ForecastPoints from "./ForecastPoints";
 import styles from "./SlotWeekGrid.module.scss";
@@ -48,6 +49,16 @@ function InjuryFlag({ player }: { player: PlanningPlayer }) {
   if (!player.injury) return null;
   const text = `${player.injury.label}${player.injury.note ? ` · ${player.injury.note}` : ""}`;
   return <Image className={styles.injuryIcon} src="/pictures/injured.png" alt={text} title={text} width={12} height={12} />;
+}
+
+/** Yahoo's goalie mark for this date, and whether it set that game's start chance. */
+function yahooStartMark(player: PlanningPlayer, date: string, forecast: GameForecast | undefined) {
+  const status = player.playerClass === "goalie" && player.startingStatus?.date === date ? player.startingStatus : null;
+  if (!status) return null;
+  const read = new Date(status.observedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  const effect = forecast?.limitations.includes(providerStartNote(player.name, status))
+    ? `; start chance ${status.isStarting ? "100%" : "0%"} for this game` : forecast ? "; FORGE's start chance unchanged" : "";
+  return { glyph: status.isStarting ? "✓" : "✗", text: `${status.isStarting ? "Starting" : "Not starting"} (Yahoo, read ${read})${effect}`, out: !status.isStarting };
 }
 
 function Logo({ abbr }: { abbr: string | null }) {
@@ -183,8 +194,8 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
     if (!player) return <td key={date} role="cell" {...columnAttrs(date)}><span className={styles.empty}>Empty</span></td>;
     const game = gameFor(player, date, assignment?.gameId);
     const forecast = game ? forecastAt.get(`${player.id}|${game.id}`) : undefined;
-    let mark: { glyph: string; text: string } | null = null;
-    if (slot.type === "G" && forecast) {
+    let mark: { glyph: string; text: string; out?: boolean } | null = yahooStartMark(player, date, forecast);
+    if (!mark && slot.type === "G" && forecast) {
       if (forecast.confirmedStart) mark = { glyph: "✓", text: "Confirmed starter" };
       else if ((forecast.startProbability ?? 0) >= 0.5) mark = { glyph: "~", text: `Likely starter (${Math.round((forecast.startProbability ?? 0) * 100)}%)` };
     }
@@ -198,7 +209,7 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
             <span className={styles.name}>{name}</span>
             <InjuryFlag player={player} />
             {assignment?.locked && <span className={styles.lock} title="Locked" aria-label="Locked">🔒</span>}
-            {mark && <span className={styles.start} title={mark.text} aria-label={mark.text}>{mark.glyph}</span>}
+            {mark && <span className={styles.start} data-out={mark.out ? "" : undefined} title={mark.text} aria-label={mark.text}>{mark.glyph}</span>}
           </span>
           {game ? <span className={styles.opp}>{game.home ? `vs${game.opponent}` : `@${game.opponent}`}</span> : <span className={styles.noGameTag}>No game</span>}
           {points && <ForecastPoints points={points} goalie={player.playerClass === "goalie"}
@@ -233,7 +244,7 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
       <table className={styles.grid} aria-label="Lineup by position" style={{ "--day-count": dates.length } as CSSProperties}>
         <thead role="rowgroup">
           <tr role="row" className={`${styles.row} ${styles.headRow}`}>
-            <th scope="col" role="columnheader" className={styles.corner}><InfoTooltip label="About the lineup grid"><span className={styles.legend}>Numbers are each player&apos;s projected fantasy points for that game, using your league&apos;s scoring: <span className={styles.points} data-tier="high">high</span> <span className={styles.points} data-tier="mid">mid</span> <span className={styles.points} data-tier="low">low</span> for your lineup this week. Goalie expected FP includes participation probability; if-starts FP assumes a start. These are alternative views of the same game, not values to add. — means complete approved scoring inputs are unavailable. <b>✓</b> confirmed starter · <b>~</b> likely starter · <span className={styles.dust} aria-hidden="true" /> game on the bench · grey: no game that night. Past days show the lineup Yahoo recorded and each player&apos;s <span className={styles.points} data-actual="">actual</span> points.</span></InfoTooltip></th>
+            <th scope="col" role="columnheader" className={styles.corner}><InfoTooltip label="About the lineup grid"><span className={styles.legend}>Numbers are each player&apos;s projected fantasy points for that game, using your league&apos;s scoring: <span className={styles.points} data-tier="high">high</span> <span className={styles.points} data-tier="mid">mid</span> <span className={styles.points} data-tier="low">low</span> for your lineup this week. Goalie expected FP includes participation probability; if-starts FP assumes a start. These are alternative views of the same game, not values to add. — means complete approved scoring inputs are unavailable. <b>✓</b> confirmed starter · <b>✗</b> not starting (Yahoo) · <b>~</b> likely starter · <span className={styles.dust} aria-hidden="true" /> game on the bench · grey: no game that night. Past days show the lineup Yahoo recorded and each player&apos;s <span className={styles.points} data-actual="">actual</span> points.</span></InfoTooltip></th>
             {dates.map(date => {
               const { weekday, label } = dateParts(date);
               return <th key={date} scope="col" role="columnheader" {...columnAttrs(date)}>
@@ -267,6 +278,10 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
                       <span className={styles.name}>{lastName(item.player.name)}</span>
                       <InjuryFlag player={item.player} />
                       {item.playing && <span className={styles.dust} title="Game on the bench" aria-label="Bench game" />}
+                      {item.playing && (() => {
+                        const game = gameFor(item.player, date), mark = yahooStartMark(item.player, date, game ? forecastAt.get(`${item.player.id}|${game.id}`) : undefined);
+                        return mark && <span className={styles.start} data-out={mark.out ? "" : undefined} title={mark.text} aria-label={mark.text}>{mark.glyph}</span>;
+                      })()}
                     </span>
                     {item.playing ? (() => { const game = gameFor(item.player, date); return game ? <span className={styles.opp}>{game.home ? `vs${game.opponent}` : `@${game.opponent}`}</span> : null; })()
                       : <span className={styles.noGameTag} data-quiet="">No game</span>}

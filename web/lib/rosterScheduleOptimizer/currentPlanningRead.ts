@@ -2,6 +2,7 @@ import { decodePlanningDataTransport } from "../rosterScheduleData/planningDataT
 import { expandBridgeForecasts, jsonUtf8Bytes, PLANNING_RESPONSE_BYTE_BUDGET } from "../rosterScheduleData/bridgeForecastWire";
 import type { GameForecast, PlanningData, PlanningSnapshot, StatLine } from "./planningTypes";
 import { cachedYahooPlayer, type YahooEligibilityReceipt } from "./yahooEligibility";
+import { applyProviderGoalieStarts } from "./providerGoalieStarts";
 
 export type CurrentPlanningOptions = { allowRead?: boolean; publicContext?: boolean; refreshKey?: string;
   yahooEligibility?: YahooEligibilityReceipt | null };
@@ -91,7 +92,12 @@ export async function withCurrentPlanningRead<T>(snapshot: PlanningSnapshot, opt
     // The full request round trip is a conservative upper bound on time since
     // server evaluation. Device/server clock offsets never enter the comparison.
     serverClock = () => evaluatedAt + elapsed();
-    data = { ...decoded, forecasts: [...decoded.forecasts, ...expandBridgeForecasts(body.bridgeForecasts, decoded)] };
+    const forecasts = [...decoded.forecasts, ...expandBridgeForecasts(body.bridgeForecasts, decoded)];
+    // Yahoo's goalie marks come from the private roster read, so they shape the rows here, before the scope below
+    // fingerprints them; a public workspace or retained roster carries no marks.
+    data = { ...decoded, forecasts: snapshot.context.provider === "yahoo" && !options.publicContext
+      ? applyProviderGoalieStarts(forecasts, { marked: snapshot.players, catalog: decoded.players, games: decoded.games,
+        bridgeRevisionIds: new Set(policy.bridgeRevisionIds), now: evaluatedAt }) : forecasts };
     // Private/provider identities and schedule are never restamped to match a
     // forecast. Only an explicit current public workspace bootstraps those inputs.
     const publicPlayers = new Map(data.players.map(row => [row.id, row]));

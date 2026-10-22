@@ -35,6 +35,7 @@ const player = z.object({
   reserveEligibility: z.array(z.enum(["IR", "IR+", "NA"])), waiverClearsAt: instant.nullable().optional(),
   form: z.object({ label: id, games: z.number().int().nonnegative(), points: z.number().finite(), includedInForecast: z.boolean().nullable() }).strict().optional(),
   injury: z.object({ status: id, label: id, note: z.string().nullable() }).strict().nullable().optional(),
+  startingStatus: z.object({ source: z.literal("yahoo"), date, isStarting: z.boolean(), observedAt: instant }).strict().nullable().optional(),
 }).strict();
 const rosterEntry = z.object({ playerId: id, position: z.enum(["active", "bench", "IR", "IR+", "NA"]) }).strict();
 const lockedAssignment = z.object({ date, playerId: id, slotId: id.nullable(), source: z.enum(["provider", "manager"]).optional() }).strict();

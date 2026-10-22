@@ -5,6 +5,8 @@ import type { GameForecast, LeagueRules, PlanningPlayer, PlanningSnapshot, Plann
 import { resolvePlanningContributions } from "../lib/player-forecasts/planningContributions";
 import { saveWorkspaceSchema, snapshotSchema } from "../lib/in-season/workspaceSchema";
 import { forecastCalendarPolicy } from "../lib/player-forecasts/contributions";
+import { currentRsoUsePolicy } from "../lib/player-forecasts/rsoUsePolicy";
+import { compactBridgeForecasts } from "../lib/rosterScheduleData/bridgeForecastWire";
 
 const player = { id: "fhfh:1", nhlId: 1, name: "Alpha Center", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "unknown" as const, ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] };
 const date = (day: number) => `2026-10-0${day}`;
@@ -2226,4 +2228,60 @@ test("alerts on a healthy player left in IR and shows what activating him gains"
   // This fixture has no current forecast read, so the planner prices games, not points (the unit test covers points).
   await expect(alert.getByText("+2 active games this week")).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("healthy-ir-alert-1440x900.png") });
+});
+
+// TJ 2026-10-22: Yahoo marks each rostered goalie Starting or Not Starting for the day; the RSO should plan with it.
+test("plans tonight's goalie from Yahoo's Starting and Not Starting marks and shows them in the grid", async ({ page }, testInfo) => {
+  await page.route(url => !["127.0.0.1", "localhost"].includes(url.hostname), route => route.abort());
+  await page.route("**/api/**", route => route.fulfill({ status: 503, json: { error: "fixture: not mocked" } }));
+  const evaluatedAt = "2026-10-05T18:00:00.000Z";
+  await page.clock.install({ time: new Date(evaluatedAt) });
+  const goalie = (id: number, name: string, team: string): PlanningPlayer => ({ ...fixturePlayer(id, name, team), eligiblePositions: ["G"], playerClass: "goalie" });
+  const members = [goalie(11, "Starting Goalie", "DAL"), goalie(12, "Sitting Goalie", "VGK")];
+  const mark = (isStarting: boolean) => ({ source: "yahoo" as const, date: date(5), isStarting, observedAt: "2026-10-05T17:30:00.000Z" });
+  const marked = [{ ...members[0], startingStatus: mark(true) }, { ...members[1], startingStatus: mark(false) }];
+  const workspace = fixtureWorkspace(marked, { ...fixtureRules, rosterSlots: { G: 1, BN: 1 }, periods: [],
+    scoring: { mode: "points", weights: { SAVES_GOALIE: 0.2 }, categories: [] } });
+  workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "league", teamId: "team", endDate: date(6), asOf: evaluatedAt };
+  // FORGE's prior makes the sitting goalie (0.7) look likelier than the starter (0.6); Yahoo's marks reverse that tonight.
+  workspace.roster = [{ playerId: members[1].id, position: "active" }, { playerId: members[0].id, position: "bench" }];
+  await seedWorkspace(page, workspace);
+  await installDraftProAuthenticatedFixtures(page, () => ({ access: { eligible: false, grantingSources: [], expiresAt: null, verifiedAt: null, nextVerificationAt: null, reason: "no_active_grant", capabilities: [], providerReadiness: { stripe: false, patreon: false, yahoo: false } } }));
+  const storageKey = `sb-${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fyhftlxokyjtpndbkfse.supabase.co").hostname.split(".")[0]}-auth-token`;
+  await page.addInitScript(key => { const session = localStorage.getItem("sb-127-auth-token"); if (session) localStorage.setItem(key, session); }, storageKey);
+  await page.route("**/api/v1/roster-schedule-optimizer/access", route => route.fulfill({ json: { data: { eligible: true, capabilities: ["rso_sync"], grantingSources: ["test"], expiresAt: null, reason: null } } }));
+  await page.route("**/api/v1/roster-schedule-optimizer/workspace**", route => route.fulfill({ json: { data: null } }));
+  const games = members.map(member => fixtureGame(`${member.id}:5`, 5, member.teamAbbreviation!));
+  const revision = "forge-daily-bridge-v1:fixture-run";
+  const bridgeRow = (member: PlanningPlayer, probability: number): GameForecast => ({ ...fixtureForecast(member, games.find(game => game.teamAbbreviation === member.teamAbbreviation)!, 0),
+    revisionId: revision, sourceWatermark: revision, modelVersion: "forge-daily-bridge-v1:fixture", limitations: ["Interim FORGE projection."],
+    stats: { SAVES_GOALIE: 25 * probability }, conditionalStats: { SAVES_GOALIE: 25 }, startProbability: probability });
+  const { wire } = compactBridgeForecasts([bridgeRow(members[0], 0.6), bridgeRow(members[1], 0.7)], { players: members, games }, 20262027);
+  expect(wire?.rows).toHaveLength(2);
+  // The current read: FORGE's bridge rows under a manifest naming their revision (the data route has no Yahoo marks).
+  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true,
+    data: { players: members, games, forecasts: [], baselineSources: [], participationSources: [],
+      evidence: { schedule: { source: "fixture", asOf: evaluatedAt, seasonId: 20262027, completeness: "complete", limitations: [] } },
+      forecastManifest: { version: "planning-forecasts-v1", id: "current-read", seasonId: 20262027, asOf: evaluatedAt,
+        scheduleRevision: "schedule", rosterRevision: "roster", issuedRevisionIds: [revision], baselineChecksum: null,
+        requiredOpportunities: 2, forecastedOpportunities: 2, exclusionCounts: {},
+        rsoUsePolicy: { version: "rso-target-use-v1", revision: currentRsoUsePolicy().revision, bridgeRevisionIds: [revision] } } },
+    bridgeForecasts: wire, read: { nonce: route.request().headers()["x-rso-read-nonce"], evaluatedAt } } }));
+  // A live Yahoo roster read carrying tonight's marks.
+  await page.route("**/api/v1/roster-schedule-optimizer/provider", route => route.fulfill({ json: { success: true,
+    snapshot: { id: "provider-goalie-marks", context: workspace.context, players: marked, roster: workspace.roster, games, forecasts: [], rules: workspace.rules,
+      lockedAssignments: [], realized: {}, opponent: null,
+      evidence: { roster: { source: "Yahoo authorized current roster", asOf: evaluatedAt, seasonId: 20262027, completeness: "complete", limitations: [] } } },
+    capabilities: { roster: true, availability: true, rules: true, matchup: false, acquisitions: false, limitations: [] } } }));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/roster-schedule-optimizer");
+  await page.getByRole("button", { name: "By position" }).click();
+  const grid = page.getByRole("table", { name: "Lineup by position" });
+  const starter = grid.getByRole("button", { name: `Starting Goalie, G, ${date(5)}` });
+  await expect(starter.getByLabel(/^Starting \(Yahoo, read .+\); start chance 100% for this game$/)).toHaveText("✓");
+  // The grid holds forecast rows for the chosen lineup only, so a benched goalie's mark names no effect.
+  await expect(grid.getByRole("button", { name: `Sitting Goalie, bench, has a game, ${date(5)}` })
+    .getByLabel(/^Not starting \(Yahoo, read .+\)$/)).toHaveText("✗");
+  await expect(starter.getByLabel(/Expected fantasy points:/)).toContainText("5.0");
+  await page.screenshot({ path: testInfo.outputPath("yahoo-goalie-marks-1440x900.png") });
 });

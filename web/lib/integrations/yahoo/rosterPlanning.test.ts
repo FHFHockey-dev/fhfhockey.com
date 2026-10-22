@@ -19,7 +19,7 @@ vi.mock("lib/integrations/yahoo/rosterPlanning", async (original) => ({
   loadYahooPlanningSnapshot: mocks.snapshot,
 }));
 
-import { yahooCreditedGoalieAppearances, yahooInjury, yahooPastLineupPoints, yahooPlanningAcquisitions, yahooPlanningCategories, yahooPlanningEditable, yahooPlanningPlayers, yahooPlanningStats, yahooPlanningTeams } from "./rosterPlanning";
+import { yahooCreditedGoalieAppearances, yahooInjury, yahooPastLineupPoints, yahooPlanningAcquisitions, yahooPlanningCategories, yahooPlanningEditable, yahooPlanningPlayers, yahooPlanningStats, yahooPlanningTeams, yahooStartingStatus } from "./rosterPlanning";
 import type { YahooProviderJsonResult } from "./providerClient";
 import { YahooLiveDraftError } from "./liveDraft";
 import providerHandler from "../../../pages/api/v1/roster-schedule-optimizer/provider";
@@ -647,6 +647,72 @@ describe("Yahoo injury status", () => {
     expect(yahooInjury({ status: "ir-lt" })).toEqual({ status: "IR-LT", label: "IR-LT", note: null });
     expect(yahooInjury({ status: "NA", status_full: "Not Active" })).toBeNull();
     expect(yahooInjury({})).toBeNull();
+  });
+});
+
+describe("Yahoo goalie starting status", () => {
+  // Synthetic rows in the shape Yahoo's standard-JSON roster returns: `starting_status` sits beside `selected_position`
+  // for goalies on the roster's own date, and is omitted when Yahoo has no mark yet (e.g. tomorrow's roster).
+  const read = "Thu, 01 Oct 2026 21:30:01 GMT";
+  const goalie = (key: string, status?: Array<Record<string, unknown>>) => ({ player: [
+    [{ player_key: key }, { name: { full: `Goalie ${key}` } }, { position_type: "G" }, { eligible_positions: [{ position: "G" }] }],
+    { selected_position: [{ coverage_type: "date", date: "2026-10-01" }, { position: "G" }, { is_flex: 0 }] },
+    ...(status ? [{ starting_status: status }] : []),
+    { is_editable: 1 },
+  ] });
+  const rows = yahooPlanningPlayers({ fantasy_content: { team: [[{ team_key: "453.l.1.t.1" }], { roster: { 0: { players: { count: 4,
+    0: goalie("453.p.1", [{ coverage_type: "date", date: "2026-10-01" }, { is_starting: 1 }]),
+    1: goalie("453.p.2", [{ coverage_type: "date", date: "2026-10-01" }, { is_starting: 0 }]),
+    2: goalie("453.p.3"),
+    3: goalie("453.p.4", [{ coverage_type: "date", date: "2026-09-30" }, { is_starting: 1 }]) } } } }] } });
+
+  it("reads Starting and Not Starting for the roster date, with the read time", () => {
+    expect(yahooStartingStatus(rows[0], "2026-10-01", read)).toEqual({ source: "yahoo", date: "2026-10-01", isStarting: true, observedAt: "2026-10-01T21:30:01.000Z" });
+    expect(yahooStartingStatus(rows[1], "2026-10-01", read)).toEqual({ source: "yahoo", date: "2026-10-01", isStarting: false, observedAt: "2026-10-01T21:30:01.000Z" });
+  });
+  it("keeps an absent mark, another date or an unknown read time unknown", () => {
+    expect(yahooStartingStatus(rows[2], "2026-10-01", read)).toBeNull();
+    expect(yahooStartingStatus(rows[3], "2026-10-01", read)).toBeNull();
+    expect(yahooStartingStatus(rows[0], "2026-10-01", null)).toBeNull();
+    expect(yahooStartingStatus({ starting_status: [{ coverage_type: "week", date: "2026-10-01" }, { is_starting: 1 }] }, "2026-10-01", read)).toBeNull();
+    expect(yahooStartingStatus({ starting_status: [{ coverage_type: "date", date: "2026-10-01" }, { is_starting: "maybe" }] }, "2026-10-01", read)).toBeNull();
+  });
+  it("puts the mark on the snapshot's rostered goalies only from a fresh read", async () => {
+    const network = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Unexpected network request in synthetic starting-status test"));
+    try {
+      const db = { from(table: string) {
+        const query = {
+          select() { return query; }, order() { return query; }, eq() { return query; },
+          async maybeSingle() { return { data: table === "external_teams"
+            ? { id: "team-a", team_metadata: { is_owned: true }, connected_account_id: "account-a", external_league_id: "league-a", external_team_key: "453.l.1.t.1" }
+            : { id: "league-a", connected_account_id: "account-a", external_league_key: "453.l.1" }, error: null }; },
+          async range() { return { data: [1, 2, 3].map(id => ({ nhl_player_id: id, yahoo_player_id: id })), error: null }; },
+        };
+        return query;
+      } };
+      const now = new Date("2026-10-01T21:30:01Z");
+      const transport = { responseDate: read, ageSeconds: 0 };
+      mocks.planningData.mockResolvedValue({ players: [1, 2, 3].map(id => ({ id: `player-${id}`, nhlId: id, name: `Goalie ${id}`,
+        teamAbbreviation: "TOR", eligiblePositions: ["G"], eligibilityVerified: false, playerClass: "goalie", availability: "unknown",
+        ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] })), games: [], forecasts: [], evidence: {} });
+      mocks.settings.mockReturnValue({ rosterType: "date", rosterConfig: { G: 2, BN: 1 }, scoringTypeRecognized: true,
+        unsupportedStatIds: [], unsupportedRosterSlots: [], leagueType: "points", scoringCategories: {}, categoryWeights: {}, minimumGoalieStarts: null });
+      mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "UTC" }, transport });
+      mocks.boardResource.mockImplementation(async ({ resource }: any) => {
+        if (resource.type !== "roster") throw new Error("Synthetic optional read unavailable");
+        return { payload: { team_key: "453.l.1.t.1", is_owned_by_current_login: "1", roster: { date: "2026-10-01", coverage_type: "date", is_editable: "1",
+          players: { count: 3, 0: goalie("453.p.1", [{ coverage_type: "date", date: "2026-10-01" }, { is_starting: 1 }]),
+            1: goalie("453.p.2", [{ coverage_type: "date", date: "2026-10-01" }, { is_starting: 0 }]), 2: goalie("453.p.3") } } }, transport };
+      });
+      mocks.planningResource.mockRejectedValue(new Error("Synthetic optional read unavailable"));
+      const actual = await vi.importActual<typeof import("./rosterPlanning")>("./rosterPlanning");
+      const result = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", now });
+      const status = (id: string) => result.snapshot.players.find(player => player.id === id)!.startingStatus;
+      expect(status("player-1")).toEqual({ source: "yahoo", date: "2026-10-01", isStarting: true, observedAt: "2026-10-01T21:30:01.000Z" });
+      expect(status("player-2")).toMatchObject({ isStarting: false });
+      expect(status("player-3")).toBeNull();
+      expect(network).not.toHaveBeenCalled();
+    } finally { network.mockRestore(); }
   });
 });
 

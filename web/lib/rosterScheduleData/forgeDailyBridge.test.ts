@@ -419,6 +419,47 @@ describe("FORGE daily bridge", () => {
     } finally { vi.useRealTimers(); vi.unstubAllGlobals(); }
   });
 
+  it("applies a Yahoo goalie's Not Starting mark to that night's bridge rows inside the current read", async () => {
+    const { forecasts } = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy);
+    const upcoming = games.filter(row => row.date >= "2026-10-19");
+    const { wire } = compactBridgeForecasts(forecasts, { players, games: upcoming }, 20262027);
+    const revisions = [...new Set(forecasts.map(row => row.revisionId))].sort();
+    const data: PlanningData = { players, games: upcoming, forecasts: [], baselineSources: [], participationSources: [],
+      evidence: { schedule: { source: "fixture", asOf: now.toISOString(), seasonId: 20262027, completeness: "complete", limitations: [] } },
+      forecastManifest: { version: "planning-forecasts-v1", id: "current-read", seasonId: 20262027, asOf: now.toISOString(),
+        scheduleRevision: "schedule", rosterRevision: "roster", issuedRevisionIds: revisions, baselineChecksum: null,
+        requiredOpportunities: forecasts.length, forecastedOpportunities: forecasts.length, exclusionCounts: {},
+        rsoUsePolicy: { version: "rso-target-use-v1", revision: currentRsoUsePolicy().revision, bridgeRevisionIds: revisions } } };
+    // g1 (FORGE: 0.8 to start game 1) is on the Yahoo roster marked Not Starting tonight; g2 is his only teammate.
+    const marked = players.map(player => player.id === "g1" ? { ...player, availability: "rostered" as const,
+      startingStatus: { source: "yahoo" as const, date: "2026-10-19", isStarting: false, observedAt: "2026-10-19T17:30:00.000Z" } } : player);
+    const snapshot: PlanningSnapshot = { id: "snap", context: { provider: "yahoo", seasonId: 20262027, leagueId: "l", teamId: "t",
+      startDate: "2026-10-19", endDate: "2026-10-25", timeZone: "UTC", asOf: now.toISOString() },
+      players: marked, games: upcoming, forecasts: [], roster: [{ playerId: "g1", position: "active" }], lockedAssignments: [], realized: {}, opponent: null,
+      rules: { lineupMode: "daily", rosterSlots: { G: 1, BN: 1 }, acquisitionTiming: "next_day", acquisitionCost: 1, periods: [],
+        scoring: { mode: "points", weights: { SAVES_GOALIE: 0.2 }, categories: [] },
+        goalieMinimum: { required: null, credited: null, counts: "unknown", penalty: "none" }, unsupported: [] },
+      evidence: { schedule: { source: "fixture", asOf: now.toISOString(), seasonId: 20262027, completeness: "complete", limitations: [] } } };
+    vi.useFakeTimers(); vi.setSystemTime(now);
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => ({ ok: true, json: async () => JSON.parse(JSON.stringify({
+      success: true, data, bridgeForecasts: wire, read: {
+        nonce: (init.headers as Record<string, string>)["X-RSO-Read-Nonce"], evaluatedAt: now.toISOString() } })) }) as Response));
+    const read = (input: PlanningSnapshot) => withCurrentPlanningRead(input, {}, currentRsoUsePolicy().revision, new AbortController().signal,
+      (current, _data, readError) => { expect(readError).toBeNull(); return { points: candidateHorizonPoints(current), rows: current.forecasts }; });
+    try {
+      const [yahoo, plain] = [await read(snapshot), await read({ ...snapshot, players })];
+      const row = (rows: typeof forecasts, id: string, gameId: string) => rows.find(item => item.playerId === id && item.gameId === gameId)!;
+      expect(row(yahoo.rows, "g1", "1")).toMatchObject({ startProbability: 0, confirmedStart: false, stats: { SAVES_GOALIE: 0 } });
+      expect(row(yahoo.rows, "g2", "1").startProbability).toBe(1);
+      expect(row(yahoo.rows, "g1", "2").startProbability).toBe(0.7);
+      // The changed rows keep current-read authority: their points are known, not withheld.
+      expect(plain.points.get("g1")).toBeCloseTo(0.8 * 25 * 0.2 + 0.7 * 25 * 0.2);
+      expect(yahoo.points.get("g1")).toBeCloseTo(0.7 * 25 * 0.2);
+      expect(plain.points.get("g2")).toBeCloseTo(0.2 * 25 * 0.2 + 0.3 * 25 * 0.2);
+      expect(yahoo.points.get("g2")).toBeCloseTo(25 * 0.2 + 0.3 * 25 * 0.2);
+    } finally { vi.useRealTimers(); vi.unstubAllGlobals(); }
+  });
+
   it.each([
     ["only off-release runs exist", [] as string[], []],
     ["a newer null or local run shares the released run's date", ["released"], []],

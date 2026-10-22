@@ -161,6 +161,15 @@ export function yahooInjury(row: Record<string, unknown>): PlanningPlayer["injur
   const note = typeof row.injury_note === "string" && row.injury_note.trim() ? row.injury_note.trim() : null;
   return { status, label, note };
 }
+/** Yahoo's daily goalie mark ("Starting" / "Not Starting"): a roster player's `starting_status` for the roster's own
+ * date. Yahoo omits it until it knows (e.g. tomorrow's roster), so absent or any other date stays null (unknown). */
+export function yahooStartingStatus(row: Record<string, unknown>, date: string, observedAt: string | null): PlanningPlayer["startingStatus"] {
+  const status = yahooFields(row.starting_status);
+  const read = Date.parse(observedAt ?? "");
+  if (text(status.coverage_type) !== "date" || text(status.date) !== date || !Number.isFinite(read)
+    || !(yes(status.is_starting) || no(status.is_starting))) return null;
+  return { source: "yahoo", date, isStarting: yes(status.is_starting), observedAt: new Date(read).toISOString() };
+}
 export function yahooPlanningCategories(keys: string[]): ScoringCategory[] {
   return keys.map((key) => key === "SAVE_PERCENTAGE"
     ? { key, direction: "higher", numerator: "SAVES_GOALIE", denominator: "SHOTS_AGAINST_GOALIE" }
@@ -392,6 +401,7 @@ export async function loadYahooPlanningSnapshot(args: {
     player.providerId = String(row.player_key);
     player.canDrop = fresh && no(row.is_undroppable) ? true : yes(row.is_undroppable) ? false : null;
     player.injury = yahooInjury(row);
+    if (player.playerClass === "goalie") player.startingStatus = fresh ? yahooStartingStatus(row, today, rosterResponse.transport.responseDate) : null;
     // Use explicit league eligibility, never infer it from injury status text.
     player.reserveEligibility = fresh ? reportedEligibility.filter((value): value is "IR" | "IR+" | "NA" => ["IR", "IR+", "NA"].includes(value)) : [];
     roster.push({ playerId: player.id, position: ["IR", "IR+", "NA"].includes(selected) ? selected as RosterEntry["position"] : selected === "BN" ? "bench" : "active" });
