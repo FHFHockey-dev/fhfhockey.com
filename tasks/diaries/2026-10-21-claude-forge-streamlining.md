@@ -35,10 +35,11 @@
   - R23 `6d5664f76` live: route-runner store checks writes by affected count (PostgREST returned no rows from writes that changed filtered columns, so every claim looked lost). Rolling recompute 10-07..10-21 done on /db/runner (6.2/6.3 done). octoberBranch synced `81575246c`.
   - R24 (job 79 constant + cron doc on master) built as `2f039e98` but NOT pushed: master still gates gamelog bursts on the 07:25 slot, so it must ship with `e89dfdde5`'s advisory clearance (Codex note updated).
 - **Next**
-  0. TJ reruns run-projection-v2 for 10-22 and 10-23 (console loop), then VACUUM FULL via the session pooler; verify the new runs are served and the table size after.
-  1. TJ runs `VACUUM FULL` on `rolling_player_game_metrics` at a quiet hour; then check the size.
+  0. Done 10-22: production reruns of run-projection-v2 served (R23 `6d5664f76`; 10-22 12 games, zero hits 139→38, zero blocks 168→42; 10-23 zero hits 23→3); VACUUM FULL 6,328 → 2,933 MB.
   2. Full S-F hydration plus F3/F4 hits/blocks ship with the next FORGE model release (audit session).
 - **Gotchas**
+  - Console route runs on localhost:3000 write production rows with octoberBranch code (`local:` git_sha, fenced from readers). Use a https://fhfhockey.com tab for production reruns.
+  - run-projection-v2 504s can strand a run at finalization; a takeover needs the lease expiry + 2 min grace (`RUN_TAKEOVER_GRACE_MS`) before the next call resumes it.
   - Pre-2026-27 rows still hold pruned wide values, so never omit the pruned keys from the upsert.
   - Before the drop, check master's code for the 491 names too.
   - `qualify-native-players-offline.test.ts` fails 30 tests at HEAD (pre-existing, `b8fe1072e` fixture gap).

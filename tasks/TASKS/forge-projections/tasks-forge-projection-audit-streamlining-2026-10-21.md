@@ -90,6 +90,7 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
     - (a) `DROP COLUMN` only: instant, but the space returns only as rows are rewritten.
     - (b) `VACUUM FULL` in a maintenance window: locks the table for the duration.
     - (c) `pg_repack`, if available on the project: online. (TJ chose (c), falling back to (a) if unavailable.)
+    - Done 2026-10-22 ~15:44–15:48Z: pg_repack was unusable (1.5.0), so TJ ran `VACUUM (FULL, ANALYZE, VERBOSE)` over the direct connection after the projection rerun: 4m01s (heap copy 77 s), 898,403 rows, 0 dead. Table 6,328 MB → 2,933 MB (heap 2,803 MB, indexes 129 MB; pages 787,693 → 358,846); database 28 GB → 25 GB; disk ~29.4 → ~26 GB of 40 GB.
   - [x] 7.4 Write the drop-column migration, apply it with TJ's approval, record it in the ledger, and regenerate `database-generated.types.ts`.
   - [ ] 7.5 Verify: a row-identical recompute for 20 players × 5 strengths, plus the rankings and trends tests.
 
