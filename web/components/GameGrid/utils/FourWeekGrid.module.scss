@@ -355,3 +355,8 @@
 .table td {
   @include opponentPalette.four-week-bands($standalone: true);
 }
+
+.table td.trendCell {
+  width: 104px;
+  padding: 3px 6px;
+}

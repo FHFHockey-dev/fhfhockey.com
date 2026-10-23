@@ -18,6 +18,8 @@ import {
 import { getTeamScheduleSummary } from "./scheduleSummary";
 
 export type ScheduleArray = ExtendedWeekData[];
+const EMPTY_SCHEDULE: ScheduleArray = [];
+const EMPTY_GAME_COUNTS: number[] = [];
 
 export type FourWeekCalendar = {
   start: string;
@@ -99,7 +101,8 @@ export default function useFourWeekSchedule(start: string): [ScheduleArray, numb
         });
 
         for (let week = 1; week <= weeksToFetch; week++) {
-          const schedule = await getSchedule(currentStart);
+          // Opportunity needs fixtures, not the additional win-odds database lookup.
+          const schedule = await getSchedule(currentStart, { includeOdds: false });
           if (
             !schedule ||
             !schedule.data ||
@@ -163,20 +166,8 @@ export default function useFourWeekSchedule(start: string): [ScheduleArray, numb
           );
         }
 
-        // Filter out teams that have zero games across the entire 4-week span
-        const totalGamesByTeam = new Map<number, number>();
-        for (const row of aggregatedSchedule) {
-          totalGamesByTeam.set(
-            row.teamId,
-            (totalGamesByTeam.get(row.teamId) ?? 0) + (row.totalGamesPlayed ?? 0)
-          );
-        }
-        const filteredAggregated = aggregatedSchedule.filter(
-          (row) => (totalGamesByTeam.get(row.teamId) ?? 0) > 0 || knownDays < 28
-        );
-
         if (!ignore) {
-          setScheduleArray(filteredAggregated);
+          setScheduleArray(aggregatedSchedule);
           setNumGamesPerDay(aggregatedNumGamesPerDay);
           setLoading(false);
           setCalendar({ start: calendarStart, end: format(addDays(parseISO(calendarStart), 27), "yyyy-MM-dd"), knownDays, expectedDays: 28, error: null });
@@ -207,7 +198,7 @@ export default function useFourWeekSchedule(start: string): [ScheduleArray, numb
       pendingStart = format(startOfISOWeek(parseISO(start)), "yyyy-MM-dd");
       pendingEnd = format(addDays(parseISO(pendingStart), 27), "yyyy-MM-dd");
     } catch { /* The effect reports invalid dates through calendar.error. */ }
-    return [[], [], true, { start: pendingStart, end: pendingEnd, knownDays: 0, expectedDays: 28, error: null }];
+    return [EMPTY_SCHEDULE, EMPTY_GAME_COUNTS, true, { start: pendingStart, end: pendingEnd, knownDays: 0, expectedDays: 28, error: null }];
   }
   return [scheduleArray, numGamesPerDay, loading, calendar];
 }

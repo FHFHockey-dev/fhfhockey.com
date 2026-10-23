@@ -49,6 +49,8 @@ export type UseOpponentMetricsDataResult = {
   statsLoading: boolean;
   statsError: string | null;
   sourceLabel: string;
+  /** Same loaded snapshot, reused locally for four-week context; never a second read. */
+  statsByAbbreviation?: Record<string, TeamStats>;
 };
 
 export const OPPONENT_METRIC_COLUMNS: OpponentMetricColumn[] = [
@@ -61,6 +63,7 @@ export const OPPONENT_METRIC_COLUMNS: OpponentMetricColumn[] = [
   { label: "PTS%", key: "avgWinPct" }
 ];
 
+const EMPTY_TEAM_STATS: Record<string, TeamStats> = {};
 const EMPTY_AVERAGES: OpponentMetricAverages = {
   avgXgf: null,
   avgXga: null,
@@ -92,7 +95,7 @@ export function computeOpponentMetrics(
       const gp = stats?.gp;
       const value = stats?.[fields[key]];
       if (typeof gp !== "number" || !Number.isFinite(gp) || gp <= 0 ||
-          typeof value !== "number" || !Number.isFinite(value)) return;
+          typeof value !== "number" || !Number.isFinite(value) || value < 0) return;
       const perGame = value / (key === "avgWinPct" ? 2 * gp : gp);
       if (!Number.isFinite(perGame)) return;
       sum += perGame;
@@ -258,6 +261,7 @@ export default function useOpponentMetricsData(
     : "Snapshot freshness unknown.";
 
   return {
+    statsByAbbreviation: enabled && sourceReady && !statsLoading && !statsError ? allTeamStats : EMPTY_TEAM_STATS,
     entries,
     metricsByTeamId,
     coverageByTeamId,

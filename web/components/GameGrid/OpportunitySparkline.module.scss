@@ -1,0 +1,207 @@
+@use "sass:color";
+@use "styles/vars" as v;
+
+// Neon sparkline recipe mirrors TransactionTrends (.sparkPath / .sparkArea),
+// with per-week matchup colors (green / yellow / red) on the gradient stops and dots.
+$matchup-colors: (
+  "easier": v.$success-color,
+  "average": v.$warning-color,
+  "harder": v.$danger-color,
+  "unknown": v.$text-secondary,
+  "no_games": v.$text-secondary,
+);
+
+// Framed like a TransactionTrends spark cell: solid outline, transparent fill.
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 30px;
+  padding: 2px 6px;
+  border: 1px solid rgba(v.$color-white, 0.16);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    border-color: rgba(v.$color-white, 0.42);
+    box-shadow: 0 0 8px rgba(v.$color-white, 0.12);
+  }
+}
+
+.spark {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 40px;
+  max-width: 96px;
+  height: 24px;
+  overflow: visible;
+}
+
+.empty {
+  flex: 1 1 auto;
+  height: 24px;
+  color: v.$text-secondary;
+}
+
+.line {
+  fill: none;
+  stroke-width: 1.55;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.glow {
+  fill: none;
+  stroke-width: 3.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.55;
+}
+
+.area {
+  opacity: 0.14;
+}
+
+.dot,
+.lastDot {
+  stroke: none;
+}
+
+.lastDot {
+  filter: drop-shadow(0 0 3px currentColor);
+}
+
+@each $name, $color in $matchup-colors {
+  .stop[data-matchup="#{$name}"] {
+    stop-color: $color;
+  }
+
+  .dot[data-matchup="#{$name}"],
+  .lastDot[data-matchup="#{$name}"] {
+    color: $color;
+    fill: $color;
+  }
+
+  .cardMatchup[data-matchup="#{$name}"] {
+    color: $color;
+  }
+}
+
+// Quick-look card: glass panel with a solid top rail.
+.card {
+  position: fixed;
+  z-index: v.$mobile-z-index-modal;
+  box-sizing: border-box;
+  width: 236px;
+  max-width: calc(100vw - 16px);
+  padding: 12px 12px 8px;
+  overflow: hidden;
+  border: 1px solid rgba(v.$color-white, 0.12);
+  border-radius: v.$border-radius-md;
+  background: #1d2127;
+  box-shadow: 0 14px 28px rgba(v.$color-black, 0.4), 0 0 18px rgba(v.$primary-color, 0.12);
+  color: v.$text-primary;
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  pointer-events: none;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: v.$primary-color;
+    box-shadow: 0 0 10px v.$primary-color;
+  }
+}
+
+.cardHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(v.$color-white, 0.08);
+}
+
+.cardTeam {
+  color: v.$color-white;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.cardTotal {
+  color: v.$primary-color;
+  font-family: v.$font-family-numbers;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.cardTrend {
+  margin-left: auto;
+  color: v.$text-secondary;
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+
+  &[data-trend="Rising"] { color: v.$success-color; }
+  &[data-trend="Falling"] { color: v.$danger-color; }
+}
+
+.cardWeeks {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cardWeek {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.cardDate {
+  color: v.$text-secondary;
+}
+
+.cardCounts {
+  font-family: v.$font-family-numbers;
+  font-size: 0.64rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.cardPending {
+  grid-column: 2 / -1;
+  color: v.$text-secondary;
+  font-style: italic;
+}
+
+.cardMatchup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  &::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 6px currentColor;
+  }
+}

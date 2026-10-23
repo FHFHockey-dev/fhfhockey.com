@@ -356,7 +356,7 @@ const realRows = (page: Page, width: number) => width >= 1024
   ? page.locator('tbody tr:has([id^="game-grid-master-trigger-"])')
   : page.locator('table').filter({ has: page.getByRole('button', { name: 'Sort by games played', exact: true }) }).locator('tbody tr:has(td:first-child a)');
 const column = (rows: Locator, index: number) => rows.evaluateAll((trs, i) => trs.map((tr) => tr.querySelectorAll('td')[i]?.textContent?.trim() ?? ''), index);
-const gpSum = async (rows: Locator) => (await column(rows, 8)).reduce((sum, value) => sum + Number(value), 0);
+const gpSum = async (rows: Locator) => (await column(rows, await rows.first().locator('td').count() === 11 ? 8 : 10)).reduce((sum, value) => sum + Number(value), 0);
 
 for (const width of [1920, 1180, 390, 320]) test(`32-team real week keeps rows, totals and rankings through day masks and schedule states at ${width}px`, async ({ page }, testInfo) => {
   await page.setViewportSize({ width, height: width >= 1024 ? 1000 : 844 });
@@ -368,9 +368,9 @@ for (const width of [1920, 1180, 390, 320]) test(`32-team real week keeps rows, 
   expect(await gpSum(rows)).toBe(104);
   if (width >= 1024) {
     const totals = page.locator('tr', { hasText: 'GP/Day' }).first().locator('td');
-    expect((await totals.allTextContents()).slice(1, 9)).toEqual(['5', '9', '2', '14', '1', '14', '7', '52']);
+    expect((await totals.allTextContents()).slice(3, 11)).toEqual(['5', '9', '2', '14', '1', '14', '7', '52']);
     await page.getByRole('button', { name: 'Sort by Score descending' }).first().click();
-    const scores = (await column(rows, 10)).map(Number);
+    const scores = (await column(rows, width >= 1024 ? 12 : 10)).map(Number);
     expect(scores.every((score, i) => i === 0 || scores[i - 1] >= score)).toBe(true);
   } else {
     const fit = await rows.first().evaluate((tr) => ({ cells: tr.querySelectorAll('td').length,
@@ -387,14 +387,14 @@ for (const width of [1920, 1180, 390, 320]) test(`32-team real week keeps rows, 
   // A postponement removes one game from both teams and from Thursday's slate only.
   await page.getByRole('button', { name: 'Postponed schedule fixture' }).click();
   await expect.poll(() => gpSum(rows)).toBe(102);
-  if (width >= 1024) expect((await page.locator('tr', { hasText: 'GP/Day' }).first().locator('td').allTextContents())[4]).toBe('13');
+  if (width >= 1024) expect((await page.locator('tr', { hasText: 'GP/Day' }).first().locator('td').allTextContents())[6]).toBe('13');
   await page.getByRole('button', { name: 'Partial schedule fixture' }).click();
   await expect(page.getByText(/Selected schedule incomplete: 6\/7 days covered/)).toBeVisible();
   await expect(rows).toHaveCount(0);
   await page.getByRole('button', { name: 'Empty schedule fixture' }).click();
   await expect(rows).toHaveCount(32);
   expect(await gpSum(rows)).toBe(0);
-  expect(new Set(await column(rows, 10))).toEqual(new Set(['-']));
+  expect(new Set(await column(rows, width >= 1024 ? 12 : 10))).toEqual(new Set(['-']));
   expect(errors).toEqual([]);
 });
 
@@ -408,4 +408,293 @@ test('32-team stale schedule receipts are disclosed in previews and never become
   const details = page.locator(`#${id}`);
   await expect(details.getByText(/Schedule retrieved: 2026-09-30T12:00:00Z\. Provider source freshness unavailable\./).first()).toBeVisible();
   await expect(details.getByLabel('Remaining-week category forecasts').getByText('Unavailable', { exact: true })).toHaveCount(7);
+});
+
+
+for (const width of [1440, 520]) test(`Game Grid UI corrections keep info readable and controls unchanged at ${width}px`, async ({ page }, testInfo) => {
+  await page.setViewportSize({ width, height: 900 });
+  await fixture(page);
+  if (width >= 1024) await page.goto('/?sticky-header=1');
+  await expect(page.getByRole('button', { name: /^(Skaters|Goalies)$/ })).toHaveCount(0);
+  const help = page.getByRole('button', { name: 'Week Score i', exact: true });
+  const dialog = page.getByRole('dialog', { name: 'Week score formula' });
+  const grid = width >= 1024 ? page.locator('[class*="masterTableScroll"] table')
+    : page.locator('table').filter({ has: page.getByRole('button', { name: 'Sort by games played', exact: true }) });
+  const rowsBefore = await grid.locator('tbody').innerText();
+  if (width >= 1024) {
+    const legend = page.getByRole('group', { name: 'Game Grid legend' });
+    const summary = legend.locator('summary[aria-label="Info about Game Grid metrics"]');
+    await expect(summary).toHaveCount(1);
+    await expect(page.locator('[class*="masterTableShell"] summary')).toHaveCount(0);
+    await summary.press('Enter');
+    await expect(legend.getByText(/Metrics per game/)).toBeVisible();
+    await expect(legend.getByText(/Lower OPP%/)).toBeVisible();
+    await summary.press('Enter');
+    await expect(summary.locator('..')).not.toHaveAttribute('open');
+  }
+  await page.screenshot({ path: testInfo.outputPath(`game-grid-legend-full-${width}.png`), fullPage: false });
+  await help.focus();
+  await help.press('Enter');
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toBeFocused();
+  await expect(dialog.getByText(/Adjusted Team Games = Team Games/)).toBeVisible();
+  const readable = async () => {
+    const bounds = await dialog.evaluate(node => {
+      const box = node.getBoundingClientRect();
+      const points = [0.1, 0.5, 0.9].map(part => ({ x: box.left + box.width / 2, y: box.top + box.height * part }));
+      return { left: box.left, right: box.right, top: box.top, bottom: box.bottom,
+        portaled: node.parentElement === document.body,
+        unobscured: points.every(({x, y}) => node.contains(document.elementFromPoint(x, y))) };
+    });
+    const viewport = page.viewportSize()!;
+    const headerBottom = await page.locator('[data-site-header]').evaluateAll(nodes =>
+      Math.max(0, ...nodes.map(node => node.getBoundingClientRect().bottom)));
+    const drawerTop = await page.locator('#gg-bottom-drawer').evaluate(node => {
+      const box = node.getBoundingClientRect();
+      return box.height > 0 ? box.top : window.innerHeight;
+    });
+    expect(bounds.portaled).toBe(true);
+    expect(bounds.left).toBeGreaterThanOrEqual(8);
+    expect(bounds.right).toBeLessThanOrEqual(viewport.width - 7);
+    expect(bounds.top).toBeGreaterThanOrEqual(headerBottom + 8);
+    expect(bounds.bottom).toBeLessThanOrEqual(drawerTop - 7);
+    expect(bounds.bottom).toBeLessThanOrEqual(viewport.height - 7);
+    expect(bounds.unobscured).toBe(true);
+  };
+  await readable();
+  await page.screenshot({ path: testInfo.outputPath(`game-grid-help-${width}.png`), fullPage: false });
+  // Keep the anchor visible while scrolling; the body portal follows it.
+  await page.evaluate(() => window.scrollBy(0, 20));
+  await readable();
+  await page.setViewportSize({ width, height: 420 });
+  await expect.poll(() => dialog.evaluate(node => node.getBoundingClientRect().bottom)).toBeLessThanOrEqual(413);
+  await readable();
+  if (width >= 1024) {
+    await page.locator('[data-site-header]').evaluate(node => node.style.setProperty('--fixture-header-height', '96px'));
+    await expect.poll(() => dialog.evaluate(node => node.getBoundingClientRect().top)).toBeGreaterThanOrEqual(104);
+    await readable();
+  }
+  await page.screenshot({ path: testInfo.outputPath(`game-grid-help-short-${width}.png`), fullPage: false });
+  await dialog.evaluate(node => { node.scrollTop = node.scrollHeight; });
+  await expect(dialog.getByText(/Adjusted Team Games = Team Games/)).toBeInViewport();
+  await dialog.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(help).toBeFocused();
+  await help.press('Enter');
+  await page.getByRole('button', { name: 'Next week', exact: true }).focus();
+  await expect(dialog).toHaveCount(0);
+  await help.click();
+  await expect(dialog).toBeVisible();
+  await page.getByRole('button', { name: '7-Day', exact: true }).dispatchEvent('pointerdown', { pointerType: 'touch' });
+  await expect(dialog).toHaveCount(0);
+  expect(await grid.locator('tbody').innerText()).toEqual(rowsBefore);
+  await page.screenshot({ path: testInfo.outputPath(`game-grid-legend-${width}.png`), fullPage: false });
+  await help.click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^(Skaters|Goalies)$/ })).toHaveCount(0);
+});
+
+
+for (const width of [1440, 1024, 520, 390, 320]) for (const warning of [true, false]) {
+  test(`Game Grid legend and warning footer at ${width}px with warning ${warning ? 'present' : 'absent'}`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 });
+    await fixture(page);
+    if (!warning) await page.goto('/?complete-schedule=1');
+    // Match production's global box sizing without importing remote fonts/assets.
+    await page.addStyleTag({ content: '* { box-sizing: border-box; }' });
+    const footer = page.locator('[data-game-grid-warning-footer]');
+    const message = 'Schedule incomplete. Affected totals are unavailable; check back after schedule updates.';
+    await expect(footer).toHaveCount(1);
+    if (warning) {
+      await expect(footer.getByRole('status')).toHaveText(message);
+      await expect(page.getByRole('status').filter({ hasText: message })).toHaveCount(1);
+      const fit = await footer.evaluate(node => {
+        const parent = node.parentElement!;
+        const box = node.getBoundingClientRect(), controls = parent.getBoundingClientRect();
+        const style = getComputedStyle(parent), text = node.querySelector('[role="status"]')!;
+        const warning = text.getBoundingClientRect();
+        return { left: box.left, right: box.right, bottom: box.bottom,
+          warningLeft: warning.left, warningRight: warning.right, warningBottom: warning.bottom,
+          expectedLeft: controls.left + parseFloat(style.borderLeftWidth),
+          expectedRight: controls.right - parseFloat(style.borderRightWidth),
+          expectedBottom: controls.bottom - parseFloat(style.borderBottomWidth),
+          scroll: text.scrollWidth, client: text.clientWidth };
+      });
+      expect(fit.left).toBeCloseTo(fit.expectedLeft, 0);
+      expect(fit.right).toBeCloseTo(fit.expectedRight, 0);
+      expect(fit.bottom).toBeCloseTo(fit.expectedBottom, 0);
+      expect(fit.warningLeft).toBeCloseTo(fit.left, 0);
+      expect(fit.warningRight).toBeCloseTo(fit.right, 0);
+      expect(fit.warningBottom).toBeCloseTo(fit.bottom, 0);
+      expect(fit.left).toBeGreaterThanOrEqual(0);
+      expect(fit.right).toBeLessThanOrEqual(width + 1);
+      expect(fit.scroll).toBeLessThanOrEqual(fit.client + 1);
+    } else {
+      await expect(footer).toBeHidden();
+      await expect(footer.getByRole('status')).toHaveCount(0);
+      await expect(page.getByRole('status').filter({ hasText: message })).toHaveCount(0);
+      expect(await footer.evaluate(node => node.getBoundingClientRect().height)).toBe(0);
+    }
+    if (width >= 1024) {
+      const legend = page.getByRole('group', { name: 'Game Grid legend' });
+      const summary = legend.locator('summary[aria-label="Info about Game Grid metrics"]');
+      await expect(summary).toHaveCount(1);
+      await expect(legend.getByRole('status')).toHaveCount(0);
+      const swatches = await legend.locator('ul').boundingBox();
+      const info = await summary.boundingBox();
+      expect(info!.x).toBeGreaterThan(swatches!.x + swatches!.width);
+      await summary.press('Enter');
+      await expect(legend.getByText(/Metrics per game/)).toBeVisible();
+      await expect(legend.getByText(/Lower OPP%/)).toBeVisible();
+      const contentFits = await summary.locator('..').evaluate(node => node.scrollWidth <= node.clientWidth + 1);
+      expect(contentFits).toBe(true);
+      await summary.press('Enter');
+    }
+    await expect(page.getByRole('button', { name: /^(Skaters|Goalies)$/ })).toHaveCount(0);
+    await page.screenshot({ path: testInfo.outputPath(`legend-footer-${width}-${warning ? 'warning' : 'complete'}.png`), fullPage: false });
+  });
+}
+
+for (const timezoneId of ['UTC', 'America/New_York', 'America/Los_Angeles', 'Asia/Tokyo', 'Pacific/Auckland']) {
+  test(`four-week opportunity keeps future NHL Sunday starts across viewer midnight in ${timezoneId}`, async ({ browser }) => {
+    const context = await browser.newContext({ timezoneId, viewport: { width: 1440, height: 900 } });
+    try {
+      const page = await context.newPage();
+      await page.clock.install({ time: new Date('2026-11-01T23:00:00Z') });
+      await page.clock.setFixedTime(new Date('2026-11-01T23:00:00Z'));
+      await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+      await page.goto('/?teams=32&opportunity=1');
+      const sparks = page.getByRole('button', { name: / 4-week value / });
+      await expect(sparks).toHaveCount(32);
+      const values = await sparks.evaluateAll(nodes => nodes.map(node => node.getAttribute('aria-label')!.match(/4-week value ([^,;]+)/)![1]));
+      expect(values.filter(v => v === '1.3')).toHaveLength(14);
+      expect(values.filter(v => v === '0.0')).toHaveLength(18);
+      expect(new Set(await sparks.locator('svg').evaluateAll(nodes => nodes.map(n => n.getAttribute('data-shared-scale'))))).toEqual(new Set(['2']));
+      const target = page.getByRole('button', { name: / 4-week value 1\.3[,;]/ }).first();
+      await target.focus();
+      const card = page.getByRole('tooltip');
+      await expect(card).toBeVisible();
+      await expect(card.getByText('Oct 26', { exact: true })).toBeVisible();
+      await expect(card.getByText('1 GP · 1 OFF', { exact: true })).toBeVisible();
+      await target.press('Escape');
+      await expect(card).toHaveCount(0);
+      await expect(target).toBeFocused();
+    } finally { await context.close(); }
+  });
+}
+
+for (const width of [1920, 1440, 1024, 520, 390, 320]) for (const dayCount of width >= 1024 ? [7, 10] : [7]) test(`opponent ratings and four-week opportunity expand independently at ${width}px in ${dayCount}-day mode`, async ({ page }, testInfo) => {
+  await page.setViewportSize({ width, height: 900 });
+  await fixture(page);
+  await page.goto('/?teams=32&opportunity=1');
+  await page.addStyleTag({ content: '* { box-sizing: border-box; }' });
+  if (dayCount === 10) await page.getByRole('button', { name: '10-Day', exact: true }).click();
+  let gridWidths: number[] | undefined;
+  const opponent = page.getByRole('button', { name: 'Expand opponent details' }).first();
+  const fourWeek = page.getByRole('button', { name: 'Expand four-week columns' }).first();
+  await expect(opponent).toHaveAttribute('aria-expanded', 'false');
+  await expect(fourWeek).toHaveAttribute('aria-expanded', 'false');
+  const check = async (left: boolean, right: boolean) => {
+    if (width >= 1024) {
+      const table = page.locator('[class*="masterTableScroll"] table');
+      const expected = 2 + (left ? 7 : 0) + 1 + dayCount + 3 + (right ? 5 : 2);
+      await expect(table.locator('col')).toHaveCount(expected);
+      const widths = await table.locator('col').evaluateAll(cols => cols.map(col => col.getBoundingClientRect().width));
+      // Team and day columns keep one width in every expansion state.
+      const grid = widths.slice(left ? 9 : 2, (left ? 9 : 2) + 1 + dayCount);
+      if (!gridWidths) gridWidths = grid;
+      else grid.forEach((gridWidth, index) => expect(gridWidth).toBeCloseTo(gridWidths![index], 0));
+      const geometry = await table.evaluate(node => ({ width: node.getBoundingClientRect().width, container: node.parentElement!.clientWidth, center: (node.getBoundingClientRect().left + node.getBoundingClientRect().right) / 2, parentCenter: (node.parentElement!.getBoundingClientRect().left + node.parentElement!.getBoundingClientRect().right) / 2 }));
+      if (geometry.width <= geometry.container) expect(geometry.center).toBeCloseTo(geometry.parentCenter, 0);
+      // Collapsed groups fit everywhere; fully expanded groups fit once the container holds their minimums.
+      if (!left || width >= 1920) expect(geometry.width).toBeLessThanOrEqual(Math.max(geometry.container, 380 + 72 + dayCount * 80 + 248 + 288) + 1);
+      if (width >= 1920) expect(geometry.width).toBeLessThanOrEqual(geometry.container + 1);
+      const rows = table.locator('tbody tr').filter({ has: page.locator('[id^="game-grid-master-trigger-"]') });
+      await expect(rows).toHaveCount(32);
+      expect(await rows.evaluateAll(trs => new Set(trs.map(tr => tr.querySelectorAll('td').length)).size)).toBe(1);
+      expect(await rows.first().locator('td').count()).toBe(expected);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  };
+  await check(false, false);
+  await opponent.click();
+  await check(true, false);
+  await fourWeek.click();
+  await check(true, true);
+  await page.getByRole('button', { name: 'Collapse opponent details' }).first().click();
+  await check(false, true);
+  await page.getByRole('button', { name: 'Collapse four-week columns' }).first().click();
+  await check(false, false);
+  await expect(page.getByRole('button', { name: /^(Skaters|Goalies)$/ })).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath(`compact-opportunity-${width}-${dayCount}.png`), fullPage: false });
+});
+
+test('four-week opportunity preserves unknown gaps and exposes touch and keyboard context', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await fixture(page);
+  await page.goto('/?opportunity=1&gap=1');
+  const target = page.getByRole('button', { name: /^F1 4-week value / });
+  await expect(target).toHaveAccessibleName(/^F1 4-week value —/);
+  await expect(target.locator('circle')).toHaveCount(3);
+  expect((await target.locator('path[stroke]:not([filter])').getAttribute('d'))!.match(/M/g)).toHaveLength(2);
+  await target.click();
+  const card = page.getByRole('tooltip');
+  await expect(card).toBeVisible();
+  await expect(card.getByText('Schedule pending')).toBeVisible();
+  await page.addScriptTag({ content: axe.source });
+  expect(await card.evaluate(async node => (await (window as any).axe.run(node, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa'] } })).violations.map((v: any) => v.id))).toEqual([]);
+  await target.press('Escape');
+  await expect(card).toHaveCount(0);
+  await expect(target).toBeFocused();
+  await target.press('Enter');
+  await expect(card).toBeVisible();
+  await page.getByRole('button', { name: 'Ready schedule fixture' }).click();
+  await expect(card).toHaveCount(0);
+});
+
+test('sparkline gradient colors weeks by skater matchup and sticky headers stay aligned', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await fixture(page);
+  await page.goto('/?teams=32&opportunity=1');
+  await page.addStyleTag({ content: '* { box-sizing: border-box; } #root { padding-bottom: 100vh; }' });
+  const table = page.locator('[class*="masterTableScroll"] table');
+  const stopColors = await Promise.all(['easier', 'average', 'harder'].map(grade =>
+    table.locator(`stop[data-matchup="${grade}"]`).first().evaluate(node => getComputedStyle(node).stopColor)));
+  expect(new Set(stopColors).size).toBe(3);
+  const trigger = table.locator('button:has(stop[data-matchup="harder"])').first();
+  await trigger.hover();
+  await expect(page.getByRole('tooltip').getByText('Hard', { exact: true }).first()).toBeVisible();
+  await page.mouse.move(0, 0);
+  await expect(page.getByRole('tooltip')).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath('centered-grid-skater-markers.png'), fullPage: false });
+  const overlay = page.locator('[class*="masterStickyHeaderOverlay"]');
+  await table.locator('thead').evaluate(node => window.scrollBy(0, node.getBoundingClientRect().top + 10));
+  await expect(overlay).toBeVisible();
+  const actualHeader = table.locator('thead th').nth(2);
+  const stickyHeader = overlay.locator('thead th').nth(2);
+  await expect.poll(async () => {
+    const a = await actualHeader.boundingBox(), b = await stickyHeader.boundingBox();
+    return Math.abs(a!.x - b!.x);
+  }).toBeLessThanOrEqual(1);
+});
+
+test('Game Grid stays responsive while the four-week reader is slow', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(String(error)));
+  page.on('console', message => { if (/Maximum update depth|Too many re-renders/i.test(message.text())) errors.push(message.text()); });
+  await fixture(page);
+  await page.goto('/?teams=32&opportunity=1&slow-four-week=1');
+  const table = page.locator('[class*="masterTableScroll"] table');
+  const spark = table.getByRole('button', { name: / 4-week value / }).first();
+  await expect(spark).toHaveAccessibleName(/ 4-week value —/);
+  const daySwitch = page.getByRole('switch', { name: 'Include THU games', exact: true }).first();
+  await daySwitch.click({ timeout: 1500 });
+  await expect(daySwitch).toHaveAttribute('aria-checked', 'false', { timeout: 1000 });
+  await daySwitch.click({ timeout: 1500 });
+  await expect(daySwitch).toHaveAttribute('aria-checked', 'true', { timeout: 1000 });
+  await expect(spark.locator('circle')).toHaveCount(4, { timeout: 6000 });
+  await expect(table.locator('tbody tr:has([id^="game-grid-master-trigger-"])')).toHaveCount(32);
+  expect(errors).toEqual([]);
 });

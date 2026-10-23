@@ -1,4 +1,4 @@
-import React, { createElement, useSyncExternalStore } from 'react';
+import React, { createElement, useEffect, useState, useSyncExternalStore } from 'react';
 import { DAYS, GameData, Team } from 'lib/NHL/types';
 import { addDays, format, parseISO } from 'date-fns';
 import { REAL_WEEK_32 } from './real-week-32';
@@ -42,7 +42,7 @@ export function useSchedule(start: string, extended: boolean) {
       const game = (day: number): GameData & { startTimeUTC: string } => ({
         id: Math.ceil(team.id / 2) * 100 + day, season: 20262027, gameType: 2,
         gameDate: dates[day], startTimeUTC: dates[day] + 'T23:00:00Z',
-        gameState: status === 'refreshed' && day === 3 ? 'LIVE' : 'FUT',
+        gameScheduleState: 'OK', gameState: status === 'refreshed' && day === 3 ? 'LIVE' : 'FUT',
         homeTeam: { ...teams[Math.min(team.id, opponent)] }, awayTeam: { ...teams[Math.max(team.id, opponent)] },
       });
       return { teamId: team.id, ...(status === 'empty' ? {} : { THU: game(3), SUN: game(6), ...(team.id > 12 ? { SAT: game(5) } : {}), ...(extended ? { nMON: game(7) } : {}) }) };
@@ -64,14 +64,51 @@ function realWeekRows(dates: string[], status: string) {
       const self = idOf(abbreviation), opponent = idOf(cell.replace('@', ''));
       const [home, away] = cell.startsWith('@') ? [opponent, self] : [self, opponent];
       row[DAYS[day]] = { id: 2026020000 + day * 100 + Math.min(home, away), season: 20262027, gameType: 2,
-        gameDate: dates[day], startTimeUTC: dates[day] + 'T23:00:00Z', gameState: 'FUT',
+        gameDate: dates[day], startTimeUTC: dates[day] + 'T23:00:00Z', gameState: 'FUT', gameScheduleState: 'OK',
         ...(status === 'postponed' && day === 3 && home === idOf('S.J') ? { gameScheduleState: 'PPD' } : {}),
         homeTeam: { ...teams[home] }, awayTeam: { ...teams[away] } };
     });
     return row;
   });
 }
-const fourWeeks = [[], [], false, { start: '2026-10-05', end: '2026-11-01', knownDays: 0, expectedDays: 28, error: null }];
-export const useFourWeekSchedule = () => fourWeeks;
-const metrics = { entries: [], metricsByTeamId: {}, coverageByTeamId: {}, leagueAverages: {}, leagueCoverage: {}, metricColumns: [], statsLoading: false, statsError: null, sourceLabel: 'Fixture: observed metrics unavailable.' };
-export const useOpponentMetricsData = () => metrics;
+const completeCalendar = typeof location !== 'undefined' && new URLSearchParams(location.search).has('complete-schedule');
+const fourWeekSnapshots = new Map();
+export function useFourWeekSchedule(start: string) {
+  const [waiting, setWaiting] = useState(() => new URLSearchParams(location.search).has('slow-four-week'));
+  useEffect(() => {
+    if (!waiting) return;
+    const timer = setTimeout(() => setWaiting(false), 4000);
+    return () => clearTimeout(timer);
+  }, [waiting]);
+  const window = useSchedule(start, false);
+  const key = `${start}/${state}`;
+  if (!fourWeekSnapshots.has(key)) {
+    const opportunityFixture = new URLSearchParams(location.search).has('opportunity');
+    const covered = completeCalendar || opportunityFixture;
+    const rows = [1, 2, 3, 4].flatMap((weekNumber) => window[0].map((row: Record<string, unknown>) => ({
+      ...row, weekNumber, totalGamesPlayed: 0, totalOffNights: 0, weekScore: -100,
+      scheduleCoverage: { known: covered && !(new URLSearchParams(location.search).has('gap') && row.teamId === 1 && weekNumber === 2) ? 7 : 0, expected: 7 },
+      ...Object.fromEntries(DAYS.flatMap((day) => {
+        const game = row[day] as GameData | undefined;
+        if (!game) return [];
+        const date = format(addDays(parseISO(game.gameDate!), 7 * (weekNumber - 1)), 'yyyy-MM-dd');
+        return [[day, { ...game, id: game.id + weekNumber * 100000, gameDate: date,
+          startTimeUTC: opportunityFixture && weekNumber === 4 && day === 'SUN' ? '2026-11-02T02:00:00Z' : date + 'T23:00:00Z' }]];
+      })),
+    })));
+    fourWeekSnapshots.set(key, [rows, [], false, { start, end: format(addDays(parseISO(start), 27), 'yyyy-MM-dd'), knownDays: covered ? 28 : 0, expectedDays: 28, error: null }]);
+  }
+  // Deliberately return fresh empty rows, exercising the clock's loading guard.
+  if (waiting) return [[], [], true, { start, end: format(addDays(parseISO(start), 27), 'yyyy-MM-dd'), knownDays: 0, expectedDays: 28, error: null }];
+  return fourWeekSnapshots.get(key);
+}
+export function useOpponentMetricsData(teamData: any[]) {
+  const statsByAbbreviation = Object.fromEntries(Object.values(teams).map((team) => [team.abbreviation, { gp: 4, xgf: team.id, xga: 33 - team.id }]));
+  const keys = ['avgXgf', 'avgXga', 'avgGoalFor', 'avgGoalAgainst', 'avgSf', 'avgSa', 'avgWinPct'];
+  const labels = ['xGF', 'xGA', 'GF', 'GA', 'SF', 'SA', 'PTS%'];
+  const entries = teamData.map((team) => ({ team,
+    averages: Object.fromEntries(keys.map((key, index) => [key, team.totals.gamesPlayed ? index === 6 ? .5 : index === 0 ? team.teamId / 4 : (33 - team.teamId) / 4 : null])),
+    coverage: Object.fromEntries(keys.map((key) => [key, { known: team.totals.gamesPlayed, expected: team.totals.gamesPlayed }])) }));
+  return { entries, statsByAbbreviation, metricsByTeamId: Object.fromEntries(entries.map((e) => [e.team.teamId, e.averages])), coverageByTeamId: Object.fromEntries(entries.map((e) => [e.team.teamId, e.coverage])),
+    leagueAverages: {}, leagueCoverage: {}, metricColumns: keys.map((key, index) => ({ key, label: labels[index] })), statsLoading: false, statsError: null, sourceLabel: 'Fixture: provisional observations; freshness unknown.' };
+}

@@ -1,0 +1,30 @@
+@use "styles/vars" as v;
+
+// Ghost toggle for the stacked opponent / four-week panels.
+.detailToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  margin: 4px 8px 8px;
+  padding: 4px 12px;
+  border: 1px solid v.$border-secondary;
+  border-radius: 999px;
+  background: transparent;
+  color: v.$text-secondary;
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover,
+  &:focus-visible,
+  &[aria-expanded="true"] {
+    outline: none;
+    border-color: v.$primary-color;
+    color: v.$primary-color;
+    box-shadow: 0 0 8px rgba(v.$primary-color, 0.35);
+  }
+}

@@ -24,7 +24,7 @@ const entries = [1, 2, 3, 4].map((teamId) => {
     avgSf: 25 + teamId, avgSa: 25 + teamId, avgWinPct: teamId / 10
   };
   return {
-    team: { teamId, teamAbbreviation: `T${teamId}` } as unknown as TeamDataWithTotals,
+    team: { teamId, teamAbbreviation: `T${teamId}`, weeks: [], totals: { gamesPlayed: 1, offNights: 0, opponents: [], scheduleCoverage: full }, avgOpponentPointPct: null } as TeamDataWithTotals,
     averages,
     coverage: Object.fromEntries(columns.map(({ key }) => [key, full])) as UseOpponentMetricsDataResult["entries"][number]["coverage"]
   };
@@ -34,28 +34,21 @@ const metricsData = {
   metricColumns: columns, statsLoading: false, statsError: null, sourceLabel: "fixture"
 } as unknown as UseOpponentMetricsDataResult;
 
-const saCells = () => screen.getAllByRole("row").slice(2).map((row) => within(row).getAllByRole("cell")[6]);
+const saCells = () => screen.getAllByRole("row").slice(2).map((row) => within(row).getAllByRole("cell")[8]);
 
 describe("OpponentMetricsTable perspective", () => {
-  it("defaults to the skater view and uncolors mixed-sign metrics for goalies", () => {
+  it("hides the role control and preserves the released skater colors", () => {
     render(<OpponentMetricsTable teamData={entries.map(({ team }) => team)} metricsData={metricsData} />);
-    const skaters = screen.getByRole("button", { name: "Skaters" });
-    const goalies = screen.getByRole("button", { name: "Goalies" });
-    expect(skaters.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.queryByRole("button", { name: "Skaters" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Goalies" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Expand opponent details" }));
     expect(saCells().every((cell) => cell.className !== "")).toBe(true);
     expect(screen.getByRole("columnheader", { name: /SA/ }).hasAttribute("data-uncolored")).toBe(false);
-
-    fireEvent.click(goalies);
-    expect(goalies.getAttribute("aria-pressed")).toBe("true");
-    expect(skaters.getAttribute("aria-pressed")).toBe("false");
-    expect(saCells().every((cell) => cell.className === "")).toBe(true);
-    expect(screen.getByRole("columnheader", { name: /SA/ }).hasAttribute("data-uncolored")).toBe(true);
-    expect(screen.getByRole("columnheader", { name: /xGF/ }).hasAttribute("data-uncolored")).toBe(false);
   });
 });
 
 describe("DesktopMasterTable perspective", () => {
-  it("shares the skater default and the goalie split with the standalone table", () => {
+  it("hides the role control and shares the unchanged skater default", () => {
     vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
     render(<DesktopMasterTable
       start="2026-10-19" extended={false}
@@ -66,10 +59,10 @@ describe("DesktopMasterTable perspective", () => {
       opponentMetricsLoading={false} opponentMetricsError={null}
       fourWeekSummaryByTeamId={{}} fourWeekAverages={{ gamesPlayed: null, offNights: null, avgOpponentPointPct: null, score: null }}
     />);
-    const sa = () => screen.getAllByRole("link", { name: /Team HQ/ }).map((link) => link.closest("tr")!.querySelectorAll("td")[5].className);
+    fireEvent.click(screen.getByRole("button", { name: "Expand opponent details" }));
+    const sa = () => screen.getAllByRole("link", { name: /Team HQ/ }).map((link) => link.closest("tr")!.querySelectorAll("td")[7].className);
     expect(sa().every((name) => /masterMetric(Good|Bad)/.test(name))).toBe(true);
-    fireEvent.click(screen.getByRole("button", { name: "Goalies" }));
-    expect(screen.getByRole("button", { name: "Goalies" }).getAttribute("aria-pressed")).toBe("true");
-    expect(sa().some((name) => /masterMetric(Good|Bad)/.test(name))).toBe(false);
+    expect(screen.queryByRole("button", { name: "Skaters" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Goalies" })).toBeNull();
   });
 });

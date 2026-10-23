@@ -1,480 +1,111 @@
-// components/GameGrid/FourWeekGrid.tsx
-
-import React, { useMemo, useState, useEffect } from "react"; // Added useEffect
-import styles from "./FourWeekGrid.module.scss";
-import MetricInfoDisclosure from "../MetricInfoDisclosure";
-import Image from "next/image"; // Use next/image instead of legacy
+import React, { useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { TeamDataWithTotals, TeamWithScore } from "lib/NHL/types"; // Consolidate type imports
+import type { TeamDataWithTotals } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
-import clsx from "clsx";
-import { FOUR_WEEK_COLOR_LEGEND, toFourWeekMetricBands } from "./fourWeekMetricBands";
-import { getFourWeekAverages, getFourWeekScore } from "./scheduleSummary";
+import MetricInfoDisclosure from "../MetricInfoDisclosure";
+import OpportunitySparkline from "../OpportunitySparkline";
+import toggleStyles from "../DetailToggle.module.scss";
+import rankStyles from "../OpponentMetricsTable.module.scss";
+import { toRankMaps } from "./metricRanks";
+import { OPPORTUNITY_INFO, formatOpportunity, type TeamOpportunity } from "./scheduleOpportunity";
+import { getFourWeekAverages } from "./scheduleSummary";
+import { toFourWeekMetricBands, FOUR_WEEK_COLOR_LEGEND } from "./fourWeekMetricBands";
 import type { FourWeekCalendar } from "./useFourWeekSchedule";
-import {
-  buildFourWeekDetailAverages,
-  buildFourWeekDetailCells,
-  FourWeekGridView,
-  getFourWeekNumbers,
-} from "./fourWeekGridViews";
+import { buildFourWeekDetailCells } from "./fourWeekGridViews";
+import styles from "./FourWeekGrid.module.scss";
 
-// --- useIsMobile hook ---
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    function handleResize() {
-      setIsMobile(window.innerWidth < 768);
-    }
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-  return isMobile;
-}
-
-// --- Component Props and Types ---
-type FourWeekGridProps = {
+type Props = {
   teamDataArray: TeamDataWithTotals[];
   calendar?: FourWeekCalendar;
+  warningTarget?: HTMLElement | null;
+  opportunityByTeamId?: Record<number, TeamOpportunity>;
+  sharedScale?: number;
 };
-type SortConfig = {
-  key:
-    | "gamesPlayed"
-    | "offNights"
-    | "avgOpponentPointPct"
-    | "score"
-    | "teamName"; // Added teamName
-  direction: "ascending" | "descending";
-};
-const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray, calendar }) => {
-  const teamsMap = useTeamsMap();
-  const isMobile = useIsMobile();
-  const [isMobileMinimized, setIsMobileMinimized] = useState(false);
-  const [activeView, setActiveView] = useState<FourWeekGridView>("summary");
-  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null); // Default sort removed, will apply in useMemo
-
-  // --- Handlers ---
-  const toggleMobileMinimize = () => {
-    if (isMobile) {
-      setIsMobileMinimized((prev) => !prev);
-    }
+type Key = "teamName" | "gamesPlayed" | "offNights" | "avgOpponentPointPct" | "score";
+export default function FourWeekGrid({ teamDataArray, calendar, warningTarget, opportunityByTeamId = {}, sharedScale = 1 }: Props) {
+  const teams = useTeamsMap();
+  const [expanded, setExpanded] = useState(false);
+  const [weekly, setWeekly] = useState(false);
+  const [sort, setSort] = useState<{ key: Key; ascending: boolean }>({ key: "teamName", ascending: true });
+  const complete = (team: TeamDataWithTotals) => team.totals.scheduleCoverage != null && team.totals.scheduleCoverage.known === team.totals.scheduleCoverage.expected;
+  const value = (team: TeamDataWithTotals, key: Key): string | number | null => {
+    if (key === "teamName") return teams[team.teamId]?.name ?? team.teamAbbreviation;
+    if (key === "score") return opportunityByTeamId[team.teamId]?.opportunity ?? null;
+    if (!complete(team)) return null;
+    return key === "avgOpponentPointPct" ? team.avgOpponentPointPct : team.totals[key];
   };
-  const handleSort = (key: SortConfig["key"]) => {
-    let direction: SortConfig["direction"] = "ascending";
-    if (
-      sortConfig &&
-      sortConfig.key === key &&
-      sortConfig.direction === "ascending"
-    ) {
-      direction = "descending";
-    }
-    // If sorting by team name, default to ascending first time
-    if (key === "teamName" && (!sortConfig || sortConfig.key !== "teamName")) {
-      direction = "ascending";
-    } else if (key !== "teamName" && (!sortConfig || sortConfig.key !== key)) {
-      // For numeric columns, default to descending first time
-      direction = "descending";
-    }
-    setSortConfig({ key, direction });
+  const sorted = [...teamDataArray].sort((a, b) => {
+    const av = value(a, sort.key), bv = value(b, sort.key);
+    if (av == null || bv == null) return av == null ? bv == null ? String(value(a, "teamName")).localeCompare(String(value(b, "teamName"))) : 1 : -1;
+    return (av < bv ? -1 : av > bv ? 1 : 0) * (sort.ascending ? 1 : -1) || String(value(a, "teamName")).localeCompare(String(value(b, "teamName")));
+  });
+  const averages = useMemo(() => getFourWeekAverages(teamDataArray.filter(complete)), [teamDataArray]);
+  const scores = Object.values(opportunityByTeamId).flatMap((v) => v.opportunity == null ? [] : [v.opportunity]);
+  const scoreMean = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
+  const metricBands = Object.fromEntries((["gamesPlayed", "offNights", "avgOpponentPointPct"] as const).map((key) => [key,
+    toFourWeekMetricBands(teamDataArray.map((team) => ({ teamId: team.teamId, value: value(team, key) as number | null })), key === "avgOpponentPointPct" ? "asc" : "desc")]));
+  // 4WK Value shares the opponent table's top/bottom-10 rank shading.
+  const valueRanks = toRankMaps(teamDataArray.flatMap((team) => {
+    const score = opportunityByTeamId[team.teamId]?.opportunity;
+    return score == null ? [] : [{ teamId: team.teamId, value: score }];
+  }), "desc");
+  const valueRankClass = (teamId: number) => {
+    const best = valueRanks.best.get(teamId);
+    if (best != null) return rankStyles[`rankGood${best}`];
+    const worst = valueRanks.worst.get(teamId);
+    return worst != null ? rankStyles[`rankBad${worst}`] : undefined;
   };
-
-  // --- Memoized Calculations ---
-  const averages = useMemo(() => getFourWeekAverages(teamDataArray), [teamDataArray]);
-
-  const roundedAvgGP = useMemo(
-    () => Math.round(averages.gamesPlayed ?? 0),
-    [averages.gamesPlayed],
-  );
-  const roundedAvgOFF = useMemo(
-    () => Math.round(averages.offNights ?? 0),
-    [averages.offNights],
-  );
-
-  const teamsWithScore: TeamWithScore[] = useMemo(() => {
-    if (!teamDataArray) return [];
-    return teamDataArray.map((team) => ({
-      ...team,
-      avgOpponentPointPct: team.totals.scheduleCoverage && team.totals.scheduleCoverage.known < team.totals.scheduleCoverage.expected
-        ? null : team.avgOpponentPointPct,
-      score: getFourWeekScore(team, averages)
-    }));
-  }, [teamDataArray, averages]);
-
-  const sortedTeams = useMemo(() => {
-    let sortableTeams = [...teamsWithScore];
-    const currentSortKey = sortConfig?.key;
-    const currentDirection = sortConfig?.direction;
-
-    sortableTeams.sort((a, b) => {
-      let aValue: number | string | null;
-      let bValue: number | string | null;
-      const aComplete = !a.totals.scheduleCoverage || a.totals.scheduleCoverage.known === a.totals.scheduleCoverage.expected;
-      const bComplete = !b.totals.scheduleCoverage || b.totals.scheduleCoverage.known === b.totals.scheduleCoverage.expected;
-
-      // Get values based on sort key
-      switch (currentSortKey) {
-        case "gamesPlayed":
-          aValue = aComplete ? a.totals.gamesPlayed : null;
-          bValue = bComplete ? b.totals.gamesPlayed : null;
-          break;
-        case "offNights":
-          aValue = aComplete ? a.totals.offNights : null;
-          bValue = bComplete ? b.totals.offNights : null;
-          break;
-        case "avgOpponentPointPct":
-          aValue = a.avgOpponentPointPct;
-          bValue = b.avgOpponentPointPct;
-          break;
-        case "score":
-          aValue = a.score;
-          bValue = b.score;
-          break;
-        case "teamName":
-          aValue = teamsMap[a.teamId]?.name.toLowerCase() || "";
-          bValue = teamsMap[b.teamId]?.name.toLowerCase() || "";
-          break;
-        default: // Default alphabetical sort if no sortConfig
-          aValue = teamsMap[a.teamId]?.name.toLowerCase() || "";
-          bValue = teamsMap[b.teamId]?.name.toLowerCase() || "";
-          // Force ascending for default alphabetical
-          if (aValue < bValue) return -1;
-          if (aValue > bValue) return 1;
-          return 0;
-      }
-
-      // Comparison logic
-      if (aValue == null) return bValue == null ? 0 : 1;
-      if (bValue == null) return -1;
-      if (aValue < bValue) return currentDirection === "ascending" ? -1 : 1;
-      if (aValue > bValue) return currentDirection === "ascending" ? 1 : -1;
-      return 0;
-    });
-
-    return sortableTeams;
-  }, [teamsWithScore, sortConfig, teamsMap]);
-
-  const metricBands = useMemo(() => {
-    const complete = (team: TeamWithScore) => !team.totals.scheduleCoverage || team.totals.scheduleCoverage.known === team.totals.scheduleCoverage.expected;
-    return {
-      gamesPlayed: toFourWeekMetricBands(teamsWithScore.map((team) => ({ teamId: team.teamId, value: complete(team) ? team.totals.gamesPlayed : null })), "desc"),
-      offNights: toFourWeekMetricBands(teamsWithScore.map((team) => ({ teamId: team.teamId, value: complete(team) ? team.totals.offNights : null })), "desc"),
-      avgOpponentPointPct: toFourWeekMetricBands(teamsWithScore.map((team) => ({ teamId: team.teamId, value: team.avgOpponentPointPct })), "asc"),
-      score: toFourWeekMetricBands(teamsWithScore.map((team) => ({ teamId: team.teamId, value: team.score })), "desc"),
-    };
-  }, [teamsWithScore]);
-
-  const weekNumbers = useMemo(
-    () => getFourWeekNumbers(teamDataArray ?? []),
-    [teamDataArray],
-  );
-  const weeklyAverages = useMemo(
-    () => buildFourWeekDetailAverages(teamDataArray ?? [], weekNumbers),
-    [teamDataArray, weekNumbers],
-  );
-
-  // --- Render ---
-  const handleTitleClick = isMobile ? toggleMobileMinimize : undefined;
-  const isLoading = !teamsMap || Object.keys(teamsMap).length === 0;
-  const hasData = sortedTeams.length > 0;
-
-  return (
-    <div
-      className={clsx(
-        styles.container,
-        isMobile && isMobileMinimized && styles.minimized,
-      )}
-    >
-      {/* Clickable Title Header */}
-      <div
-        className={styles.titleHeader}
-        onClick={handleTitleClick}
-        role={isMobile ? "button" : undefined}
-        tabIndex={isMobile ? 0 : undefined}
-        aria-expanded={isMobile ? !isMobileMinimized : undefined}
-        aria-controls={isMobile ? "four-week-grid-content" : undefined}
-        data-interactive={isMobile ? true : undefined}
-      >
-        <span className={styles.titleText}>
-          {" "}
-          FOUR WEEK <span className={styles.spanColorBlue}>FORECAST</span>{" "}
-        </span>
-        {isMobile && (
-          <span
-            className={clsx(
-              styles.minimizeToggleIcon,
-              isMobileMinimized && styles.minimized,
-            )}
-            aria-hidden="true"
-          >
-            {" "}
-            ▼{" "}
-          </span>
-        )}
-      </div>
-
-      {/* Collapsible Content Wrapper */}
-      <div id="four-week-grid-content" className={styles.tableWrapper}>
-        <MetricInfoDisclosure label="four-week forecast" warnings={calendar?.error
-          ? ["Schedule unavailable. Reload to retry."]
-          : (calendar && calendar.knownDays < calendar.expectedDays) || teamDataArray.some((team) => team.totals.scheduleCoverage && team.totals.scheduleCoverage.known < team.totals.scheduleCoverage.expected)
-            ? ["Schedule incomplete. Affected totals are unavailable; check back after schedule updates."]
-            : teamDataArray.some((team) => team.opponentCoverage && team.opponentCoverage.known < team.opponentCoverage.expected)
-              ? ["Some opponent strength values are unavailable. Check back after standings update."] : []}>
-          {calendar && <p>{calendar.start}–{calendar.end}: selected Monday–Sunday week plus three weeks. {calendar.error ?? (calendar.knownDays === calendar.expectedDays ? "Schedule complete." : "Schedule incomplete; affected totals are unavailable.")}</p>}
-          <p>GP = games played; OFF = games on nights with eight or fewer NHL games. OPP% uses current-season NHL regular-season team points percentages.</p>
-          <p>{FOUR_WEEK_COLOR_LEGEND}</p>
-        </MetricInfoDisclosure>
-        {isLoading ? (
-          <div className={styles.message}>Loading schedule data...</div>
-        ) : !hasData ? (
-          <div className={styles.message}>No schedule data available.</div>
-        ) : (
-          <>
-            <div
-              className={styles.viewTabs}
-              role="tablist"
-              aria-label="Four-week forecast views"
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeView === "summary"}
-                className={clsx(
-                  styles.viewTab,
-                  activeView === "summary" && styles.viewTabActive,
-                )}
-                onClick={() => setActiveView("summary")}
-              >
-                4W Summary
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeView === "weekly"}
-                className={clsx(
-                  styles.viewTab,
-                  activeView === "weekly" && styles.viewTabActive,
-                )}
-                onClick={() => setActiveView("weekly")}
-              >
-                Weekly Detail
-              </button>
-            </div>
-            {activeView === "summary" ? (
-              // REMOVED Scroll Container Div - Table directly inside wrapper
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    {/* Team Header - Make it sortable too */}
-                    <th>
-                      <button
-                        type="button"
-                        onClick={() => handleSort("teamName")}
-                        className={styles.sortButton}
-                        aria-label={`Sort by Team Name ${
-                          sortConfig?.key === "teamName" &&
-                          sortConfig.direction === "ascending"
-                            ? "descending"
-                            : "ascending"
-                        }`}
-                      >
-                        Team{" "}
-                        {sortConfig?.key === "teamName" &&
-                          (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
-                      </button>
-                    </th>
-                    <th>
-                      <button
-                        type="button"
-                        onClick={() => handleSort("gamesPlayed")}
-                        className={styles.sortButton}
-                        aria-label={`Sort by Games Played ${
-                          sortConfig?.key === "gamesPlayed" &&
-                          sortConfig.direction === "descending"
-                            ? "ascending"
-                            : "descending"
-                        }`}
-                      >
-                        GP{" "}
-                        {sortConfig?.key === "gamesPlayed" &&
-                          (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
-                      </button>
-                    </th>
-                    <th>
-                      <button
-                        type="button"
-                        onClick={() => handleSort("offNights")}
-                        className={styles.sortButton}
-                        aria-label={`Sort by OFF ${
-                          sortConfig?.key === "offNights" &&
-                          sortConfig.direction === "descending"
-                            ? "ascending"
-                            : "descending"
-                        }`}
-                      >
-                        OFF{" "}
-                        {sortConfig?.key === "offNights" &&
-                          (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
-                      </button>
-                    </th>
-                    <th>
-                      <button
-                        type="button"
-                        onClick={() => handleSort("avgOpponentPointPct")}
-                        className={styles.sortButton}
-                        aria-label={`Sort by Opponent Pct ${
-                          sortConfig?.key === "avgOpponentPointPct" &&
-                          sortConfig.direction === "descending"
-                            ? "ascending"
-                            : "descending"
-                        }`}
-                      >
-                        OPP (%){" "}
-                        {sortConfig?.key === "avgOpponentPointPct" &&
-                          (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
-                      </button>
-                    </th>
-                    <th>
-                      <button
-                        type="button"
-                        onClick={() => handleSort("score")}
-                        className={styles.sortButton}
-                        aria-label={`Sort by 4 WK Score ${
-                          sortConfig?.key === "score" &&
-                          sortConfig.direction === "descending"
-                            ? "ascending"
-                            : "descending"
-                        }`}
-                      >
-                        4WK Score{" "}
-                        {sortConfig?.key === "score" &&
-                          (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
-                      </button>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* AVG Row */}
-                  <tr className={styles.averagesRow}>
-                    <td>AVG:</td>
-                    <td>{averages.gamesPlayed?.toFixed(2) ?? "-"}</td>
-                    <td>{averages.offNights?.toFixed(2) ?? "-"}</td>
-                    <td>{averages.avgOpponentPointPct == null ? "-" : `${(averages.avgOpponentPointPct * 100).toFixed(1)}%`}</td>
-                    <td>{averages.score?.toFixed(2) ?? "-"}</td>
-                  </tr>
-
-                  {/* Data Rows */}
-                  {sortedTeams.map((team) => {
-                    const teamInfo = teamsMap[team.teamId];
-                    if (!teamInfo) return null; // Skip if no team info found
-
-                    const complete = !team.totals.scheduleCoverage || team.totals.scheduleCoverage.known === team.totals.scheduleCoverage.expected;
-                    const gp = complete ? team.totals.gamesPlayed : "-";
-                    const off = complete ? team.totals.offNights : "-";
-                    const oppPct = team.avgOpponentPointPct;
-                    const score = team.score;
-
-                    return (
-                      <tr key={team.teamId}>
-                        <td className={styles.teamCell}>
-                          <Link
-                            href={`/stats/team/${teamInfo.abbreviation}`}
-                            aria-label={`Open ${teamInfo.name} Team HQ`}
-                            className={styles.teamInfo}
-                          >
-                            <Image
-                              src={teamInfo.logo}
-                              alt={`${teamInfo.name} logo`}
-                              width={24}
-                              height={24}
-                              className={styles.teamLogo}
-                            />
-                            {/* Optional: Add team name/abbr here on wider screens */}
-                            {/* <span className={styles.teamNameText}>{teamInfo.abbreviation}</span> */}
-                          </Link>
-                        </td>
-                        <td data-favorability={metricBands.gamesPlayed.get(team.teamId)}>{gp}</td>
-                        <td data-favorability={metricBands.offNights.get(team.teamId)}>{off}</td>
-                        <td data-favorability={metricBands.avgOpponentPointPct.get(team.teamId)}>
-                          {typeof oppPct === "number"
-                            ? `${(oppPct * 100).toFixed(1)}%`
-                            : "-"}
-                        </td>
-                        <td data-favorability={metricBands.score.get(team.teamId)}>{score?.toFixed(2) ?? "-"}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            ) : (
-              <table className={clsx(styles.table, styles.weeklyTable)}>
-                <thead>
-                  <tr>
-                    <th>Team</th>
-                    {weekNumbers.map((weekNumber) => (
-                      <th key={weekNumber}>W{weekNumber}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className={styles.averagesRow}>
-                    <td>AVG:</td>
-                    {weeklyAverages.map((week) => (
-                      <td key={week.weekNumber}>
-                        {week.gamesPlayed?.toFixed(1) ?? "-"}G /{" "}
-                        {week.offNights?.toFixed(1) ?? "-"}O
-                      </td>
-                    ))}
-                  </tr>
-                  {sortedTeams.map((team) => {
-                    const teamInfo = teamsMap[team.teamId];
-                    if (!teamInfo) return null;
-
-                    return (
-                      <tr key={team.teamId}>
-                        <td className={styles.teamCell}>
-                          <Link
-                            href={`/stats/team/${teamInfo.abbreviation}`}
-                            aria-label={`Open ${teamInfo.name} Team HQ`}
-                            className={styles.teamInfo}
-                          >
-                            <Image
-                              src={teamInfo.logo}
-                              alt={`${teamInfo.name} logo`}
-                              width={24}
-                              height={24}
-                              className={styles.teamLogo}
-                            />
-                          </Link>
-                        </td>
-                        {buildFourWeekDetailCells(team, weekNumbers).map(
-                          (week) => (
-                            <td key={week.weekNumber}>
-                              <strong>
-                                {week.gamesPlayed == null
-                                  ? `Schedule ${week.coverage?.known ? "partial" : "unavailable"}`
-                                  : `${week.gamesPlayed}G / ${week.offNights}O`}
-                              </strong>
-                              <span className={styles.opponentList}>
-                                {week.opponents.length
-                                  ? week.opponents.join(" · ")
-                                  : week.gamesPlayed == null ? "" : "No games"}
-                              </span>
-                            </td>
-                          ),
-                        )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
-          </>
-        )}
-      </div>
+  const header = (label: string, key: Key) => <th><button className={styles.sortButton} type="button" onClick={() => setSort((old) => ({ key, ascending: old.key === key ? !old.ascending : key === "teamName" }))} aria-label={`Sort by ${label}`}>{label}</button></th>;
+  return <div className={styles.container}>
+    <div className={styles.titleHeader}><span className={styles.titleText}>4-Week <span className={styles.spanColorBlue}>Value</span></span></div>
+    <div className={styles.tableWrapper}>
+      <MetricInfoDisclosure label="four-week forecast" warningTarget={warningTarget} warnings={calendar?.error
+        ? ["Schedule unavailable. Reload to retry."]
+        : Object.values(opportunityByTeamId).some((v) => v.weeks.some((w) => w.unknown > 0))
+          ? ["Some fixture starts or states are unresolved. Affected opportunity totals are unavailable."]
+        : (calendar && calendar.knownDays < calendar.expectedDays) || teamDataArray.some((team) => !complete(team))
+          ? ["Schedule incomplete. Affected totals are unavailable; check back after schedule updates."]
+          : teamDataArray.some((team) => team.opponentCoverage && team.opponentCoverage.known < team.opponentCoverage.expected)
+            ? ["Some opponent strength values are unavailable. Check back after standings update."] : []}>
+        {calendar && <p>{calendar.start}–{calendar.end}: selected Monday–Sunday week plus three weeks. {calendar.error ?? (calendar.knownDays === calendar.expectedDays ? "Schedule complete." : "Schedule incomplete; affected totals are unavailable.")}</p>}
+        <p>{OPPORTUNITY_INFO}</p><p>OPP% = current opponent PTS/(2 × GP). Missing values show “—”.</p>
+        <p>{FOUR_WEEK_COLOR_LEGEND.replace("score", "4WK Value")}</p>
+      </MetricInfoDisclosure>
+      <button type="button" className={toggleStyles.detailToggle} aria-expanded={expanded} aria-label={expanded ? "Collapse four-week columns" : "Expand four-week columns"} onClick={() => setExpanded((v) => !v)}>
+        {expanded ? "Hide details" : "Show details"} <span aria-hidden="true">{expanded ? "▴" : "▾"}</span>
+      </button>
+      {expanded && <div className={styles.viewTabs} role="tablist" aria-label="Four-week forecast views">
+        <button type="button" role="tab" aria-selected={!weekly} onClick={() => setWeekly(false)}>4W Summary</button>
+        <button type="button" role="tab" aria-selected={weekly} onClick={() => setWeekly(true)}>Weekly Detail</button>
+      </div>}
+      {!teamDataArray.length ? <p>No schedule data available.</p> : <div style={{ overflowX: "auto" }}>
+        <table className={styles.table}>
+          <thead><tr>{header("Team", "teamName")}{expanded && weekly ? [1, 2, 3, 4].map((n) => <th key={n}>W{n}</th>) : <>
+            {expanded && <>{header("GP", "gamesPlayed")}{header("OFF", "offNights")}{header("OPP (%)", "avgOpponentPointPct")}</>}
+            {header("4WK Value", "score")}<th>Trend</th>
+          </>}</tr></thead>
+          <tbody>
+            <tr className={styles.averagesRow}><td>AVG:</td>{expanded && weekly ? [1, 2, 3, 4].map((n) => <td key={n}>—</td>) : <>
+              {expanded && <><td>{formatOpportunity(averages.gamesPlayed)}</td><td>{formatOpportunity(averages.offNights)}</td><td>{averages.avgOpponentPointPct == null ? "—" : `${(averages.avgOpponentPointPct * 100).toFixed(1)}%`}</td></>}
+              <td>{formatOpportunity(scoreMean)}</td><td />
+            </>}</tr>
+            {sorted.map((team) => <tr key={team.teamId} data-team-id={team.teamId}>
+              <td className={styles.teamCell}><Link href={`/stats/team/${team.teamAbbreviation}`} aria-label={`Open ${teams[team.teamId]?.name ?? team.teamAbbreviation} Team HQ`} className={styles.teamInfo}>
+                <Image src={teams[team.teamId]?.logo ?? `/teamLogos/${team.teamAbbreviation}.png`} alt={team.teamAbbreviation} width={24} height={24} />
+              </Link></td>
+              {expanded && weekly ? buildFourWeekDetailCells(team, [1, 2, 3, 4]).map((week) => <td key={week.weekNumber}>
+                <strong>{week.gamesPlayed == null ? `Schedule ${week.coverage?.known ? "partial" : "unavailable"}` : `${week.gamesPlayed}G / ${week.offNights}O`}</strong>
+                <span className={styles.opponentList}>{week.opponents.join(" · ") || (week.gamesPlayed == null ? "" : "No remaining games")}</span>
+              </td>) : <>
+                {expanded && <><td data-favorability={metricBands.gamesPlayed.get(team.teamId)}>{formatOpportunity(value(team, "gamesPlayed") as number | null)}</td><td data-favorability={metricBands.offNights.get(team.teamId)}>{formatOpportunity(value(team, "offNights") as number | null)}</td><td data-favorability={metricBands.avgOpponentPointPct.get(team.teamId)}>{value(team, "avgOpponentPointPct") == null ? "—" : `${(team.avgOpponentPointPct! * 100).toFixed(1)}%`}</td></>}
+                <td className={valueRankClass(team.teamId)}>{formatOpportunity(value(team, "score") as number | null)}</td>
+                <td className={styles.trendCell}><OpportunitySparkline value={opportunityByTeamId[team.teamId]} scale={sharedScale} team={team.teamAbbreviation} /></td>
+              </>}
+            </tr>)}
+          </tbody>
+        </table>
+      </div>}
     </div>
-  );
-};
-
-export default FourWeekGrid;
+  </div>;
+}

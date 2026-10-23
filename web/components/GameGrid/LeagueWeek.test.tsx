@@ -126,7 +126,9 @@ describe("Game Grid on a complete 32-team week", () => {
     expect(links()).toHaveLength(32);
 
     const totals = screen.getByText("GP/Day").closest("tr")!;
-    const dayCells = within(totals).getAllByRole("cell").slice(1, 8).map((cell) => cell.textContent);
+    const totalCells = within(totals).getAllByRole("cell");
+    const firstDay = totalCells.findIndex((cell) => cell.textContent?.startsWith("GP/Day")) + 1;
+    const dayCells = totalCells.slice(firstDay, firstDay + 7).map((cell) => cell.textContent);
     expect(dayCells).toEqual(perDay.map(String));
 
     fireEvent.click(screen.getByRole("button", { name: "Sort by Score descending" }));

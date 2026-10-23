@@ -5,14 +5,15 @@ import styles from "./OpponentMetricsTable.module.scss";
 import clsx from "clsx";
 import PanelStatus from "components/common/PanelStatus";
 import MetricInfoDisclosure from "./MetricInfoDisclosure";
+import RatingMeter from "./RatingMeter";
+import toggleStyles from "./DetailToggle.module.scss";
+import { buildOpponentRatings, RATING_INFO } from "./utils/scheduleOpportunity";
 import OptimizedImage from "components/common/OptimizedImage";
 import { getLocalTeamLogoPath } from "lib/images";
 import { useTeamsMap } from "hooks/useTeams";
 import { TeamNumeric, toRankMaps } from "./utils/metricRanks";
-import OpponentRoleToggle from "./OpponentRoleToggle";
 import {
   getOpponentViewDirections,
-  OPPONENT_VIEW_LEGEND,
   OpponentRole
 } from "./utils/opponentCategoryEffects";
 import {
@@ -45,30 +46,35 @@ export default function OpponentMetricsTable({
   metricsData
 }: OpponentMetricsTableProps) {
   const isMobile = useIsMobile();
+  const [expanded, setExpanded] = useState(false);
   const [isMobileMinimized, setIsMobileMinimized] = useState(false);
   const teamsMap = useTeamsMap();
-  const [role, setRole] = useState<OpponentRole>("skater");
+  // Keep the released default while the perspective control is hidden.
+  const role: OpponentRole = "skater";
   const directions = useMemo(() => getOpponentViewDirections(role), [role]);
   const [sortConfig, setSortConfig] = useState<{
-    key: keyof OpponentMetricAverages | "teamName";
+    key: keyof OpponentMetricAverages | "atk" | "def" | "teamName";
     direction: "ascending" | "descending";
   } | null>(null);
   const {
-    entries: teamsAverages,
-    metricColumns,
+    entries,
+    metricColumns: sourceColumns,
     leagueAverages,
     statsLoading,
     statsError,
     sourceLabel
   } = metricsData;
 
+  const ratings = useMemo(() => buildOpponentRatings(entries, metricsData.statsByAbbreviation), [entries, metricsData.statsByAbbreviation]);
+  const teamsAverages = useMemo(() => entries.map((e) => ({ ...e, averages: { ...e.averages, atk: ratings[e.team.teamId]?.atk ?? null, def: ratings[e.team.teamId]?.def ?? null } })), [entries, ratings]);
+  const metricColumns: { label: string; key: keyof OpponentMetricAverages | "atk" | "def" }[] = [{ label: "ATK", key: "atk" }, { label: "DEF", key: "def" }, ...(expanded ? sourceColumns : [])];
   const toggleMobileMinimize = () => {
     if (isMobile) {
       setIsMobileMinimized((prev) => !prev);
     }
   };
 
-  const handleSort = (key: keyof OpponentMetricAverages | "teamName") => {
+  const handleSort = (key: keyof OpponentMetricAverages | "atk" | "def" | "teamName") => {
     let direction: "ascending" | "descending" = "ascending";
     if (
       sortConfig &&
@@ -131,7 +137,7 @@ export default function OpponentMetricsTable({
   }, [teamsAverages, sortConfig, teamsMap]);
 
   const rankMaps = useMemo(() => {
-    return metricColumns.reduce<
+    return sourceColumns.reduce<
       Record<
         keyof OpponentMetricAverages,
         { best: Map<number, number>; worst: Map<number, number> }
@@ -150,13 +156,14 @@ export default function OpponentMetricsTable({
       keyof OpponentMetricAverages,
       { best: Map<number, number>; worst: Map<number, number> }
     >);
-  }, [teamsAverages, metricColumns, directions]);
+  }, [teamsAverages, sourceColumns, directions]);
 
   const getRankClass = (
-    key: keyof OpponentMetricAverages,
+    key: keyof OpponentMetricAverages | "atk" | "def",
     teamId: number,
     value: number | null
   ): string | undefined => {
+    if (key === "atk" || key === "def") return undefined;
     if (typeof value !== "number") return undefined;
     const rank = rankMaps[key]?.best.get(teamId);
     if (rank != null) return (styles as any)[`rankGood${rank}`];
@@ -178,6 +185,7 @@ export default function OpponentMetricsTable({
       <div
         className={styles.titleHeader}
         onClick={handleTitleClick}
+        onKeyDown={(event) => { if (isMobile && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); toggleMobileMinimize(); } }}
         role={isMobile ? "button" : undefined}
         tabIndex={isMobile ? 0 : undefined}
         aria-expanded={isMobile ? !isMobileMinimized : undefined}
@@ -185,7 +193,7 @@ export default function OpponentMetricsTable({
         data-interactive={isMobile ? true : undefined}
       >
         <span className={styles.titleText}>
-          AVG OPPONENT <span className={styles.spanColorBlue}>STATS</span>
+          Opponent <span className={styles.spanColorBlue}>Ratings</span>
         </span>
         {isMobile && (
           <span
@@ -205,9 +213,11 @@ export default function OpponentMetricsTable({
           <p>Opponent stats (Natural Stat Trick): {sourceLabel}</p>
           <p>Metrics per game; PTS% = points / (2 × GP). Missing or incomplete opponent averages show “-”.</p>
           <p>xG = expected goals; GF/GA = goals for/against; SF/SA = shots for/against.</p>
-          <p>{OPPONENT_VIEW_LEGEND[role]}</p>
+          <p>{RATING_INFO}</p>
         </MetricInfoDisclosure>
-        {hasData && !statsLoading && !statsError && <OpponentRoleToggle role={role} onChange={setRole} />}
+        <button type="button" className={toggleStyles.detailToggle} aria-expanded={expanded} aria-label={expanded ? "Collapse opponent details" : "Expand opponent details"} onClick={() => setExpanded((v) => !v)}>
+          {expanded ? "Hide source stats" : "Show source stats"} <span aria-hidden="true">{expanded ? "▴" : "▾"}</span>
+        </button>
         {statsLoading ? (
           <PanelStatus state="loading" message="Loading opponent stats..." />
         ) : statsError ? (
@@ -245,8 +255,8 @@ export default function OpponentMetricsTable({
                 {metricColumns.map((metric) => (
                   <th
                     key={metric.key}
-                    data-uncolored={directions[metric.key] ? undefined : true}
-                    title={directions[metric.key] ? undefined : `${metric.label} is not colored in the ${role} view`}
+                    data-uncolored={(metric.key === "atk" || metric.key === "def" ? null : directions[metric.key]) ? undefined : true}
+                    title={(metric.key === "atk" || metric.key === "def" ? null : directions[metric.key]) ? undefined : `${metric.label} is not colored in the ${role} view`}
                   >
                     <button
                       type="button"
@@ -271,7 +281,7 @@ export default function OpponentMetricsTable({
               <tr className={styles.averagesRow}>
                 <td>AVG:</td>
                 {metricColumns.map((metric) => {
-                  const value = leagueAverages[metric.key];
+                  const value = metric.key === "atk" || metric.key === "def" ? null : leagueAverages[metric.key];
                   return (
                     <td key={metric.key} title="Mean of complete displayed team averages">
                       {value != null
@@ -303,11 +313,13 @@ export default function OpponentMetricsTable({
                         key={metric.key}
                         className={getRankClass(metric.key, team.teamId, value)}
                       >
-                        {value != null
-                          ? metric.key === "avgWinPct"
-                            ? `${(value * 100).toFixed(1)}%`
-                            : value.toFixed(1)
-                          : "-"}
+                        {metric.key === "atk" || metric.key === "def"
+                          ? <RatingMeter kind={metric.key} value={value} />
+                          : value != null
+                            ? metric.key === "avgWinPct"
+                              ? `${(value * 100).toFixed(1)}%`
+                              : value.toFixed(1)
+                            : "-"}
                       </td>
                     );
                   })}
