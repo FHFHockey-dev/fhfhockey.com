@@ -31,3 +31,14 @@ h = live model f (Release C) with only these constants changed; see [variant-h-o
 - **Shot rate:** the season-level moment k is too small. FORGE's shot history spans seasons, and talent drifts between them, so the effective prior strength is larger. The old split-half value already gave a slope of 0.99.
 - **Recommended next candidate:** re-fit assist-share and conversion k, keep shot-rate k. It is untested as a combination and needs one gate.
 - **What still compresses goals:** the small-sample second shrink. Its weight averages 0.63 and never exceeds 0.76, so established players lose at least 24% toward the prior. That shrink is kept only because the context goal multipliers inflate conversion (task 9, Q7). Fixing it needs single ownership of finishing: the shot-quality goal multiplier repeats what conversion history already holds.
+
+## Hybrid gate (TJ chose it): variant i
+
+Variant i re-fits only assist share and conversion k; shot-rate k stays at the released split-half values ([variant-i-over-f.patch](variant-i-over-f.patch)). 62 games, 7,532 GETs, 62/62 replays matched. Results are in [PAIR-f-vs-i-hybrid.md](PAIR-f-vs-i-hybrid.md).
+
+- **RMSE:** neutral on every head. FP moves by −0.002 [−0.004, +0.000].
+- **MZ slopes, f → i:** G 1.16 → 1.14, A 1.36 → 1.30, FP 1.14 → 1.12. SOG is unchanged at 0.99.
+- **Top deciles:** FP 1.099 → 1.092; PPP 0.920 → 0.893.
+- **D in the top FP decile:** 24 (actual 38).
+
+**Decision.** I committed the hybrid k on octoberBranch (constants plus unit tests): the estimates are better founded, slightly better calibrated, and cost nothing in accuracy. The change is too small to justify a release by itself, so it rides with the next FORGE model release.

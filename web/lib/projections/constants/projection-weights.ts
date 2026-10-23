@@ -109,20 +109,21 @@ export const SKATER_PHYSICAL_LEAGUE_SCALE_MAX = 1.3;
 export const SKATER_PHYSICAL_TOI_RATIO_MAX = 1.3;
 // Assist share of on-ice goals for, by position and strength: NST regular-season game logs
 // 2023-24..2025-26 (tasks/artifacts/forge-priors-2026-10-22). k is the on-ice goals that weigh as
-// much as the prior, from alternate-game split halves: k = n(1 - r) / r.
+// much as the prior: method of moments on player-season totals (K-REFIT.json).
 export const SKATER_ASSIST_SHARE_PRIORS = {
-  F: { es: { share: 0.3747, k: 258 }, pp: { share: 0.3554, k: 58 } },
-  D: { es: { share: 0.2782, k: 309 }, pp: { share: 0.4838, k: 84 } },
+  F: { es: { share: 0.3747, k: 99 }, pp: { share: 0.3554, k: 20 } },
+  D: { es: { share: 0.2782, k: 98 }, pp: { share: 0.4838, k: 65 } },
 } as const;
 export const SKATER_ASSIST_SHARE_MIN = 0.02;
 export const SKATER_ASSIST_SHARE_MAX = 0.9;
 /** League assists per goal by strength over the same seasons; team assists are scaled to these. */
 export const SKATER_TEAM_ASSISTS_PER_GOAL = { es: 1.65, pp: 1.91 } as const;
 // Goals per shot and shots per 60 by position and strength over the same game logs (task 4). k is
-// the shots (conversion) or hours (shot rate) that weigh as much as the prior, from split halves.
+// the shots (conversion; method of moments, K-REFIT.json) or hours (shot rate; split halves, as the
+// moment fit over-disperses multi-season shot history) that weigh as much as the prior.
 export const SKATER_GOAL_CONVERSION_PRIORS = {
-  F: { es: { perShot: 0.1181, k: 423 }, pp: { perShot: 0.1589, k: 155 } },
-  D: { es: { perShot: 0.0537, k: 704 }, pp: { perShot: 0.0862, k: 73 } },
+  F: { es: { perShot: 0.1181, k: 224 }, pp: { perShot: 0.1589, k: 107 } },
+  D: { es: { perShot: 0.0537, k: 532 }, pp: { perShot: 0.0862, k: 934 } },
 } as const;
 export const SKATER_SHOT_RATE_PRIORS = {
   F: { es: { per60: 6.62, kHours: 8.4 }, pp: { per60: 11.23, kHours: 10.3 } },

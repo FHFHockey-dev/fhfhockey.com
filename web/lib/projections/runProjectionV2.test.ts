@@ -811,27 +811,28 @@ describe("skater small-sample shrinkage adjustments", () => {
 describe("skater assist share of on-ice goals", () => {
   it("uses the F/D prior for its strength without IPP history", () => {
     for (const ipp of [null, undefined, 0, Number.NaN]) {
-      expect(computeSkaterAssistShare({ goalsAll: 10, assistsAll: 20, ippAllPct: ipp, position: "C", strength: "es" }))
-        .toEqual({ share: 0.3747, onIceGoalsHistory: 0 });
+      const prior = computeSkaterAssistShare({ goalsAll: 10, assistsAll: 20, ippAllPct: ipp, position: "C", strength: "es" });
+      expect(prior.onIceGoalsHistory).toBe(0);
+      expect(prior.share).toBeCloseTo(0.3747, 12);
     }
-    expect(computeSkaterAssistShare({ goalsAll: null, assistsAll: 5, ippAllPct: 50, position: "D", strength: "pp" }).share).toBe(0.4838);
+    expect(computeSkaterAssistShare({ goalsAll: null, assistsAll: 5, ippAllPct: 50, position: "D", strength: "pp" }).share).toBeCloseTo(0.4838, 12);
   });
 
   it("shrinks the observed share toward the prior by on-ice goals", () => {
-    // 10 G + 20 A at 60% IPP = 50 on-ice goals; (20 + 258 x 0.3747) / (50 + 258).
+    // 10 G + 20 A at 60% IPP = 50 on-ice goals; (20 + 99 x 0.3747) / (50 + 99).
     const es = computeSkaterAssistShare({ goalsAll: 10, assistsAll: 20, ippAllPct: 60, position: "L", strength: "es" });
     expect(es.onIceGoalsHistory).toBeCloseTo(50, 10);
-    expect(es.share).toBeCloseTo((20 + 258 * 0.3747) / 308, 10);
-    // Defence PP: 2 G + 18 A at 50% IPP = 40 on-ice goals; (18 + 84 x 0.4838) / (40 + 84).
+    expect(es.share).toBeCloseTo((20 + 99 * 0.3747) / 149, 10);
+    // Defence PP: 2 G + 18 A at 50% IPP = 40 on-ice goals; (18 + 65 x 0.4838) / (40 + 65).
     expect(computeSkaterAssistShare({ goalsAll: 2, assistsAll: 18, ippAllPct: 50, position: "D", strength: "pp" }).share)
-      .toBeCloseTo((18 + 84 * 0.4838) / 124, 10);
+      .toBeCloseTo((18 + 65 * 0.4838) / 105, 10);
   });
 
   it("never credits more assists than on-ice goals and stays within bounds", () => {
     // IPP above 100% is inconsistent source data: assists cap at the implied on-ice goals.
     const capped = computeSkaterAssistShare({ goalsAll: 0, assistsAll: 30, ippAllPct: 150, position: "C", strength: "pp" });
     expect(capped.onIceGoalsHistory).toBeCloseTo(20, 10);
-    expect(capped.share).toBeCloseTo((20 + 58 * 0.3554) / 78, 10);
+    expect(capped.share).toBeCloseTo((20 + 20 * 0.3554) / 40, 10);
     expect(computeSkaterAssistShare({ goalsAll: 0, assistsAll: 1e6, ippAllPct: 100, position: "C", strength: "es" }).share).toBe(0.9);
   });
 });
@@ -861,9 +862,9 @@ describe("position goal-conversion priors", () => {
     const d = computeStrengthSplitConversionRates({ ...counts, position: "D" });
     expect(d.goalRateEs).toBeCloseTo(0.0537, 10);
     expect(d.goalRatePp).toBeCloseTo(0.0862, 10);
-    // A forward's 30 goals on 200 ES shots against 423 prior shots.
+    // A forward's 30 goals on 200 ES shots against 224 prior shots.
     const f = computeStrengthSplitConversionRates({ ...counts, evGoalsAll: 30, evShotsAll: 200, position: "C" });
-    expect(f.goalRateEs).toBeCloseTo((30 + 423 * 0.1181) / 623, 10);
+    expect(f.goalRateEs).toBeCloseTo((30 + 224 * 0.1181) / 424, 10);
     // Without a position the former position-blind prior remains.
     expect(computeStrengthSplitConversionRates(counts).goalRateEs).toBeCloseTo(0.095, 10);
   });
